@@ -49,11 +49,68 @@
 
 namespace geopm
 {
+    struct sst_mailbox_fields_s {
+        uint16_t command;
+        uint16_t subcommand;
+        /* TODO: uint32_t request_data won't work alone.
+         * Most, but not all, fields have config_level encoded into bits [7:0].
+         * Current version of this iogroup ignores that, effectivly using 0 for all.
+         *  -- Add bool has_config_level? Could auto-set in internal layers
+         *  -- Add additional signal names (multiply signal count by 4)
+         */
+        uint32_t request_data;
+        uint32_t begin_bit;
+        uint32_t end_bit;
+    };
+
+    using SignalName = std::string;
+    static const std::map<SignalName, sst_mailbox_fields_s> sst_mailbox_fields = {
+        { "SST::CONFIG_LEVEL", { 0x7f, 0x00, 0x00, 16, 23 } },
+        { "SST::TURBOFREQ_SUPPORT", { 0x7f, 0x01, 0x00, 0, 0 } },
+        { "SST::TURBOFREQ_STATUS", { 0x7f, 0x01, 0x00, 16, 16 } },
+        // TODO: Is COREPRIORITY_STATUS complete in the excel sheet?
+        { "SST::COREPRIORITY_STATUS", { 0xd0, 0x00, 0x00, 0, 0 } },
+        { "SST::HIGHPRIORITY_NCORES_0", { 0x7f, 0x10, 0x0000, 0, 7 } },
+        { "SST::HIGHPRIORITY_NCORES_1", { 0x7f, 0x10, 0x0000, 8, 15 } },
+        { "SST::HIGHPRIORITY_NCORES_2", { 0x7f, 0x10, 0x0000, 16, 23 } },
+        { "SST::HIGHPRIORITY_NCORES_3", { 0x7f, 0x10, 0x0000, 24, 31 } },
+        { "SST::HIGHPRIORITY_NCORES_4", { 0x7f, 0x10, 0x0100, 0, 7 } },
+        { "SST::HIGHPRIORITY_NCORES_5", { 0x7f, 0x10, 0x0100, 8, 15 } },
+        { "SST::HIGHPRIORITY_NCORES_6", { 0x7f, 0x10, 0x0100, 16, 23 } },
+        { "SST::HIGHPRIORITY_NCORES_7", { 0x7f, 0x10, 0x0100, 24, 31 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_0", { 0x7f, 0x11, 0x000000, 23, 31 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_1", { 0x7f, 0x11, 0x000000, 16, 24 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_2", { 0x7f, 0x11, 0x000000, 8, 15 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_3", { 0x7f, 0x11, 0x000000, 0, 7 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_4", { 0x7f, 0x11, 0x000100, 23, 31 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_5", { 0x7f, 0x11, 0x000100, 16, 24 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_6", { 0x7f, 0x11, 0x000100, 8, 15 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_7", { 0x7f, 0x11, 0x000100, 0, 7 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_0", { 0x7f, 0x11, 0x010000, 23, 31 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_1", { 0x7f, 0x11, 0x010000, 16, 24 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_2", { 0x7f, 0x11, 0x010000, 8, 15 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_3", { 0x7f, 0x11, 0x010000, 0, 7 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_4", { 0x7f, 0x11, 0x010100, 23, 31 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_5", { 0x7f, 0x11, 0x010100, 16, 24 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_6", { 0x7f, 0x11, 0x010100, 8, 15 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_7", { 0x7f, 0x11, 0x010100, 0, 7 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_0", { 0x7f, 0x11, 0x020000, 23, 31 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_1", { 0x7f, 0x11, 0x020000, 16, 24 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_2", { 0x7f, 0x11, 0x020000, 8, 15 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_3", { 0x7f, 0x11, 0x020000, 0, 7 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_4", { 0x7f, 0x11, 0x020100, 23, 31 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_5", { 0x7f, 0x11, 0x020100, 16, 24 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_6", { 0x7f, 0x11, 0x020100, 8, 15 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_7", { 0x7f, 0x11, 0x020100, 0, 7 } },
+        { "SST::LOWPRIORITY_FREQUENCY_SSE", { 0x7f, 0x12, 0x00, 0, 7 } },
+        { "SST::LOWPRIORITY_FREQUENCY_AVX2", { 0x7f, 0x12, 0x00, 8, 15 } },
+        { "SST::LOWPRIORITY_FREQUENCY_AVX512", { 0x7f, 0x12, 0x00, 16, 24 } },
+    };
+
     SSTIOGroup::SSTIOGroup(const PlatformTopo &topo,
                            std::shared_ptr<SSTIO> sstio)
         : m_is_signal_pushed(false)
         , m_is_batch_read(false)
-        , m_valid_signal_name({"SST::CONFIG_LEVEL"})
         , m_valid_control_name({"SST::TURBO_ENABLE"})
         , m_topo(topo)
         , m_sstio(sstio)
@@ -66,7 +123,13 @@ namespace geopm
 
     std::set<std::string> SSTIOGroup::signal_names(void) const
     {
-        return m_valid_signal_name;
+        std::set<std::string> s;
+        std::transform(sst_mailbox_fields.begin(), sst_mailbox_fields.end(),
+                       std::inserter(s, s.end()),
+                       [](const decltype(sst_mailbox_fields)::value_type& p) {
+                           return p.first;
+                       });
+        return s;
     }
 
     std::set<std::string> SSTIOGroup::control_names(void) const
@@ -76,7 +139,7 @@ namespace geopm
 
     bool SSTIOGroup::is_valid_signal(const std::string &signal_name) const
     {
-        return m_valid_signal_name.find(signal_name) != m_valid_signal_name.end();
+        return sst_mailbox_fields.find(signal_name) != sst_mailbox_fields.end();
     }
 
     bool SSTIOGroup::is_valid_control(const std::string &control_name) const
@@ -105,7 +168,9 @@ namespace geopm
     int SSTIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         int result = -1;
-        if (is_valid_signal(signal_name)) {
+        auto it = sst_mailbox_fields.find(signal_name);
+        if (it != sst_mailbox_fields.end()) {
+            const auto& field_description = it->second;
             if (domain_type != GEOPM_DOMAIN_PACKAGE) {
                 throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
@@ -113,10 +178,14 @@ namespace geopm
             auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
             int cpu_idx = *(cpus.begin());
             // "ISST::LEVELS_INFO#"
-            std::shared_ptr<Signal> levels_info = std::make_shared<SSTSignal>(
-                m_sstio, cpu_idx, 0x7F, 0x00, 0x00, 0x00);
+
             std::shared_ptr<Signal> signal = std::make_shared<MSRFieldSignal>(
-                levels_info, 16, 23, MSR::M_FUNCTION_SCALE, 1.0);
+                std::make_shared<SSTSignal>(
+                    m_sstio, cpu_idx, field_description.command,
+                    field_description.subcommand, field_description.request_data,
+                    0 /* interface parameter */),
+                field_description.begin_bit, field_description.end_bit,
+                MSR::M_FUNCTION_SCALE, 1.0);
 
             // TODO: see linear search in MSRIO::push_signal to check for already pushed
             result = m_signal_pushed.size();
@@ -157,8 +226,7 @@ namespace geopm
             auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
             int cpu_idx = *(cpus.begin());
 
-            auto control = std::make_shared<SSTControl>(m_sstio, cpu_idx, 0x7F,
-                                                        0x2, 0x0, 0x1, 16, 16);
+            auto control = std::make_shared<SSTControl>(m_sstio, cpu_idx, 0x7F, 0x2, 0x0, 0x1, 16, 16);
             control->setup_batch();
             result = m_control_pushed.size();
             m_control_pushed.push_back(control);

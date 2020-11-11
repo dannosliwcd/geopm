@@ -108,10 +108,6 @@ namespace geopm
         if (!m_mbox_interfaces.empty()) {
             m_mbox_read_batch = ioctl_struct_from_vector<sst_mbox_interface_batch_s>(
                 m_mbox_interfaces);
-            //m_mbox_read_batch->interfaces = m_mbox_interfaces.data();
-            //std::memcpy(m_mbox_read_batch->interfaces, m_mbox_interfaces.data(),
-            //            m_mbox_read_batch->num_entries *
-            //                sizeof m_mbox_read_batch->interfaces[0]);
 
             int err = ioctl(m_fd, GEOPM_IOC_SST_MBOX, m_mbox_read_batch.get());
             if (err == -1) {

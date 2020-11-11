@@ -125,6 +125,15 @@ namespace geopm
 
             std::string m_path;
             int m_fd;
+            // TODO:
+            //  vector<mbox> m_mbox_interface
+            //  vector<mmio> m_mmio_interface
+            //  vector< pair<which_list, list_idx> > pushed_offsets;
+            //   `-- push_xyz() returns an index to this, where the value
+            //       at that index indicates either mmio or mbox, and the
+            //       offset within that mmio/mbox list
+            //
+            //
             std::vector<struct sst_mbox_interface_s> m_mbox_interfaces;
             std::unique_ptr<sst_mbox_interface_batch_s> m_mbox_read_batch;
             std::unique_ptr<sst_mbox_interface_batch_s> m_mbox_write_batch;
