@@ -61,50 +61,56 @@ namespace geopm
         uint32_t request_data;
         uint32_t begin_bit;
         uint32_t end_bit;
+        double multiplier;
     };
 
-    using SignalName = std::string;
-    static const std::map<SignalName, sst_mailbox_fields_s> sst_mailbox_fields = {
+    static const std::map<std::string, sst_mailbox_fields_s> sst_signal_mbox_fields = {
         { "SST::CONFIG_LEVEL", { 0x7f, 0x00, 0x00, 16, 23 } },
         { "SST::TURBOFREQ_SUPPORT", { 0x7f, 0x01, 0x00, 0, 0 } },
         { "SST::TURBOFREQ_STATUS", { 0x7f, 0x01, 0x00, 16, 16 } },
-        // TODO: Is COREPRIORITY_STATUS complete in the excel sheet?
-        { "SST::COREPRIORITY_STATUS", { 0xd0, 0x00, 0x00, 0, 0 } },
-        { "SST::HIGHPRIORITY_NCORES_0", { 0x7f, 0x10, 0x0000, 0, 7 } },
-        { "SST::HIGHPRIORITY_NCORES_1", { 0x7f, 0x10, 0x0000, 8, 15 } },
-        { "SST::HIGHPRIORITY_NCORES_2", { 0x7f, 0x10, 0x0000, 16, 23 } },
-        { "SST::HIGHPRIORITY_NCORES_3", { 0x7f, 0x10, 0x0000, 24, 31 } },
-        { "SST::HIGHPRIORITY_NCORES_4", { 0x7f, 0x10, 0x0100, 0, 7 } },
-        { "SST::HIGHPRIORITY_NCORES_5", { 0x7f, 0x10, 0x0100, 8, 15 } },
-        { "SST::HIGHPRIORITY_NCORES_6", { 0x7f, 0x10, 0x0100, 16, 23 } },
-        { "SST::HIGHPRIORITY_NCORES_7", { 0x7f, 0x10, 0x0100, 24, 31 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_0", { 0x7f, 0x11, 0x000000, 23, 31 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_1", { 0x7f, 0x11, 0x000000, 16, 24 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_2", { 0x7f, 0x11, 0x000000, 8, 15 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_3", { 0x7f, 0x11, 0x000000, 0, 7 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_4", { 0x7f, 0x11, 0x000100, 23, 31 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_5", { 0x7f, 0x11, 0x000100, 16, 24 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_6", { 0x7f, 0x11, 0x000100, 8, 15 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_7", { 0x7f, 0x11, 0x000100, 0, 7 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_0", { 0x7f, 0x11, 0x010000, 23, 31 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_1", { 0x7f, 0x11, 0x010000, 16, 24 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_2", { 0x7f, 0x11, 0x010000, 8, 15 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_3", { 0x7f, 0x11, 0x010000, 0, 7 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_4", { 0x7f, 0x11, 0x010100, 23, 31 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_5", { 0x7f, 0x11, 0x010100, 16, 24 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_6", { 0x7f, 0x11, 0x010100, 8, 15 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_7", { 0x7f, 0x11, 0x010100, 0, 7 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_0", { 0x7f, 0x11, 0x020000, 23, 31 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_1", { 0x7f, 0x11, 0x020000, 16, 24 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_2", { 0x7f, 0x11, 0x020000, 8, 15 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_3", { 0x7f, 0x11, 0x020000, 0, 7 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_4", { 0x7f, 0x11, 0x020100, 23, 31 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_5", { 0x7f, 0x11, 0x020100, 16, 24 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_6", { 0x7f, 0x11, 0x020100, 8, 15 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_7", { 0x7f, 0x11, 0x020100, 0, 7 } },
-        { "SST::LOWPRIORITY_FREQUENCY_SSE", { 0x7f, 0x12, 0x00, 0, 7 } },
-        { "SST::LOWPRIORITY_FREQUENCY_AVX2", { 0x7f, 0x12, 0x00, 8, 15 } },
-        { "SST::LOWPRIORITY_FREQUENCY_AVX512", { 0x7f, 0x12, 0x00, 16, 24 } },
+        // TODO: Add an alias: COREPRIORITY_STATUS?
+        { "SST::COREPRIORITY_ENABLE", { 0xd0, 0x02, 0x00, 1, 1, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_0", { 0x7f, 0x10, 0x0000, 0, 7, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_1", { 0x7f, 0x10, 0x0000, 8, 15, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_2", { 0x7f, 0x10, 0x0000, 16, 23, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_3", { 0x7f, 0x10, 0x0000, 24, 31, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_4", { 0x7f, 0x10, 0x0100, 0, 7, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_5", { 0x7f, 0x10, 0x0100, 8, 15, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_6", { 0x7f, 0x10, 0x0100, 16, 23, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_7", { 0x7f, 0x10, 0x0100, 24, 31, 1.0 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_0", { 0x7f, 0x11, 0x000000, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_1", { 0x7f, 0x11, 0x000000, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_2", { 0x7f, 0x11, 0x000000, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_3", { 0x7f, 0x11, 0x000000, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_4", { 0x7f, 0x11, 0x000100, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_5", { 0x7f, 0x11, 0x000100, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_6", { 0x7f, 0x11, 0x000100, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_7", { 0x7f, 0x11, 0x000100, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_0", { 0x7f, 0x11, 0x010000, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_1", { 0x7f, 0x11, 0x010000, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_2", { 0x7f, 0x11, 0x010000, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_3", { 0x7f, 0x11, 0x010000, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_4", { 0x7f, 0x11, 0x010100, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_5", { 0x7f, 0x11, 0x010100, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_6", { 0x7f, 0x11, 0x010100, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_7", { 0x7f, 0x11, 0x010100, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_0", { 0x7f, 0x11, 0x020000, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_1", { 0x7f, 0x11, 0x020000, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_2", { 0x7f, 0x11, 0x020000, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_3", { 0x7f, 0x11, 0x020000, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_4", { 0x7f, 0x11, 0x020100, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_5", { 0x7f, 0x11, 0x020100, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_6", { 0x7f, 0x11, 0x020100, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_7", { 0x7f, 0x11, 0x020100, 0, 7, 1e8 } },
+        { "SST::LOWPRIORITY_FREQUENCY_SSE", { 0x7f, 0x12, 0x00, 0, 7, 1e8 } },
+        { "SST::LOWPRIORITY_FREQUENCY_AVX2", { 0x7f, 0x12, 0x00, 8, 15, 1e8 } },
+        { "SST::LOWPRIORITY_FREQUENCY_AVX512", { 0x7f, 0x12, 0x00, 16, 24, 1e8 } },
+    };
+    // TODO: WIP: Need to make the functions use this. Probably need to add in
+    // the mbox param field too.
+    static const std::map<std::string, sst_mailbox_fields_s> sst_control_mbox_fields = {
+        { "SST::TURBO_ENABLE", { 0x7f, 0x00, 0x00, 16, 23 } },
+        { "SST::COREPRIORITY_ENABLE", { 0xd0, 0x02, 0x00, 1, 1, 1.0 } },
     };
 
     SSTIOGroup::SSTIOGroup(const PlatformTopo &topo,
@@ -124,9 +130,9 @@ namespace geopm
     std::set<std::string> SSTIOGroup::signal_names(void) const
     {
         std::set<std::string> s;
-        std::transform(sst_mailbox_fields.begin(), sst_mailbox_fields.end(),
+        std::transform(sst_signal_mbox_fields.begin(), sst_signal_mbox_fields.end(),
                        std::inserter(s, s.end()),
-                       [](const decltype(sst_mailbox_fields)::value_type& p) {
+                       [](const decltype(sst_signal_mbox_fields)::value_type& p) {
                            return p.first;
                        });
         return s;
@@ -139,7 +145,7 @@ namespace geopm
 
     bool SSTIOGroup::is_valid_signal(const std::string &signal_name) const
     {
-        return sst_mailbox_fields.find(signal_name) != sst_mailbox_fields.end();
+        return sst_signal_mbox_fields.find(signal_name) != sst_signal_mbox_fields.end();
     }
 
     bool SSTIOGroup::is_valid_control(const std::string &control_name) const
@@ -168,8 +174,8 @@ namespace geopm
     int SSTIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         int result = -1;
-        auto it = sst_mailbox_fields.find(signal_name);
-        if (it != sst_mailbox_fields.end()) {
+        auto it = sst_signal_mbox_fields.find(signal_name);
+        if (it != sst_signal_mbox_fields.end()) {
             const auto& field_description = it->second;
             if (domain_type != GEOPM_DOMAIN_PACKAGE) {
                 throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
@@ -185,7 +191,7 @@ namespace geopm
                     field_description.subcommand, field_description.request_data,
                     0 /* interface parameter */),
                 field_description.begin_bit, field_description.end_bit,
-                MSR::M_FUNCTION_SCALE, 1.0);
+                MSR::M_FUNCTION_SCALE, field_description.multiplier);
 
             // TODO: see linear search in MSRIO::push_signal to check for already pushed
             result = m_signal_pushed.size();
