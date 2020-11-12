@@ -38,10 +38,11 @@
 namespace geopm
 {
     SSTControl::SSTControl(std::shared_ptr<SSTIO> sstio,
-                           int cpu_idx, uint32_t command, uint32_t subcommand,
-                           uint32_t interface_parameter, uint32_t write_value,
-                           int begin_bit, int end_bit)
+                           bool is_mmio, int cpu_idx, uint32_t command,
+                           uint32_t subcommand, uint32_t interface_parameter,
+                           uint32_t write_value, int begin_bit, int end_bit)
         : m_sstio(sstio)
+        , m_is_mmio(is_mmio)
         , m_cpu_idx(cpu_idx)
         , m_command(command)
         , m_subcommand(subcommand)
@@ -56,10 +57,14 @@ namespace geopm
 
     void SSTControl::setup_batch(void)
     {
-        // If (mbox or mmio ) ...
-        m_adjust_idx = m_sstio->add_mbox_write(m_cpu_idx, m_command, m_subcommand,
-                                               m_interface_parameter, m_write_value);
-
+        if (m_is_mmio) {
+            m_adjust_idx = m_sstio->add_mmio_write(
+                m_cpu_idx, m_interface_parameter, m_write_value);
+        }
+        else {
+            m_adjust_idx = m_sstio->add_mbox_write(
+                m_cpu_idx, m_command, m_subcommand, m_interface_parameter, m_write_value);
+        }
     }
 
     void SSTControl::adjust(double value)

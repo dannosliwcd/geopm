@@ -42,25 +42,25 @@ class MockSSTIO : public geopm::SSTIO
 {
     public:
         MOCK_METHOD5(add_mbox_read,
-                     int(uint32_t cpu_index, uint32_t command,
-                         uint32_t subcommand, uint32_t subcommand_arg,
+                     int(uint32_t cpu_index, uint16_t command,
+                         uint16_t subcommand, uint32_t subcommand_arg,
                          uint32_t interface_parameter));
         MOCK_METHOD5(add_mbox_write,
-                     int(uint32_t cpu_index, uint32_t command,
-                         uint32_t subcommand,
+                     int(uint32_t cpu_index, uint16_t command,
+                         uint16_t subcommand,
                          uint32_t interface_parameter, uint32_t write_value));
-        // MOCK_METHOD2(mmio_read,
-        //              uint32_t(uint32_t cpu_index, uint32_t register_offset));
-        // MOCK_METHOD3(mmio_write,
-        //              void(uint32_t cpu_index, uint32_t register_offset,
-        //                   uint32_t value));
-
+        MOCK_METHOD3(add_mmio_read, int(uint32_t cpu_index, uint16_t register_offset,
+                                        uint32_t register_value));
+        MOCK_METHOD3(add_mmio_write, int(uint32_t cpu_index, uint16_t register_offset,
+                                         uint32_t register_value));
         MOCK_METHOD0(read_batch,
                      void(void));
         MOCK_CONST_METHOD1(sample,
-                           uint32_t(int index));
-        MOCK_METHOD3(adjust,
-                     void(int index, uint32_t write_value, uint64_t mask));
+                           uint64_t(int index));
+        MOCK_METHOD0(write_batch,
+                     void(void));
+        MOCK_METHOD2(adjust,
+                     void(int index, uint64_t write_value));
 };
 
 #endif

@@ -77,8 +77,6 @@ namespace geopm
         private:
             bool m_is_signal_pushed;
             bool m_is_batch_read;
-            const std::set<std::string> m_valid_signal_name;
-            const std::set<std::string> m_valid_control_name;
             /////// old above
 
             const PlatformTopo &m_topo;

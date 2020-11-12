@@ -66,12 +66,12 @@ TEST_F(SSTSignalTest, mailbox_read_batch)
 {
     // TODO: multiple cpu
     int cpu = 3;
-    uint32_t command = 0x7f;
-    uint32_t subcommand = 0x33;
+    uint16_t command = 0x7f;
+    uint16_t subcommand = 0x33;
     uint32_t sub_arg = 0x56;
     uint32_t interface_param = 0x93;
 
-    SSTSignal sig {m_sstio, cpu, command, subcommand, sub_arg,
+    SSTSignal sig {m_sstio, false, cpu, command, subcommand, sub_arg,
                    interface_param};
 
     int batch_idx = 42;
@@ -81,7 +81,7 @@ TEST_F(SSTSignalTest, mailbox_read_batch)
 
     sig.setup_batch();
 
-    double expected = 6;
+    double expected = 6.0;
     EXPECT_CALL(*m_sstio, sample(batch_idx)).WillOnce(Return(geopm_signal_to_field(expected)));
 
     double result = sig.sample();
