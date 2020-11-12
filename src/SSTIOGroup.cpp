@@ -50,8 +50,13 @@
 namespace geopm
 {
     // TODO: do we want JSON config like for MSRs?
+    enum class SSTMailboxCommand : uint16_t {
+        TURBO_FREQUENCY = 0x7f,
+        CORE_PRIORITY = 0xd0,
+    };
+
     struct sst_signal_mailbox_fields_s {
-        sst_signal_mailbox_fields_s(uint16_t command, uint16_t subcommand,
+        sst_signal_mailbox_fields_s(SSTMailboxCommand command, uint16_t subcommand,
                                     uint32_t request_data, uint32_t begin_bit,
                                     uint32_t end_bit, double multiplier)
             : command(command)
@@ -62,7 +67,7 @@ namespace geopm
             , multiplier(multiplier)
         {
         }
-        uint16_t command;
+        SSTMailboxCommand command;
         uint16_t subcommand;
         /* TODO: uint32_t request_data won't work alone.
          * Most, but not all, fields have config_level encoded into bits [7:0].
@@ -77,7 +82,7 @@ namespace geopm
     };
 
     struct sst_control_mailbox_fields_s {
-        sst_control_mailbox_fields_s(uint16_t command, uint16_t subcommand,
+        sst_control_mailbox_fields_s(SSTMailboxCommand command, uint16_t subcommand,
                                      uint32_t write_param, uint32_t write_data,
                                      uint32_t begin_bit, uint32_t end_bit)
             : command(command)
@@ -88,7 +93,7 @@ namespace geopm
             , end_bit(end_bit)
         {
         }
-        uint16_t command;
+        SSTMailboxCommand command;
         uint16_t subcommand;
         uint32_t write_param;
         uint32_t write_data;
@@ -97,52 +102,91 @@ namespace geopm
     };
 
     static const std::map<std::string, sst_signal_mailbox_fields_s> sst_signal_mbox_fields = {
-        { "SST::CONFIG_LEVEL", { 0x7f, 0x00, 0x00, 16, 23, 1.0 } },
-        { "SST::TURBOFREQ_SUPPORT", { 0x7f, 0x01, 0x00, 0, 0, 1.0 } },
-        { "SST::TURBOFREQ_STATUS", { 0x7f, 0x01, 0x00, 16, 16, 1.0 } },
+        { "SST::CONFIG_LEVEL",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x00, 0x00, 16, 23, 1.0 } },
+        { "SST::TURBOFREQ_SUPPORT",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x01, 0x00, 0, 0, 1.0 } },
+        { "SST::TURBOFREQ_STATUS",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x01, 0x00, 16, 16, 1.0 } },
         // TODO: Add an alias: COREPRIORITY_STATUS?
-        { "SST::COREPRIORITY_ENABLE", { 0xd0, 0x02, 0x00, 1, 1, 1.0 } },
-        { "SST::HIGHPRIORITY_NCORES_0", { 0x7f, 0x10, 0x0000, 0, 7, 1.0 } },
-        { "SST::HIGHPRIORITY_NCORES_1", { 0x7f, 0x10, 0x0000, 8, 15, 1.0 } },
-        { "SST::HIGHPRIORITY_NCORES_2", { 0x7f, 0x10, 0x0000, 16, 23, 1.0 } },
-        { "SST::HIGHPRIORITY_NCORES_3", { 0x7f, 0x10, 0x0000, 24, 31, 1.0 } },
-        { "SST::HIGHPRIORITY_NCORES_4", { 0x7f, 0x10, 0x0100, 0, 7, 1.0 } },
-        { "SST::HIGHPRIORITY_NCORES_5", { 0x7f, 0x10, 0x0100, 8, 15, 1.0 } },
-        { "SST::HIGHPRIORITY_NCORES_6", { 0x7f, 0x10, 0x0100, 16, 23, 1.0 } },
-        { "SST::HIGHPRIORITY_NCORES_7", { 0x7f, 0x10, 0x0100, 24, 31, 1.0 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_0", { 0x7f, 0x11, 0x000000, 23, 31, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_1", { 0x7f, 0x11, 0x000000, 16, 24, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_2", { 0x7f, 0x11, 0x000000, 8, 15, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_3", { 0x7f, 0x11, 0x000000, 0, 7, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_4", { 0x7f, 0x11, 0x000100, 23, 31, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_5", { 0x7f, 0x11, 0x000100, 16, 24, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_6", { 0x7f, 0x11, 0x000100, 8, 15, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_SSE_7", { 0x7f, 0x11, 0x000100, 0, 7, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_0", { 0x7f, 0x11, 0x010000, 23, 31, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_1", { 0x7f, 0x11, 0x010000, 16, 24, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_2", { 0x7f, 0x11, 0x010000, 8, 15, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_3", { 0x7f, 0x11, 0x010000, 0, 7, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_4", { 0x7f, 0x11, 0x010100, 23, 31, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_5", { 0x7f, 0x11, 0x010100, 16, 24, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_6", { 0x7f, 0x11, 0x010100, 8, 15, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_7", { 0x7f, 0x11, 0x010100, 0, 7, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_0", { 0x7f, 0x11, 0x020000, 23, 31, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_1", { 0x7f, 0x11, 0x020000, 16, 24, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_2", { 0x7f, 0x11, 0x020000, 8, 15, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_3", { 0x7f, 0x11, 0x020000, 0, 7, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_4", { 0x7f, 0x11, 0x020100, 23, 31, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_5", { 0x7f, 0x11, 0x020100, 16, 24, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_6", { 0x7f, 0x11, 0x020100, 8, 15, 1e8 } },
-        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_7", { 0x7f, 0x11, 0x020100, 0, 7, 1e8 } },
-        { "SST::LOWPRIORITY_FREQUENCY_SSE", { 0x7f, 0x12, 0x00, 0, 7, 1e8 } },
-        { "SST::LOWPRIORITY_FREQUENCY_AVX2", { 0x7f, 0x12, 0x00, 8, 15, 1e8 } },
-        { "SST::LOWPRIORITY_FREQUENCY_AVX512", { 0x7f, 0x12, 0x00, 16, 24, 1e8 } },
+        { "SST::COREPRIORITY_ENABLE",
+          { SSTMailboxCommand::CORE_PRIORITY, 0x02, 0x00, 1, 1, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_0",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x10, 0x0000, 0, 7, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_1",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x10, 0x0000, 8, 15, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_2",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x10, 0x0000, 16, 23, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_3",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x10, 0x0000, 24, 31, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_4",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x10, 0x0100, 0, 7, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_5",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x10, 0x0100, 8, 15, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_6",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x10, 0x0100, 16, 23, 1.0 } },
+        { "SST::HIGHPRIORITY_NCORES_7",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x10, 0x0100, 24, 31, 1.0 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_0",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x000000, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_1",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x000000, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_2",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x000000, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_3",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x000000, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_4",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x000100, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_5",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x000100, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_6",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x000100, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_SSE_7",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x000100, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_0",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x010000, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_1",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x010000, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_2",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x010000, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_3",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x010000, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_4",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x010100, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_5",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x010100, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_6",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x010100, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX2_7",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x010100, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_0",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x020000, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_1",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x020000, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_2",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x020000, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_3",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x020000, 0, 7, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_4",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x020100, 23, 31, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_5",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x020100, 16, 24, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_6",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x020100, 8, 15, 1e8 } },
+        { "SST::HIGHPRIORITY_FREQUENCY_AVX512_7",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11, 0x020100, 0, 7, 1e8 } },
+        { "SST::LOWPRIORITY_FREQUENCY_SSE",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x12, 0x00, 0, 7, 1e8 } },
+        { "SST::LOWPRIORITY_FREQUENCY_AVX2",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x12, 0x00, 8, 15, 1e8 } },
+        { "SST::LOWPRIORITY_FREQUENCY_AVX512",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x12, 0x00, 16, 24, 1e8 } },
     };
     // TODO: WIP: Need to make the functions use this. Probably need to add in
     // the mbox param field too.
     static const std::map<std::string, sst_control_mailbox_fields_s> sst_control_mbox_fields = {
-        { "SST::TURBO_ENABLE", { 0x7f, 0x00, 0x0, 0x00, 16, 23 } },
-        { "SST::COREPRIORITY_ENABLE", { 0xd0, 0x0, 0x02, 0x00, 1, 1} },
+        { "SST::TURBO_ENABLE", { SSTMailboxCommand::TURBO_FREQUENCY, 0x00, 0x0, 0x00, 16, 23 } },
+        { "SST::COREPRIORITY_ENABLE", { SSTMailboxCommand::CORE_PRIORITY, 0x0, 0x02, 0x00, 1, 1} },
     };
 
     SSTIOGroup::SSTIOGroup(const PlatformTopo &topo,
@@ -222,7 +266,7 @@ namespace geopm
             // we should reuse the object
             std::shared_ptr<Signal> signal = std::make_shared<MSRFieldSignal>(
                 std::make_shared<SSTSignal>(
-                    m_sstio, cpu_idx, field_description.command,
+                    m_sstio, cpu_idx, static_cast<uint16_t>(field_description.command),
                     field_description.subcommand, field_description.request_data,
                     0 /* interface parameter */),
                 field_description.begin_bit, field_description.end_bit,
