@@ -58,9 +58,9 @@ namespace geopm
             void read_batch(void) override;
 
             // TODO: might need separate call for mbox and mmio
-            uint32_t sample(int index) const override;
+            uint64_t sample(int index) const override;
             void write_batch(void) override;
-            void adjust(int index, uint32_t write_value) override;
+            void adjust(int index, uint64_t write_value) override;
 
         private:
             struct sst_mmio_interface_s

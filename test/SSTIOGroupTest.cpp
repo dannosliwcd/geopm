@@ -116,13 +116,13 @@ TEST_F(SSTIOGroupTest, sample_config_level)
 
     //bits 16:23
     //0b 1111 1111 0000 0000 0000 0000
-    //uint64_t mask =nullptr 0xFF0000
+    //uint64_t mask = 0xFF0000
     uint32_t raw0 = 0x1428000;
     uint32_t raw1 = 0x1678000;
     uint32_t expected0 = 0x42;
     uint32_t expected1 = 0x67;
-    EXPECT_CALL(*m_sstio, sample(CONFIG_LEVEL_0)).WillRepeatedly(Return(raw0));
-    EXPECT_CALL(*m_sstio, sample(CONFIG_LEVEL_1)).WillRepeatedly(Return(raw1));
+    EXPECT_CALL(*m_sstio, sample(CONFIG_LEVEL_0)).WillOnce(Return(raw0));
+    EXPECT_CALL(*m_sstio, sample(CONFIG_LEVEL_1)).WillOnce(Return(raw1));
     result = m_group->sample(idx0);
     EXPECT_EQ(expected0, result);
     result = m_group->sample(idx1);
@@ -160,10 +160,9 @@ TEST_F(SSTIOGroupTest, adjust_turbo_enable)
     int idx1 = m_group->push_control("SST::TURBO_ENABLE", GEOPM_DOMAIN_PACKAGE, 1);
     EXPECT_NE(idx0, idx1);
 
-    // bit 16
-    uint64_t mask = 0x10000;
-    EXPECT_CALL(*m_sstio, adjust(idx0, 0x1, mask));
-    EXPECT_CALL(*m_sstio, adjust(idx1, 0x0, mask));
+    int shift = 16;  // bit 16
+    EXPECT_CALL(*m_sstio, adjust(idx0, 0x1 << shift));
+    EXPECT_CALL(*m_sstio, adjust(idx1, 0x0 << shift));
     m_group->adjust(idx0, 0x1);
     m_group->adjust(idx1, 0x0);
 }

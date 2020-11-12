@@ -49,6 +49,8 @@
 
 namespace geopm
 {
+    // TODO: constructor/builder for these; easy to make a mistake
+    // TODO: do we want JSON config like for MSRs?
     struct sst_mailbox_fields_s {
         uint16_t command;
         uint16_t subcommand;
@@ -65,9 +67,9 @@ namespace geopm
     };
 
     static const std::map<std::string, sst_mailbox_fields_s> sst_signal_mbox_fields = {
-        { "SST::CONFIG_LEVEL", { 0x7f, 0x00, 0x00, 16, 23 } },
-        { "SST::TURBOFREQ_SUPPORT", { 0x7f, 0x01, 0x00, 0, 0 } },
-        { "SST::TURBOFREQ_STATUS", { 0x7f, 0x01, 0x00, 16, 16 } },
+        { "SST::CONFIG_LEVEL", { 0x7f, 0x00, 0x00, 16, 23, 1.0 } },
+        { "SST::TURBOFREQ_SUPPORT", { 0x7f, 0x01, 0x00, 0, 0, 1.0 } },
+        { "SST::TURBOFREQ_STATUS", { 0x7f, 0x01, 0x00, 16, 16, 1.0 } },
         // TODO: Add an alias: COREPRIORITY_STATUS?
         { "SST::COREPRIORITY_ENABLE", { 0xd0, 0x02, 0x00, 1, 1, 1.0 } },
         { "SST::HIGHPRIORITY_NCORES_0", { 0x7f, 0x10, 0x0000, 0, 7, 1.0 } },
@@ -109,7 +111,7 @@ namespace geopm
     // TODO: WIP: Need to make the functions use this. Probably need to add in
     // the mbox param field too.
     static const std::map<std::string, sst_mailbox_fields_s> sst_control_mbox_fields = {
-        { "SST::TURBO_ENABLE", { 0x7f, 0x00, 0x00, 16, 23 } },
+        { "SST::TURBO_ENABLE", { 0x7f, 0x00, 0x00, 16, 23, 1.0 } },
         { "SST::COREPRIORITY_ENABLE", { 0xd0, 0x02, 0x00, 1, 1, 1.0 } },
     };
 
@@ -185,6 +187,9 @@ namespace geopm
             int cpu_idx = *(cpus.begin());
             // "ISST::LEVELS_INFO#"
 
+            // TODO: need to fix this for the case where multiple signals
+            // come from different fields of the same SSTSignal; in that case
+            // we should reuse the object
             std::shared_ptr<Signal> signal = std::make_shared<MSRFieldSignal>(
                 std::make_shared<SSTSignal>(
                     m_sstio, cpu_idx, field_description.command,

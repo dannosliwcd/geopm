@@ -36,15 +36,14 @@
 #include "geopm_hash.h"
 #include "SSTIO.hpp"
 
-
 // TODO: fix problems with NAN and replace -1 below
 namespace geopm
 {
 
     SSTSignal::SSTSignal(std::shared_ptr<geopm::SSTIO> sstio,
                          int cpu_idx,
-                         uint32_t command,
-                         uint32_t subcommand,
+                         uint16_t command,
+                         uint16_t subcommand,
                          uint32_t subcommand_arg,  //write_value
                          uint32_t interface_parameter) // mbox_interface_param
         : m_sstio(sstio)

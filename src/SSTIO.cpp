@@ -118,7 +118,7 @@ namespace geopm
     }
 
     // TODO: might need separate call for mbox and mmio
-    uint32_t SSTIOImp::sample(int batch_idx) const
+    uint64_t SSTIOImp::sample(int batch_idx) const
     {
         return m_mbox_read_batch->interfaces[batch_idx].read_value;
     }
@@ -137,7 +137,7 @@ namespace geopm
         }
     }
 
-    void SSTIOImp::adjust(int index, uint32_t write_value)
+    void SSTIOImp::adjust(int index, uint64_t write_value)
     {
         // TODO: check index in range
         m_mbox_interfaces[index].write_value = write_value;

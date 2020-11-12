@@ -66,12 +66,12 @@ namespace geopm
             virtual void read_batch(void) = 0;
 
             // TODO: might need separate call for mbox and mmio
-            virtual uint32_t sample(int index) const = 0;
+            virtual uint64_t sample(int index) const = 0;
 
             // See also the mock implementation
             virtual void write_batch(void) = 0;
 
-            virtual void adjust(int index, uint32_t write_value) = 0;
+            virtual void adjust(int index, uint64_t write_value) = 0;
 
             static std::shared_ptr<SSTIO> make_shared(void);
     };
