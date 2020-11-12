@@ -49,12 +49,10 @@ class MockSSTIO : public geopm::SSTIO
                      int(uint32_t cpu_index, uint16_t command,
                          uint16_t subcommand,
                          uint32_t interface_parameter, uint32_t write_value));
-        // MOCK_METHOD2(mmio_read,
-        //              uint32_t(uint32_t cpu_index, uint32_t register_offset));
-        // MOCK_METHOD3(mmio_write,
-        //              void(uint32_t cpu_index, uint32_t register_offset,
-        //                   uint32_t value));
-
+        MOCK_METHOD3(add_mmio_read, int(uint32_t cpu_index, uint16_t register_offset,
+                                        uint32_t register_value));
+        MOCK_METHOD3(add_mmio_write, int(uint32_t cpu_index, uint16_t register_offset,
+                                         uint32_t register_value));
         MOCK_METHOD0(read_batch,
                      void(void));
         MOCK_CONST_METHOD1(sample,

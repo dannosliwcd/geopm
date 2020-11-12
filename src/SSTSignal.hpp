@@ -48,6 +48,7 @@ namespace geopm
         public:
             // signal that does not need a subcommand arg
             SSTSignal(std::shared_ptr<geopm::SSTIO> sstio,
+                      bool is_mmio,
                       int cpu_idx,
                       uint16_t command,
                       uint16_t subcommand,
@@ -70,6 +71,7 @@ namespace geopm
 
         private:
             std::shared_ptr<geopm::SSTIO> m_sstio;
+            bool m_is_mmio;
             const int m_cpu_idx;
             const uint16_t m_command;
             const uint16_t m_subcommand;

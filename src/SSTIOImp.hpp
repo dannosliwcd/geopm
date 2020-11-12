@@ -53,6 +53,10 @@ namespace geopm
             int add_mbox_write(uint32_t cpu_index, uint16_t command,
                                uint16_t subcommand, uint32_t interface_parameter,
                                uint32_t write_value) override;
+            int add_mmio_read(uint32_t cpu_index, uint16_t register_offset,
+                              uint32_t register_value) override;
+            int add_mmio_write(uint32_t cpu_index, uint16_t register_offset,
+                               uint32_t register_value) override;
             // call ioctl() for both mbox list and mmio list,
             // unless we end up splitting this class
             void read_batch(void) override;
@@ -71,7 +75,7 @@ namespace geopm
                 uint32_t value;
             };
 
-            struct sst_mmio_interfaces_s
+            struct sst_mmio_interface_batch_s
             {
                 uint32_t num_entries;
                 sst_mmio_interface_s interfaces[1];
@@ -135,7 +139,11 @@ namespace geopm
             //
             //
             std::vector<struct sst_mbox_interface_s> m_mbox_interfaces;
+            std::vector<struct sst_mmio_interface_s> m_mmio_interfaces;
+            std::vector<std::pair<bool /*TODO:enum interface type*/, size_t> > m_added_interfaces;
             std::unique_ptr<sst_mbox_interface_batch_s> m_mbox_read_batch;
             std::unique_ptr<sst_mbox_interface_batch_s> m_mbox_write_batch;
+            std::unique_ptr<sst_mmio_interface_batch_s> m_mmio_read_batch;
+            std::unique_ptr<sst_mmio_interface_batch_s> m_mmio_write_batch;
     };
 }

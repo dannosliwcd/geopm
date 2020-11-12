@@ -53,9 +53,19 @@ namespace geopm
     enum class SSTMailboxCommand : uint16_t {
         TURBO_FREQUENCY = 0x7f,
         CORE_PRIORITY = 0xd0,
+        SUPPORT_CAPABILITIES = 0x94,
     };
 
     struct sst_signal_mailbox_fields_s {
+        //! Fields for an SST mailbox signal command
+        //! @param command Which type of mailbox command
+        //! @param subcommand Subtype of the given command
+        //! @param request_data Data to write to the mailbox prior to
+        //!        requesting new data. Often used to indicate which data to
+        //!        request for a given subcommand.
+        //! @param begin_bit LSB position to read from the output value.
+        //! @param end_bit MSB position to read from the output value.
+        //! @param multiplier Scaling factor to apply to the read value.
         sst_signal_mailbox_fields_s(SSTMailboxCommand command, uint16_t subcommand,
                                     uint32_t request_data, uint32_t begin_bit,
                                     uint32_t end_bit, double multiplier)
@@ -99,6 +109,36 @@ namespace geopm
         uint32_t write_data;
         uint32_t begin_bit;
         uint32_t end_bit;
+    };
+
+    struct sst_signal_mmio_fields_s {
+        sst_signal_mmio_fields_s(uint32_t register_offset, uint32_t write_value,
+                                 uint32_t begin_bit, uint32_t end_bit)
+            : register_offset(register_offset)
+            , write_value(write_value)
+            , begin_bit(begin_bit)
+            , end_bit(end_bit)
+        {
+        }
+        uint32_t register_offset;
+        uint32_t write_value;
+        uint32_t begin_bit;
+        uint32_t end_bit;
+    };
+
+    struct sst_control_mmio_fields_s {
+        sst_control_mmio_fields_s(uint32_t register_offset, uint32_t begin_bit,
+                                  uint32_t end_bit, double multiplier)
+            : register_offset(register_offset)
+            , begin_bit(begin_bit)
+            , end_bit(end_bit)
+            , multiplier(multiplier)
+        {
+        }
+        uint32_t register_offset;
+        uint32_t begin_bit;
+        uint32_t end_bit;
+        double multiplier;
     };
 
     static const std::map<std::string, sst_signal_mailbox_fields_s> sst_signal_mbox_fields = {
@@ -182,6 +222,8 @@ namespace geopm
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x12, 0x00, 8, 15, 1e8 } },
         { "SST::LOWPRIORITY_FREQUENCY_AVX512",
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x12, 0x00, 16, 24, 1e8 } },
+        { "SST::COREPRIORITY_SUPPORT",
+          { SSTMailboxCommand::SUPPORT_CAPABILITIES, 0x03, 0x00, 0, 0, 1.0 } },
     };
 
     static const std::map<std::string, sst_control_mailbox_fields_s> sst_control_mbox_fields = {
@@ -189,6 +231,29 @@ namespace geopm
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x02, 0x00 /* N/A */, 0x01, 16, 16 } },
         { "SST::COREPRIORITY_ENABLE",
           { SSTMailboxCommand::CORE_PRIORITY, 0x00, 0x1000000, 0x01, 17, 17 } },
+    };
+
+    static const std::map<std::string, sst_signal_mmio_fields_s> sst_signal_mmio_fields = {
+        //{ "SST::COREPRIORITY_SUPPORT", { 0x00, 0x00, 0, 7 } },
+    };
+
+    static const std::map<std::string, sst_control_mmio_fields_s> sst_control_mmio_fields = {
+        { "SST::COREPRIORITY_WEIGHT_0", { 0x08, 4, 7, 1.0 } },
+        { "SST::COREPRIORITY_WEIGHT_1", { 0x0c, 4, 7, 1.0 } },
+        { "SST::COREPRIORITY_WEIGHT_2", { 0x10, 4, 7, 1.0 } },
+        { "SST::COREPRIORITY_WEIGHT_3", { 0x14, 4, 7, 1.0 } },
+        { "SST::FREQUENCY_MIN_0", { 0x08, 8, 15, 1e-8 } },
+        { "SST::FREQUENCY_MIN_1", { 0x0c, 8, 15, 1e-8 } },
+        { "SST::FREQUENCY_MIN_2", { 0x10, 8, 15, 1e-8 } },
+        { "SST::FREQUENCY_MIN_3", { 0x14, 8, 15, 1e-8 } },
+        { "SST::FREQUENCY_MAX_0", { 0x08, 16, 23, 1e-8 } },
+        { "SST::FREQUENCY_MAX_1", { 0x0c, 16, 23, 1e-8 } },
+        { "SST::FREQUENCY_MAX_2", { 0x10, 16, 23, 1e-8 } },
+        { "SST::FREQUENCY_MAX_3", { 0x14, 16, 23, 1e-8 } },
+        { "SST::COREPRIORITY_ASSOCIATION", { 0x20, 16, 17, 1.0 } },
+        // TODO:
+        // -- add some kind of thing to tell geopmread to modify 0x20+4*phys_core_id
+        // -- (Current impl of this ctl only prints core 0)
     };
 
     SSTIOGroup::SSTIOGroup(const PlatformTopo &topo,
@@ -212,6 +277,11 @@ namespace geopm
                        [](const decltype(sst_signal_mbox_fields)::value_type& p) {
                            return p.first;
                        });
+        std::transform(sst_signal_mmio_fields.begin(), sst_signal_mmio_fields.end(),
+                       std::inserter(s, s.end()),
+                       [](const decltype(sst_signal_mmio_fields)::value_type& p) {
+                           return p.first;
+                       });
         return s;
     }
 
@@ -223,17 +293,28 @@ namespace geopm
                        [](const decltype(sst_control_mbox_fields)::value_type& p) {
                            return p.first;
                        });
+        std::transform(sst_control_mmio_fields.begin(), sst_control_mmio_fields.end(),
+                       std::inserter(s, s.end()),
+                       [](const decltype(sst_control_mmio_fields)::value_type& p) {
+                           return p.first;
+                       });
         return s;
     }
 
     bool SSTIOGroup::is_valid_signal(const std::string &signal_name) const
     {
-        return sst_signal_mbox_fields.find(signal_name) != sst_signal_mbox_fields.end();
+        return (sst_signal_mbox_fields.find(signal_name) !=
+                sst_signal_mbox_fields.end()) ||
+               (sst_signal_mmio_fields.find(signal_name) !=
+                sst_signal_mmio_fields.end());
     }
 
     bool SSTIOGroup::is_valid_control(const std::string &control_name) const
     {
-        return sst_control_mbox_fields.find(control_name) != sst_control_mbox_fields.end();
+        return (sst_control_mbox_fields.find(control_name) !=
+                sst_control_mbox_fields.end()) ||
+               (sst_control_mmio_fields.find(control_name) !=
+                sst_control_mmio_fields.end());
     }
 
     int SSTIOGroup::signal_domain_type(const std::string &signal_name) const
@@ -267,9 +348,10 @@ namespace geopm
         //     throw Exception("SSTIOGroup::push_signal(): cannot push signal after call to read_batch().",
         //                     GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         // }
-        auto it = sst_signal_mbox_fields.find(signal_name);
-        if (it != sst_signal_mbox_fields.end()) {
-            const auto& field_description = it->second;
+        auto mbox_it = sst_signal_mbox_fields.find(signal_name);
+        auto mmio_it = sst_signal_mmio_fields.find(signal_name);
+        if (mbox_it != sst_signal_mbox_fields.end()) {
+            const auto& field_description = mbox_it->second;
             if (domain_type != GEOPM_DOMAIN_PACKAGE) {
                 throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
@@ -283,11 +365,35 @@ namespace geopm
             // we should reuse the object
             std::shared_ptr<Signal> signal = std::make_shared<MSRFieldSignal>(
                 std::make_shared<SSTSignal>(
-                    m_sstio, cpu_idx, static_cast<uint16_t>(field_description.command),
+                    m_sstio, false, cpu_idx, static_cast<uint16_t>(field_description.command),
                     field_description.subcommand, field_description.request_data,
                     0 /* interface parameter */),
                 field_description.begin_bit, field_description.end_bit,
                 MSR::M_FUNCTION_SCALE, field_description.multiplier);
+
+            // TODO: see linear search in MSRIO::push_signal to check for already pushed
+            result = m_signal_pushed.size();
+            m_signal_pushed.push_back(signal);
+            signal->setup_batch();
+        }
+        else if (mmio_it != sst_signal_mmio_fields.end()) {
+            const auto &field_description = mmio_it->second;
+            if (domain_type != GEOPM_DOMAIN_PACKAGE) {
+                throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            }
+            // TODO: assumes using any CPU in package is fine
+            auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
+            int cpu_idx = *(cpus.begin());
+
+            // TODO: need to fix this for the case where multiple signals
+            // come from different fields of the same SSTSignal; in that case
+            // we should reuse the object
+            std::shared_ptr<Signal> signal = std::make_shared<MSRFieldSignal>(
+                std::make_shared<SSTSignal>(
+                    m_sstio, true, cpu_idx, 0x00, 0x00, field_description.register_offset,
+                    field_description.write_value),
+                field_description.begin_bit, field_description.end_bit,
+                MSR::M_FUNCTION_SCALE, 1.0);
 
             // TODO: see linear search in MSRIO::push_signal to check for already pushed
             result = m_signal_pushed.size();
@@ -304,9 +410,10 @@ namespace geopm
     int SSTIOGroup::push_control(const std::string &control_name, int domain_type, int domain_idx)
     {
         int result = -1;
-        auto it = sst_control_mbox_fields.find(control_name);
-        if (it != sst_control_mbox_fields.end()) {
-            const auto& field_description = it->second;
+        auto mbox_it = sst_control_mbox_fields.find(control_name);
+        auto mmio_it = sst_control_mmio_fields.find(control_name);
+        if (mbox_it != sst_control_mbox_fields.end()) {
+            const auto& field_description = mbox_it->second;
             if (domain_type != GEOPM_DOMAIN_PACKAGE) {
                 throw Exception("wrong domain type", GEOPM_ERROR_INVALID,
                                 __FILE__, __LINE__);
@@ -316,10 +423,31 @@ namespace geopm
             int cpu_idx = *(cpus.begin());
 
             auto control = std::make_shared<SSTControl>(
-                m_sstio, cpu_idx, static_cast<uint16_t>(field_description.command),
+                m_sstio, false, cpu_idx, static_cast<uint16_t>(field_description.command),
                 field_description.subcommand, field_description.write_param,
                 field_description.write_data, field_description.begin_bit,
                 field_description.end_bit);
+            control->setup_batch();
+            result = m_control_pushed.size();
+            m_control_pushed.push_back(control);
+        }
+        else if (mmio_it != sst_control_mmio_fields.end()) {
+            const auto& field_description = mmio_it->second;
+            if (domain_type != GEOPM_DOMAIN_PACKAGE) {
+                throw Exception("wrong domain type", GEOPM_ERROR_INVALID,
+                                __FILE__, __LINE__);
+            }
+            // TODO: assumes using any CPU in package is fine
+            auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
+            int cpu_idx = *(cpus.begin());
+
+            // TODO: boolean arg and command/subcommand could probably be
+            // removed either with interface-specific functions or separate SST
+            // objects for different interfaces.
+            auto control = std::make_shared<SSTControl>(
+                m_sstio, true, cpu_idx, 0x00, 0x00, field_description.register_offset,
+                0x00 /* Write value. adjust later */,
+                field_description.begin_bit, field_description.end_bit);
             control->setup_batch();
             result = m_control_pushed.size();
             m_control_pushed.push_back(control);

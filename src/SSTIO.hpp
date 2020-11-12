@@ -54,6 +54,15 @@ namespace geopm
                                        uint16_t subcommand, uint32_t interface_parameter,
                                        uint32_t write_value) = 0;
 
+            /// Interact with the mmio interface on commands that are expected to return data
+            virtual int add_mmio_read(uint32_t cpu_index, uint16_t register_offset,
+                                      uint32_t register_value) = 0;
+
+            // TODO: write_value probably will go away
+            /// Interact with the mmio interface on commands that are not expected to return data
+            virtual int add_mmio_write(uint32_t cpu_index, uint16_t register_offset,
+                                       uint32_t register_value) = 0;
+
             // /// Read data from the mmio interface
             // virtual int add_mmio_read(uint32_t cpu_index, uint32_t register_offset) = 0;
 
