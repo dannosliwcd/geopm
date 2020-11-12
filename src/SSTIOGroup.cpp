@@ -49,9 +49,19 @@
 
 namespace geopm
 {
-    // TODO: constructor/builder for these; easy to make a mistake
     // TODO: do we want JSON config like for MSRs?
-    struct sst_mailbox_fields_s {
+    struct sst_signal_mailbox_fields_s {
+        sst_signal_mailbox_fields_s(uint16_t command, uint16_t subcommand,
+                                    uint32_t request_data, uint32_t begin_bit,
+                                    uint32_t end_bit, double multiplier)
+            : command(command)
+            , subcommand(subcommand)
+            , request_data(request_data)
+            , begin_bit(begin_bit)
+            , end_bit(end_bit)
+            , multiplier(multiplier)
+        {
+        }
         uint16_t command;
         uint16_t subcommand;
         /* TODO: uint32_t request_data won't work alone.
@@ -66,7 +76,27 @@ namespace geopm
         double multiplier;
     };
 
-    static const std::map<std::string, sst_mailbox_fields_s> sst_signal_mbox_fields = {
+    struct sst_control_mailbox_fields_s {
+        sst_control_mailbox_fields_s(uint16_t command, uint16_t subcommand,
+                                     uint32_t write_param, uint32_t write_data,
+                                     uint32_t begin_bit, uint32_t end_bit)
+            : command(command)
+            , subcommand(subcommand)
+            , write_param(write_param)
+            , write_data(write_data)
+            , begin_bit(begin_bit)
+            , end_bit(end_bit)
+        {
+        }
+        uint16_t command;
+        uint16_t subcommand;
+        uint32_t write_param;
+        uint32_t write_data;
+        uint32_t begin_bit;
+        uint32_t end_bit;
+    };
+
+    static const std::map<std::string, sst_signal_mailbox_fields_s> sst_signal_mbox_fields = {
         { "SST::CONFIG_LEVEL", { 0x7f, 0x00, 0x00, 16, 23, 1.0 } },
         { "SST::TURBOFREQ_SUPPORT", { 0x7f, 0x01, 0x00, 0, 0, 1.0 } },
         { "SST::TURBOFREQ_STATUS", { 0x7f, 0x01, 0x00, 16, 16, 1.0 } },
@@ -110,9 +140,9 @@ namespace geopm
     };
     // TODO: WIP: Need to make the functions use this. Probably need to add in
     // the mbox param field too.
-    static const std::map<std::string, sst_mailbox_fields_s> sst_control_mbox_fields = {
-        { "SST::TURBO_ENABLE", { 0x7f, 0x00, 0x00, 16, 23, 1.0 } },
-        { "SST::COREPRIORITY_ENABLE", { 0xd0, 0x02, 0x00, 1, 1, 1.0 } },
+    static const std::map<std::string, sst_control_mailbox_fields_s> sst_control_mbox_fields = {
+        { "SST::TURBO_ENABLE", { 0x7f, 0x00, 0x0, 0x00, 16, 23 } },
+        { "SST::COREPRIORITY_ENABLE", { 0xd0, 0x0, 0x02, 0x00, 1, 1} },
     };
 
     SSTIOGroup::SSTIOGroup(const PlatformTopo &topo,
