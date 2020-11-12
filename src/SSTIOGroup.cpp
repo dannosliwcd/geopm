@@ -106,7 +106,8 @@ namespace geopm
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x00, 0x00, 16, 23, 1.0 } },
         { "SST::TURBOFREQ_SUPPORT",
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x01, 0x00, 0, 0, 1.0 } },
-        { "SST::TURBOFREQ_STATUS",
+        // TODO: alias: TURBOFREQ_ENABLE?
+        { "SST::TURBO_ENABLE",
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x01, 0x00, 16, 16, 1.0 } },
         // TODO: Add an alias: COREPRIORITY_STATUS?
         { "SST::COREPRIORITY_ENABLE",
@@ -182,18 +183,18 @@ namespace geopm
         { "SST::LOWPRIORITY_FREQUENCY_AVX512",
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x12, 0x00, 16, 24, 1e8 } },
     };
-    // TODO: WIP: Need to make the functions use this. Probably need to add in
-    // the mbox param field too.
+
     static const std::map<std::string, sst_control_mailbox_fields_s> sst_control_mbox_fields = {
-        { "SST::TURBO_ENABLE", { SSTMailboxCommand::TURBO_FREQUENCY, 0x00, 0x0, 0x00, 16, 23 } },
-        { "SST::COREPRIORITY_ENABLE", { SSTMailboxCommand::CORE_PRIORITY, 0x0, 0x02, 0x00, 1, 1} },
+        { "SST::TURBO_ENABLE",
+          { SSTMailboxCommand::TURBO_FREQUENCY, 0x02, 0x00 /* N/A */, 0x01, 16, 16 } },
+        { "SST::COREPRIORITY_ENABLE",
+          { SSTMailboxCommand::CORE_PRIORITY, 0x00, 0x1000000, 0x01, 17, 17 } },
     };
 
     SSTIOGroup::SSTIOGroup(const PlatformTopo &topo,
                            std::shared_ptr<SSTIO> sstio)
         : m_is_signal_pushed(false)
         , m_is_batch_read(false)
-        , m_valid_control_name({"SST::TURBO_ENABLE"})
         , m_topo(topo)
         , m_sstio(sstio)
         , m_is_read(false)
@@ -216,7 +217,13 @@ namespace geopm
 
     std::set<std::string> SSTIOGroup::control_names(void) const
     {
-        return m_valid_control_name;
+        std::set<std::string> s;
+        std::transform(sst_control_mbox_fields.begin(), sst_control_mbox_fields.end(),
+                       std::inserter(s, s.end()),
+                       [](const decltype(sst_control_mbox_fields)::value_type& p) {
+                           return p.first;
+                       });
+        return s;
     }
 
     bool SSTIOGroup::is_valid_signal(const std::string &signal_name) const
@@ -226,7 +233,7 @@ namespace geopm
 
     bool SSTIOGroup::is_valid_control(const std::string &control_name) const
     {
-        return m_valid_control_name.find(control_name) != m_valid_control_name.end();
+        return sst_control_mbox_fields.find(control_name) != sst_control_mbox_fields.end();
     }
 
     int SSTIOGroup::signal_domain_type(const std::string &signal_name) const
@@ -250,6 +257,16 @@ namespace geopm
     int SSTIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         int result = -1;
+        // TODO: TBD: per-signal domain type and is batch read
+        // if (domain_type != GEOPM_DOMAIN_CPU) {
+        //     throw Exception("SSTIOGroup::push_signal(): signal_name " + signal_name +
+        //                     " not defined for domain " + std::to_string(domain_type),
+        //                     GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        // }
+        // if (m_is_batch_read) {
+        //     throw Exception("SSTIOGroup::push_signal(): cannot push signal after call to read_batch().",
+        //                     GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        // }
         auto it = sst_signal_mbox_fields.find(signal_name);
         if (it != sst_signal_mbox_fields.end()) {
             const auto& field_description = it->second;
@@ -280,29 +297,16 @@ namespace geopm
         else {
             throw Exception("invalid signal", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
-        // if (!is_valid_signal(signal_name)) {
-        //     throw Exception("SSTIOGroup::push_signal(): signal_name " + signal_name +
-        //                     " not valid for SSTIOGroup",
-        //                     GEOPM_ERROR_INVALID, __FILE__, __LINE__);
-        // }
-        // if (domain_type != GEOPM_DOMAIN_CPU) {
-        //     throw Exception("SSTIOGroup::push_signal(): signal_name " + signal_name +
-        //                     " not defined for domain " + std::to_string(domain_type),
-        //                     GEOPM_ERROR_INVALID, __FILE__, __LINE__);
-        // }
-        // if (m_is_batch_read) {
-        //     throw Exception("SSTIOGroup::push_signal(): cannot push signal after call to read_batch().",
-        //                     GEOPM_ERROR_INVALID, __FILE__, __LINE__);
-        // }
-        // m_is_signal_pushed = true;
-        // return 0;
+        // TODO: TBD vector of m_is_signal_pushed = true;
         return result;
     }
 
     int SSTIOGroup::push_control(const std::string &control_name, int domain_type, int domain_idx)
     {
         int result = -1;
-        if (is_valid_control(control_name)) {
+        auto it = sst_control_mbox_fields.find(control_name);
+        if (it != sst_control_mbox_fields.end()) {
+            const auto& field_description = it->second;
             if (domain_type != GEOPM_DOMAIN_PACKAGE) {
                 throw Exception("wrong domain type", GEOPM_ERROR_INVALID,
                                 __FILE__, __LINE__);
@@ -311,7 +315,11 @@ namespace geopm
             auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
             int cpu_idx = *(cpus.begin());
 
-            auto control = std::make_shared<SSTControl>(m_sstio, cpu_idx, 0x7F, 0x2, 0x0, 0x1, 16, 16);
+            auto control = std::make_shared<SSTControl>(
+                m_sstio, cpu_idx, static_cast<uint16_t>(field_description.command),
+                field_description.subcommand, field_description.write_param,
+                field_description.write_data, field_description.begin_bit,
+                field_description.end_bit);
             control->setup_batch();
             result = m_control_pushed.size();
             m_control_pushed.push_back(control);
