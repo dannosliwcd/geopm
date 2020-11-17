@@ -257,13 +257,13 @@ namespace geopm
         // -- (Current impl of this ctl only prints core 0)
     };
 
-    SSTIOGroup::SSTIOGroup(const PlatformTopo &topo,
-                           std::shared_ptr<SSTIO> sstio)
-        : m_is_signal_pushed(false)
-        , m_is_batch_read(false)
-        , m_topo(topo)
+    SSTIOGroup::SSTIOGroup(const PlatformTopo &topo, std::shared_ptr<SSTIO> sstio)
+        : m_topo(topo)
         , m_sstio(sstio)
         , m_is_read(false)
+        , m_signal_available()
+        , m_signal_pushed()
+        , m_control_pushed()
     {
         if (m_sstio == nullptr) {
             m_sstio = SSTIO::make_shared(topo.num_domain(GEOPM_DOMAIN_CPU));

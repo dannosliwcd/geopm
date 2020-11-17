@@ -75,8 +75,6 @@ namespace geopm
             static std::string plugin_name(void);
             static std::unique_ptr<IOGroup> make_plugin(void);
         private:
-            bool m_is_signal_pushed;
-            bool m_is_batch_read;
             /////// old above
 
             const PlatformTopo &m_topo;

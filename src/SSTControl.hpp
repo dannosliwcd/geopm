@@ -62,8 +62,6 @@ namespace geopm
             const uint32_t m_interface_parameter;
             const uint32_t m_write_value;
             const int m_shift;
-            const int m_num_bit;
-            const uint64_t m_mask;
             int m_adjust_idx;
 
     };

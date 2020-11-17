@@ -49,8 +49,6 @@ namespace geopm
         , m_interface_parameter(interface_parameter)
         , m_write_value(write_value)
         , m_shift(begin_bit)
-        , m_num_bit(end_bit - begin_bit + 1)
-        , m_mask(((1ULL << m_num_bit) - 1) << begin_bit)
     {
 
     }
