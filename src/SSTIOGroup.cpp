@@ -160,7 +160,7 @@ namespace geopm
           } },
         { "SST::TURBOFREQ_SUPPORT",
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x01,
-            {{ "ENABLED", { 0x00, 0, 0, 1.0 } }}
+            {{ "SUPPORTED", { 0x00, 0, 0, 1.0 } }}
           } },
         // TODO: alias: TURBOFREQ_ENABLE?
         { "SST::TURBO_ENABLE",
