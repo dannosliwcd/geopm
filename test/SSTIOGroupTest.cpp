@@ -190,7 +190,7 @@ TEST_F(SSTIOGroupTest, sample_highprio_frequency)
     int idx5 = m_group->push_signal("SST::HIGHPRIORITY_FREQUENCY_SSE:5",
                                     GEOPM_DOMAIN_PACKAGE, 1);
     std::set<int> unique_idx { idx0, idx1, idx4, idx5 };
-    EXPECT_EQ(4, unique_idx.size());
+    EXPECT_EQ(4u, unique_idx.size());
 
     uint32_t result = 0;
 

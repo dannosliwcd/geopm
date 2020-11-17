@@ -61,6 +61,7 @@ class MockSSTIO : public geopm::SSTIO
                      void(void));
         MOCK_METHOD2(adjust,
                      void(int index, uint64_t write_value));
+        MOCK_METHOD1(get_punit_from_cpu, uint32_t(uint32_t cpu_index));
 };
 
 #endif
