@@ -61,6 +61,7 @@ void SSTIOGroupTest::SetUp()
 {
     m_topo = make_topo(m_num_package, m_num_core, m_num_cpu);
     EXPECT_CALL(*m_topo, domain_nested(_, _, _)).Times(AtLeast(0));
+    EXPECT_CALL(*m_topo, num_domain(_)).Times(AtLeast(0));
 
     m_sstio = std::make_shared<MockSSTIO>();
 
@@ -69,6 +70,10 @@ void SSTIOGroupTest::SetUp()
 
 TEST_F(SSTIOGroupTest, valid_signal_names)
 {
+    auto names = m_group->signal_names();
+    for (auto nn : names) {
+        std::cout << nn << std::endl;
+    }
 }
 
 TEST_F(SSTIOGroupTest, valid_signal_domains)
@@ -103,20 +108,18 @@ TEST_F(SSTIOGroupTest, sample_config_level)
     EXPECT_CALL(*m_sstio, add_mbox_read(pkg_1_cpu, 0x7F, 0x00, 0x00, 0x00))
         .WillOnce(Return(CONFIG_LEVEL_1));
 
-    int idx0 = m_group->push_signal("SST::CONFIG_LEVEL", GEOPM_DOMAIN_PACKAGE, 0);
-    int idx1 = m_group->push_signal("SST::CONFIG_LEVEL", GEOPM_DOMAIN_PACKAGE, 1);
+    int idx0 = m_group->push_signal("SST::CONFIG_LEVEL:LEVEL", GEOPM_DOMAIN_PACKAGE, 0);
+    int idx1 = m_group->push_signal("SST::CONFIG_LEVEL:LEVEL", GEOPM_DOMAIN_PACKAGE, 1);
     EXPECT_NE(idx0, idx1);
 
     uint32_t result = 0;
+
+    //uint64_t mask = 0xFF0000
 
     // first batch
     {
     EXPECT_CALL(*m_sstio, read_batch());
     m_group->read_batch();
-
-    //bits 16:23
-    //0b 1111 1111 0000 0000 0000 0000
-    //uint64_t mask = 0xFF0000
     uint32_t raw0 = 0x1428000;
     uint32_t raw1 = 0x1678000;
     uint32_t expected0 = 0x42;
@@ -131,14 +134,87 @@ TEST_F(SSTIOGroupTest, sample_config_level)
 
     // sample again without read should get same value
     {
-
+    uint32_t raw0 = 0x1428000;
+    uint32_t raw1 = 0x1678000;
+    uint32_t expected0 = 0x42;
+    uint32_t expected1 = 0x67;
+    EXPECT_CALL(*m_sstio, sample(CONFIG_LEVEL_0)).WillOnce(Return(raw0));
+    EXPECT_CALL(*m_sstio, sample(CONFIG_LEVEL_1)).WillOnce(Return(raw1));
+    result = m_group->sample(idx0);
+    EXPECT_EQ(expected0, result);
+    result = m_group->sample(idx1);
+    EXPECT_EQ(expected1, result);
     }
 
     // second batch
     {
+    EXPECT_CALL(*m_sstio, read_batch());
+    m_group->read_batch();
+    uint32_t raw0 = 0x1478000;
+    uint32_t raw1 = 0x1638000;
+    uint32_t expected0 = 0x47;
+    uint32_t expected1 = 0x63;
+    EXPECT_CALL(*m_sstio, sample(CONFIG_LEVEL_0)).WillOnce(Return(raw0));
+    EXPECT_CALL(*m_sstio, sample(CONFIG_LEVEL_1)).WillOnce(Return(raw1));
+    result = m_group->sample(idx0);
+    EXPECT_EQ(expected0, result);
+    result = m_group->sample(idx1);
+    EXPECT_EQ(expected1, result);
 
     }
 
+}
+
+TEST_F(SSTIOGroupTest, sample_highprio_frequency)
+{
+    enum sst_idx_e {
+        FREQ_000,
+        FREQ_100
+    };
+
+    //int pkg_0_cpu = 0;
+    int pkg_1_cpu = 2;
+
+    // mailbox will only be read once even though it supports multiple signals
+    EXPECT_CALL(*m_sstio, add_mbox_read(pkg_1_cpu, 0x7F, 0x11, 0x000, 0x00))
+        .WillOnce(Return(FREQ_000));
+    EXPECT_CALL(*m_sstio, add_mbox_read(pkg_1_cpu, 0x7F, 0x11, 0x100, 0x00))
+        .WillOnce(Return(FREQ_100));
+
+    int idx0 = m_group->push_signal("SST::HIGHPRIORITY_FREQUENCY_SSE:0",
+                                    GEOPM_DOMAIN_PACKAGE, 1);
+    int idx1 = m_group->push_signal("SST::HIGHPRIORITY_FREQUENCY_SSE:1",
+                                    GEOPM_DOMAIN_PACKAGE, 1);
+    int idx4 = m_group->push_signal("SST::HIGHPRIORITY_FREQUENCY_SSE:4",
+                                    GEOPM_DOMAIN_PACKAGE, 1);
+    int idx5 = m_group->push_signal("SST::HIGHPRIORITY_FREQUENCY_SSE:5",
+                                    GEOPM_DOMAIN_PACKAGE, 1);
+    std::set<int> unique_idx { idx0, idx1, idx4, idx5 };
+    EXPECT_EQ(4, unique_idx.size());
+
+    uint32_t result = 0;
+
+    EXPECT_CALL(*m_sstio, read_batch());
+    m_group->read_batch();
+
+    uint32_t raw000 = 0x00012322;
+    uint32_t raw100 = 0x00012524;
+    double expected0 = 0x22 * 1e8;
+    double expected1 = 0x23 * 1e8;
+    double expected4 = 0x24 * 1e8;
+    double expected5 = 0x25 * 1e8;
+    EXPECT_CALL(*m_sstio, sample(FREQ_000)).Times(2)
+        .WillRepeatedly(Return(raw000));
+    EXPECT_CALL(*m_sstio, sample(FREQ_100)).Times(2)
+        .WillRepeatedly(Return(raw100));
+    result = m_group->sample(idx0);
+    EXPECT_EQ(expected0, result);
+    result = m_group->sample(idx1);
+    EXPECT_EQ(expected1, result);
+    result = m_group->sample(idx4);
+    EXPECT_EQ(expected4, result);
+    result = m_group->sample(idx5);
+    EXPECT_EQ(expected5, result);
 }
 
 TEST_F(SSTIOGroupTest, adjust_turbo_enable)

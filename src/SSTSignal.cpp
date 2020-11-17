@@ -58,15 +58,17 @@ namespace geopm
 
     void SSTSignal::setup_batch(void)
     {
-        if (m_is_mmio) {
-            m_batch_idx = m_sstio->add_mmio_read(m_cpu_idx, m_subcommand_arg,
-                                                 m_interface_parameter);
-        }
-        else {
-            // commit will be called by iogroup read_batch()
-            m_batch_idx = m_sstio->add_mbox_read(m_cpu_idx, m_command,
-                                                 m_subcommand, m_subcommand_arg,
-                                                 m_interface_parameter);
+        if (m_batch_idx == -1) {
+            if (m_is_mmio) {
+                m_batch_idx = m_sstio->add_mmio_read(m_cpu_idx, m_subcommand_arg,
+                                                     m_interface_parameter);
+            }
+            else {
+                // commit will be called by iogroup read_batch()
+                m_batch_idx = m_sstio->add_mbox_read(m_cpu_idx, m_command,
+                                                     m_subcommand, m_subcommand_arg,
+                                                     m_interface_parameter);
+            }
         }
     }
 
