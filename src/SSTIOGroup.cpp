@@ -252,7 +252,6 @@ namespace geopm
         { "SST::FREQUENCY_MAX_1", { 0x0c, 16, 23, 1e-8 } },
         { "SST::FREQUENCY_MAX_2", { 0x10, 16, 23, 1e-8 } },
         { "SST::FREQUENCY_MAX_3", { 0x14, 16, 23, 1e-8 } },
-        { "SST::COREPRIORITY_ASSOCIATION", { 0x20, 16, 17, 1.0 } },
         // TODO:
         // -- add some kind of thing to tell geopmread to modify 0x20+4*phys_core_id
         // -- (Current impl of this ctl only prints core 0)
@@ -267,7 +266,7 @@ namespace geopm
         , m_is_read(false)
     {
         if (m_sstio == nullptr) {
-            m_sstio = SSTIO::make_shared();
+            m_sstio = SSTIO::make_shared(topo.num_domain(GEOPM_DOMAIN_CPU));
         }
 
         // TODO: might want to replace some autos with types
@@ -359,6 +358,7 @@ namespace geopm
                        [](const decltype(sst_control_mmio_fields)::value_type& p) {
                            return p.first;
                        });
+        s.insert("SST::COREPRIORITY_ASSOCIATION");
         return s;
     }
 
@@ -369,7 +369,8 @@ namespace geopm
 
     bool SSTIOGroup::is_valid_control(const std::string &control_name) const
     {
-        return (sst_control_mbox_fields.find(control_name) !=
+        return control_name == "SST::COREPRIORITY_ASSOCIATION" ||
+               (sst_control_mbox_fields.find(control_name) !=
                 sst_control_mbox_fields.end()) ||
                (sst_control_mmio_fields.find(control_name) !=
                 sst_control_mmio_fields.end());
@@ -389,7 +390,9 @@ namespace geopm
     {
         int result = GEOPM_DOMAIN_INVALID;
         if (is_valid_control(control_name)) {
-            result = GEOPM_DOMAIN_PACKAGE;
+            result = control_name == "SST::COREPRIORITY_ASSOCIATION"
+                         ? GEOPM_DOMAIN_CORE
+                         : GEOPM_DOMAIN_PACKAGE;
         }
         return result;
     }
@@ -480,6 +483,26 @@ namespace geopm
             // TODO: boolean arg and command/subcommand could probably be
             // removed either with interface-specific functions or separate SST
             // objects for different interfaces.
+            auto control = std::make_shared<SSTControl>(
+                m_sstio, true, cpu_idx, 0x00, 0x00, field_description.register_offset,
+                0x00 /* Write value. adjust later */,
+                field_description.begin_bit, field_description.end_bit);
+            control->setup_batch();
+            result = m_control_pushed.size();
+            m_control_pushed.push_back(control);
+        }
+        else if (control_name == "SST::COREPRIORITY_ASSOCIATION") {
+            if (domain_type != GEOPM_DOMAIN_CORE) {
+                throw Exception("wrong domain type", GEOPM_ERROR_INVALID,
+                                __FILE__, __LINE__);
+            }
+            auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
+            int cpu_idx = *(cpus.begin());
+
+            geopm::sst_control_mmio_fields_s field_description{
+                static_cast<uint32_t>(0x20 + m_sstio->get_punit_from_cpu(domain_idx) * 4),
+                16, 17, 1.0
+            };
             auto control = std::make_shared<SSTControl>(
                 m_sstio, true, cpu_idx, 0x00, 0x00, field_description.register_offset,
                 0x00 /* Write value. adjust later */,

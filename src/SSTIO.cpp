@@ -39,19 +39,19 @@
 
 #include "Exception.hpp"
 #include "SSTIOImp.hpp"
-#include <iostream>
 
+#define GEOPM_IOC_SST_GET_CPU_ID _IOWR(0xfe, 1, struct geopm::SSTIOImp::sst_mbox_interface_batch_s *)
 #define GEOPM_IOC_SST_MMIO _IOW(0xfe, 2, struct geopm::SSTIOImp::sst_mmio_interface_batch_s *)
 #define GEOPM_IOC_SST_MBOX _IOWR(0xfe, 3, struct geopm::SSTIOImp::sst_mbox_interface_batch_s *)
 
 namespace geopm
 {
-    std::shared_ptr<SSTIO> SSTIO::make_shared(void)
+    std::shared_ptr<SSTIO> SSTIO::make_shared(int max_cpus)
     {
-        return std::make_shared<SSTIOImp>();
+        return std::make_shared<SSTIOImp>(max_cpus);
     }
 
-    SSTIOImp::SSTIOImp()
+    SSTIOImp::SSTIOImp(int max_cpus)
         : m_path("/dev/isst_interface")
         , m_fd(open(m_path.c_str(), O_RDWR))
         , m_mbox_interfaces()
@@ -61,12 +61,34 @@ namespace geopm
         , m_mbox_write_batch(nullptr)
         , m_mmio_read_batch(nullptr)
         , m_mmio_write_batch(nullptr)
+        , m_cpu_punit_core_map()
     {
         // TODO: error checking
         if (m_fd < 0) {
             throw Exception("SSTIOImp: failed to open SST driver",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
 
+        }
+
+        std::vector<sst_cpu_map_interface_s> batch_read_data;
+        batch_read_data.reserve(max_cpus);
+        for (int i = 0; i < max_cpus; ++i) {
+            batch_read_data.emplace_back(sst_cpu_map_interface_s{static_cast<uint32_t>(i), 0});
+        }
+        auto batch_read = ioctl_struct_from_vector<sst_cpu_map_interface_batch_s>(
+            batch_read_data);
+        int err = ioctl(m_fd, GEOPM_IOC_SST_GET_CPU_ID, batch_read.get());
+        if (err == -1) {
+            throw Exception("SSTIOImp::SSTIOImp(): failed to get CPU map",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        }
+
+        for (size_t i = 0; i < batch_read->num_entries; ++i)
+        {
+            m_cpu_punit_core_map.emplace(batch_read->interfaces[i].cpu_index,
+                                         // Right-shift once to drop the
+                                         // hyperthread bit
+                                         batch_read->interfaces[i].punit_cpu >> 1);
         }
     }
 
@@ -114,7 +136,7 @@ namespace geopm
     }
 
     int SSTIOImp::add_mmio_read(uint32_t cpu_index, uint16_t register_offset,
-                              uint32_t register_value)
+                                uint32_t register_value)
     {
         struct sst_mmio_interface_s mmio {
             .is_write = 0,
@@ -165,18 +187,6 @@ namespace geopm
             m_mmio_read_batch = ioctl_struct_from_vector<sst_mmio_interface_batch_s>(
                 m_mmio_interfaces);
 
-
-            std::cout << "IOCTL mmio read: "
-                << m_mmio_read_batch->num_entries << " entries:";
-            for (size_t i = 0; i < m_mmio_read_batch->num_entries; ++i)
-            {
-                std::cout
-                    << "\n  cpu_index: " << m_mmio_read_batch->interfaces[i].cpu_index
-                    << "\n  is_write: " << m_mmio_read_batch->interfaces[i].is_write
-                    << "\n  register_offset: " << m_mmio_read_batch->interfaces[i].register_offset
-                    << "\n  value: " << m_mmio_read_batch->interfaces[i].value;
-            }
-            std::cout << std::endl;
             int err = ioctl(m_fd, GEOPM_IOC_SST_MMIO, m_mmio_read_batch.get());
             if (err == -1) {
                 throw Exception("SSTIOImp::read_batch(): mmio read failed",
@@ -203,9 +213,6 @@ namespace geopm
         if (!m_mbox_interfaces.empty()) {
             m_mbox_write_batch = ioctl_struct_from_vector<sst_mbox_interface_batch_s>(
                 m_mbox_interfaces);
-            std::cout << "IOCTL mbox write: "
-                << m_mbox_write_batch->num_entries << " entries:";
-            std::cout << std::endl;
 
             int err = ioctl(m_fd, GEOPM_IOC_SST_MBOX, m_mbox_write_batch.get());
             if (err == -1) {
@@ -217,17 +224,6 @@ namespace geopm
             m_mmio_write_batch = ioctl_struct_from_vector<sst_mmio_interface_batch_s>(
                 m_mmio_interfaces);
 
-            std::cout << "IOCTL mmio write: "
-                << m_mmio_write_batch->num_entries << " entries:";
-            for (size_t i = 0; i < m_mmio_write_batch->num_entries; ++i)
-            {
-                std::cout
-                    << "\n  cpu_index: " << m_mmio_write_batch->interfaces[i].cpu_index
-                    << "\n  is_write: " << m_mmio_write_batch->interfaces[i].is_write
-                    << "\n  register_offset: " << m_mmio_write_batch->interfaces[i].register_offset
-                    << "\n  value: " << m_mmio_write_batch->interfaces[i].value;
-            }
-            std::cout << std::endl;
             int err = ioctl(m_fd, GEOPM_IOC_SST_MMIO, m_mmio_write_batch.get());
             if (err == -1) {
                 throw Exception("sstioimp::write_batch(): write failed",
@@ -246,5 +242,10 @@ namespace geopm
         else {
             m_mbox_interfaces[interface.second].write_value = write_value;
         }
+    }
+
+    uint32_t SSTIOImp::get_punit_from_cpu(uint32_t cpu_index)
+    {
+        return m_cpu_punit_core_map.at(cpu_index);
     }
 }

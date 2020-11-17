@@ -31,6 +31,7 @@
  */
 
 #include <cstring>
+#include <map>
 #include <string>
 
 #include "SSTIO.hpp"
@@ -43,7 +44,7 @@ namespace geopm
     class SSTIOImp : public SSTIO
     {
         public:
-            SSTIOImp();
+            SSTIOImp(int max_cpus);
             virtual ~SSTIOImp() = default;
 
             /// Interact with the mailbox on commands that are expected to return data
@@ -65,8 +66,21 @@ namespace geopm
             uint64_t sample(int index) const override;
             void write_batch(void) override;
             void adjust(int index, uint64_t write_value) override;
+            uint32_t get_punit_from_cpu(uint32_t cpu_index) override;
 
         private:
+            struct sst_cpu_map_interface_s
+            {
+                uint32_t cpu_index;
+                uint32_t punit_cpu;
+            };
+
+            struct sst_cpu_map_interface_batch_s
+            {
+                uint32_t num_entries;
+                sst_cpu_map_interface_s interfaces[1];
+            };
+
             struct sst_mmio_interface_s
             {
                 uint32_t is_write;
@@ -145,5 +159,6 @@ namespace geopm
             std::unique_ptr<sst_mbox_interface_batch_s> m_mbox_write_batch;
             std::unique_ptr<sst_mmio_interface_batch_s> m_mmio_read_batch;
             std::unique_ptr<sst_mmio_interface_batch_s> m_mmio_write_batch;
+            std::map<uint32_t, uint32_t> m_cpu_punit_core_map;
     };
 }

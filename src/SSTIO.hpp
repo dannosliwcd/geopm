@@ -82,7 +82,9 @@ namespace geopm
 
             virtual void adjust(int index, uint64_t write_value) = 0;
 
-            static std::shared_ptr<SSTIO> make_shared(void);
+            virtual uint32_t get_punit_from_cpu(uint32_t cpu_index) = 0;
+
+            static std::shared_ptr<SSTIO> make_shared(int max_cpus);
     };
 
 }
