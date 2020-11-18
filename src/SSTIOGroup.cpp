@@ -185,36 +185,37 @@ namespace geopm
           } },
         { "SST::HIGHPRIORITY_FREQUENCY_SSE",
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
-            {{ "3", { 0x000000, 24, 31, 1e8 } },
-             { "2", { 0x000000, 16, 23, 1e8 } },
-             { "1", { 0x000000, 8, 15, 1e8 } },
+            {
              { "0", { 0x000000, 0, 7, 1e8 } },
-             { "7", { 0x000100, 24, 31, 1e8 } },
-             { "6", { 0x000100, 16, 23, 1e8 } },
+             { "1", { 0x000000, 8, 15, 1e8 } },
+             { "2", { 0x000000, 16, 23, 1e8 } },
+             { "3", { 0x000000, 24, 31, 1e8 } },
+             { "4", { 0x000100, 0, 7, 1e8 } },
              { "5", { 0x000100, 8, 15, 1e8 } },
-             { "4", { 0x000100, 0, 7, 1e8 } }}
+             { "6", { 0x000100, 16, 23, 1e8 } },
+             { "7", { 0x000100, 24, 31, 1e8 } }}
           } },
         { "SST::HIGHPRIORITY_FREQUENCY_AVX2",
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
-            {{ "3", { 0x010000, 24, 31, 1e8 } },
-             { "2", { 0x010000, 16, 23, 1e8 } },
+            {{ "0", { 0x010000, 0, 7, 1e8 } },
              { "1", { 0x010000, 8, 15, 1e8 } },
-             { "0", { 0x010000, 0, 7, 1e8 } },
-             { "7", { 0x010100, 24, 31, 1e8 } },
-             { "6", { 0x010100, 16, 23, 1e8 } },
+             { "2", { 0x010000, 16, 23, 1e8 } },
+             { "3", { 0x010000, 24, 31, 1e8 } },
+             { "4", { 0x010100, 0, 7, 1e8 } },
              { "5", { 0x010100, 8, 15, 1e8 } },
-             { "4", { 0x010100, 0, 7, 1e8 } }}
+             { "6", { 0x010100, 16, 23, 1e8 } },
+             { "7", { 0x010100, 24, 31, 1e8 } }}
           } },
         { "SST::HIGHPRIORITY_FREQUENCY_AVX512",
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
-            {{ "3", { 0x020000, 24, 31, 1e8 } },
-             { "2", { 0x020000, 16, 23, 1e8 } },
+            {{ "0", { 0x020000, 0, 7, 1e8 } },
              { "1", { 0x020000, 8, 15, 1e8 } },
-             { "0", { 0x020000, 0, 7, 1e8 } },
-             { "7", { 0x020100, 24, 31, 1e8 } },
-             { "6", { 0x020100, 16, 23, 1e8 } },
+             { "2", { 0x020000, 16, 23, 1e8 } },
+             { "3", { 0x020000, 24, 31, 1e8 } },
+             { "4", { 0x020100, 0, 7, 1e8 } },
              { "5", { 0x020100, 8, 15, 1e8 } },
-             { "4", { 0x020100, 0, 7, 1e8 } }}
+             { "6", { 0x020100, 16, 23, 1e8 } },
+             { "7", { 0x020100, 24, 31, 1e8 } }}
           } },
         { "SST::LOWPRIORITY_FREQUENCY",
           { SSTMailboxCommand::TURBO_FREQUENCY, 0x12,
@@ -280,7 +281,7 @@ namespace geopm
             int domain_type = GEOPM_DOMAIN_PACKAGE;
             int num_domain = m_topo.num_domain(domain_type);
 
-            for (const auto ff : fields) {
+            for (const auto &ff : fields) {
                 auto field_name = ff.first;
                 auto field_desc = ff.second;
                 auto request_data = field_desc.request_data;
