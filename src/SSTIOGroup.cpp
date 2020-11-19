@@ -343,6 +343,7 @@ namespace geopm
         for (const auto &kv : m_signal_available) {
             result.insert(kv.first);
         }
+        result.insert("SST::COREPRIORITY_ASSOCIATION");
         return result;
     }
 
@@ -365,7 +366,8 @@ namespace geopm
 
     bool SSTIOGroup::is_valid_signal(const std::string &signal_name) const
     {
-        return (m_signal_available.find(signal_name) != m_signal_available.end());
+        return (signal_name == "SST::COREPRIORITY_ASSOCIATION" ||
+                m_signal_available.find(signal_name) != m_signal_available.end());
     }
 
     bool SSTIOGroup::is_valid_control(const std::string &control_name) const
@@ -382,7 +384,9 @@ namespace geopm
         // TODO: use struct?
         int result = GEOPM_DOMAIN_INVALID;
         if (is_valid_signal(signal_name)) {
-            result = GEOPM_DOMAIN_PACKAGE;
+            result = signal_name == "SST::COREPRIORITY_ASSOCIATION"
+                         ? GEOPM_DOMAIN_CORE
+                         : GEOPM_DOMAIN_PACKAGE;
         }
         return result;
     }
@@ -439,6 +443,28 @@ namespace geopm
             result = m_signal_pushed.size();
             m_signal_pushed.push_back(signal);
             signal->setup_batch();
+        }
+        else if (signal_name == "SST::COREPRIORITY_ASSOCIATION") {
+            if (domain_type != GEOPM_DOMAIN_CORE) {
+                throw Exception("wrong domain type", GEOPM_ERROR_INVALID,
+                                __FILE__, __LINE__);
+            }
+            auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
+            int cpu_idx = *(cpus.begin());
+
+            geopm::sst_signal_mmio_fields_s field_description{
+                static_cast<uint32_t>(0x20 + m_sstio->get_punit_from_cpu(domain_idx) * 4),
+                0, 16, 17
+            };
+            std::shared_ptr<Signal> signal = std::make_shared<MSRFieldSignal>(
+                std::make_shared<SSTSignal>(
+                    m_sstio, true, cpu_idx, 0x00, 0x00, field_description.register_offset,
+                    field_description.write_value),
+                field_description.begin_bit, field_description.end_bit,
+                MSR::M_FUNCTION_SCALE, 1.0);
+            signal->setup_batch();
+            result = m_signal_pushed.size();
+            m_signal_pushed.push_back(signal);
         }
         else {
             throw Exception("invalid signal", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
