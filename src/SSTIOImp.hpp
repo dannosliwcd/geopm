@@ -53,7 +53,9 @@ namespace geopm
                               uint32_t interface_parameter) override;
             int add_mbox_write(uint32_t cpu_index, uint16_t command,
                                uint16_t subcommand, uint32_t interface_parameter,
-                               uint32_t write_value) override;
+                               uint16_t read_subcommand,
+                               uint32_t read_interface_parameter,
+                               uint32_t read_mask) override;
             int add_mmio_read(uint32_t cpu_index, uint16_t register_offset,
                               uint32_t register_value) override;
             int add_mmio_write(uint32_t cpu_index, uint16_t register_offset,
@@ -65,7 +67,7 @@ namespace geopm
             // TODO: might need separate call for mbox and mmio
             uint64_t sample(int index) const override;
             void write_batch(void) override;
-            void adjust(int index, uint64_t write_value) override;
+            void adjust(int index, uint64_t write_value, uint64_t write_mask) override;
             uint32_t get_punit_from_cpu(uint32_t cpu_index) override;
 
         private:
@@ -99,7 +101,7 @@ namespace geopm
             {
                 uint32_t cpu_index;
                 uint32_t mbox_interface_param; // Parameter to the mbox interface itself
-                uint32_t write_value; // Mailbox data (write-only)
+                uint32_t write_value; // Mailbox data, or input parameter for a read
                 uint32_t read_value; // Mailbox data (read-only)
                 uint16_t command;
                 uint16_t subcommand;
@@ -152,7 +154,11 @@ namespace geopm
             //       offset within that mmio/mbox list
             //
             //
-            std::vector<struct sst_mbox_interface_s> m_mbox_interfaces;
+            std::vector<struct sst_mbox_interface_s> m_mbox_read_interfaces;
+            std::vector<struct sst_mbox_interface_s> m_mbox_write_interfaces;
+            std::vector<struct sst_mbox_interface_s> m_mbox_rmw_interfaces;
+            std::vector<uint32_t> m_mbox_rmw_read_masks;
+            std::vector<uint32_t> m_mbox_rmw_write_masks;
             std::vector<struct sst_mmio_interface_s> m_mmio_interfaces;
             std::vector<std::pair<bool /*TODO:enum interface type*/, size_t> > m_added_interfaces;
             std::unique_ptr<sst_mbox_interface_batch_s> m_mbox_read_batch;

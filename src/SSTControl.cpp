@@ -37,10 +37,12 @@
 
 namespace geopm
 {
-    SSTControl::SSTControl(std::shared_ptr<SSTIO> sstio,
-                           bool is_mmio, int cpu_idx, uint32_t command,
-                           uint32_t subcommand, uint32_t interface_parameter,
-                           uint32_t write_value, int begin_bit, int end_bit)
+    SSTControl::SSTControl(std::shared_ptr<SSTIO> sstio, bool is_mmio,
+                           int cpu_idx, uint32_t command, uint32_t subcommand,
+                           uint32_t interface_parameter, uint32_t write_value,
+                           uint32_t begin_bit, uint32_t end_bit, double scale,
+                           uint32_t rmw_subcommand,
+                           uint32_t rmw_interface_parameter, uint32_t rmw_read_mask)
         : m_sstio(sstio)
         , m_is_mmio(is_mmio)
         , m_cpu_idx(cpu_idx)
@@ -49,6 +51,11 @@ namespace geopm
         , m_interface_parameter(interface_parameter)
         , m_write_value(write_value)
         , m_shift(begin_bit)
+        , m_num_bit(end_bit - begin_bit + 1)
+        , m_mask(((1ULL << m_num_bit) - 1) << begin_bit)
+        , m_rmw_subcommand(rmw_subcommand)
+        , m_rmw_interface_parameter(rmw_interface_parameter)
+        , m_rmw_read_mask(rmw_read_mask)
     {
 
     }
@@ -61,7 +68,8 @@ namespace geopm
         }
         else {
             m_adjust_idx = m_sstio->add_mbox_write(
-                m_cpu_idx, m_command, m_subcommand, m_interface_parameter, m_write_value);
+                m_cpu_idx, m_command, m_subcommand, m_interface_parameter,
+                m_rmw_subcommand, m_rmw_interface_parameter, m_rmw_read_mask);
         }
     }
 
@@ -69,12 +77,11 @@ namespace geopm
     {
         // TODO: check if value in range of uint32_t
         //     : Or check if in range of mask
-        m_sstio->adjust(m_adjust_idx, (uint32_t)value << m_shift);
+        m_sstio->adjust(m_adjust_idx, static_cast<uint64_t>(value) << m_shift, m_mask);
     }
 
     void SSTControl::write(double value)
     {
-
     }
 
     void SSTControl::save(void)

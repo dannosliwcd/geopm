@@ -52,7 +52,9 @@ namespace geopm
             /// Interact with the mailbox on commands that are not expected to return data
             virtual int add_mbox_write(uint32_t cpu_index, uint16_t command,
                                        uint16_t subcommand, uint32_t interface_parameter,
-                                       uint32_t write_value) = 0;
+                                       uint16_t read_subcommand,
+                                       uint32_t read_interface_parameter,
+                                       uint32_t read_mask) = 0;
 
             /// Interact with the mmio interface on commands that are expected to return data
             virtual int add_mmio_read(uint32_t cpu_index, uint16_t register_offset,
@@ -80,7 +82,7 @@ namespace geopm
             // See also the mock implementation
             virtual void write_batch(void) = 0;
 
-            virtual void adjust(int index, uint64_t write_value) = 0;
+            virtual void adjust(int index, uint64_t write_value, uint64_t write_mask) = 0;
 
             virtual uint32_t get_punit_from_cpu(uint32_t cpu_index) = 0;
 

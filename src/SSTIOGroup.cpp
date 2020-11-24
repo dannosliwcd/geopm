@@ -31,96 +31,30 @@
  */
 
 #include "config.h"
+
 #include "SSTIOGroup.hpp"
 
 #include <algorithm>
 #include <cinttypes>
+#include <iomanip>
+#include <sstream>
 
-#include "geopm_debug.hpp"
-#include "PlatformTopo.hpp"
-#include "Helper.hpp"
-#include "Exception.hpp"
 #include "Agg.hpp"
+#include "Exception.hpp"
+#include "Helper.hpp"
 #include "MSR.hpp"
 #include "MSRFieldSignal.hpp"
+#include "PlatformTopo.hpp"
+#include "SSTControl.hpp"
 #include "SSTIO.hpp"
 #include "SSTSignal.hpp"
-#include "SSTControl.hpp"
+#include "geopm_debug.hpp"
 
 namespace geopm
 {
     // TODO: do we want JSON config like for MSRs?
-    enum class SSTMailboxCommand : uint16_t {
-        TURBO_FREQUENCY = 0x7f,
-        CORE_PRIORITY = 0xd0,
-        SUPPORT_CAPABILITIES = 0x94,
-    };
-
-    struct sst_signal_mailbox_field_s {
-        //! Fields for an SST mailbox signal command
-        //! @param request_data Data to write to the mailbox prior to
-        //!        requesting new data. Often used to indicate which data to
-        //!        request for a given subcommand.
-        //! @param begin_bit LSB position to read from the output value.
-        //! @param end_bit MSB position to read from the output value.
-        //! @param multiplier Scaling factor to apply to the read value.
-        sst_signal_mailbox_field_s(uint32_t request_data,
-                                    uint32_t begin_bit, uint32_t end_bit,
-                                    double multiplier)
-            : request_data(request_data)
-            , begin_bit(begin_bit)
-            , end_bit(end_bit)
-            , multiplier(multiplier)
-        {
-        }
-        /* TODO: uint32_t request_data won't work alone.
-         * Most, but not all, fields have config_level encoded into bits [7:0].
-         * Current version of this iogroup ignores that, effectivly using 0 for all.
-         *  -- Add bool has_config_level? Could auto-set in internal layers
-         *  -- Add additional signal names (multiply signal count by 4)
-         */
-        uint32_t request_data;
-        uint32_t begin_bit;
-        uint32_t end_bit;
-        double multiplier;
-    };
-    struct sst_signal_mailbox_raw_s {
-        //! @param command Which type of mailbox command
-        //! @param subcommand Subtype of the given command
-        //! @param fields Subfields of the mailbox
-        sst_signal_mailbox_raw_s(SSTMailboxCommand command, uint16_t subcommand,
-                                 std::map<std::string, sst_signal_mailbox_field_s> fields)
-            : command(command)
-            , subcommand(subcommand)
-            , fields(fields)
-        {
-        }
-        SSTMailboxCommand command;
-        uint16_t subcommand;
-        std::map<std::string, sst_signal_mailbox_field_s> fields;
-    };
-
-
-    //// Controls
-    struct sst_control_mailbox_fields_s {
-        sst_control_mailbox_fields_s(SSTMailboxCommand command, uint16_t subcommand,
-                                     uint32_t write_param, uint32_t write_data,
-                                     uint32_t begin_bit, uint32_t end_bit)
-            : command(command)
-            , subcommand(subcommand)
-            , write_param(write_param)
-            , write_data(write_data)
-            , begin_bit(begin_bit)
-            , end_bit(end_bit)
-        {
-        }
-        SSTMailboxCommand command;
-        uint16_t subcommand;
-        uint32_t write_param;
-        uint32_t write_data;
-        uint32_t begin_bit;
-        uint32_t end_bit;
-    };
+    // Mailbox signals
+    // Mailbox Controls
 
     /// MMIO - no signals
     struct sst_signal_mmio_fields_s {
@@ -153,27 +87,21 @@ namespace geopm
         double multiplier;
     };
 
-    static const std::map<std::string, sst_signal_mailbox_raw_s> sst_signal_mbox_info = {
+    // For derived controls. This is a vector of (base control name, adjuster function)
+    using adjuster_function = std::function<void(Control& c, double val)>;
+    using base_adjusters = std::vector<std::pair<std::string, adjuster_function> >;
+
+    const std::map<std::string, SSTIOGroup::sst_signal_mailbox_raw_s> SSTIOGroup::sst_signal_mbox_info = {
         { "SST::CONFIG_LEVEL",
-          { SSTMailboxCommand::TURBO_FREQUENCY, 0x00,
+          { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x00,
             {{ "LEVEL", {0x00, 16, 23, 1.0 } }}
           } },
         { "SST::TURBOFREQ_SUPPORT",
-          { SSTMailboxCommand::TURBO_FREQUENCY, 0x01,
+          { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x01,
             {{ "SUPPORTED", { 0x00, 0, 0, 1.0 } }}
           } },
-        // TODO: alias: TURBOFREQ_ENABLE?
-        { "SST::TURBO_ENABLE",
-          { SSTMailboxCommand::TURBO_FREQUENCY, 0x01,
-            {{ "ENABLE", { 0x00, 16, 16, 1.0 } }}
-          } },
-        // TODO: Add an alias: COREPRIORITY_STATUS?
-        { "SST::COREPRIORITY_ENABLE",
-          { SSTMailboxCommand::CORE_PRIORITY, 0x02,
-            {{ "ENABLE", { 0x00, 1, 1, 1.0 } }}
-          } },
         { "SST::HIGHPRIORITY_NCORES",
-          { SSTMailboxCommand::TURBO_FREQUENCY, 0x10,
+          { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x10,
             {{ "0", { 0x0000, 0, 7, 1.0 } },
              { "1", { 0x0000, 8, 15, 1.0 } },
              { "2", { 0x0000, 16, 23, 1.0 } },
@@ -184,7 +112,7 @@ namespace geopm
              { "7", { 0x0100, 24, 31, 1.0 } }}
           } },
         { "SST::HIGHPRIORITY_FREQUENCY_SSE",
-          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
+          { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
             {
              { "0", { 0x000000, 0, 7, 1e8 } },
              { "1", { 0x000000, 8, 15, 1e8 } },
@@ -196,7 +124,7 @@ namespace geopm
              { "7", { 0x000100, 24, 31, 1e8 } }}
           } },
         { "SST::HIGHPRIORITY_FREQUENCY_AVX2",
-          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
+          { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
             {{ "0", { 0x010000, 0, 7, 1e8 } },
              { "1", { 0x010000, 8, 15, 1e8 } },
              { "2", { 0x010000, 16, 23, 1e8 } },
@@ -207,7 +135,7 @@ namespace geopm
              { "7", { 0x010100, 24, 31, 1e8 } }}
           } },
         { "SST::HIGHPRIORITY_FREQUENCY_AVX512",
-          { SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
+          { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
             {{ "0", { 0x020000, 0, 7, 1e8 } },
              { "1", { 0x020000, 8, 15, 1e8 } },
              { "2", { 0x020000, 16, 23, 1e8 } },
@@ -218,22 +146,39 @@ namespace geopm
              { "7", { 0x020100, 24, 31, 1e8 } }}
           } },
         { "SST::LOWPRIORITY_FREQUENCY",
-          { SSTMailboxCommand::TURBO_FREQUENCY, 0x12,
+          { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x12,
             {{ "SSE", { 0x00, 0, 7, 1e8 } },
              { "AVX2", { 0x00, 8, 15, 1e8 } },
              { "AVX512", { 0x00, 16, 23, 1e8 } }}
           } },
         { "SST::COREPRIORITY_SUPPORT",
-          { SSTMailboxCommand::SUPPORT_CAPABILITIES, 0x03,
+          { SSTIOGroup::SSTMailboxCommand::SUPPORT_CAPABILITIES, 0x03,
             {{ "CAPABILITIES", { 0x00, 0, 0, 1.0 } }}
           } }
     };
 
-    static const std::map<std::string, sst_control_mailbox_fields_s> sst_control_mbox_fields = {
+    // TODO: third list of control-readers
+    const std::map<std::string, SSTIOGroup::sst_control_mailbox_raw_s> SSTIOGroup::sst_control_mbox_info = {
         { "SST::TURBO_ENABLE",
-          { SSTMailboxCommand::TURBO_FREQUENCY, 0x02, 0x00 /* N/A */, 0x01, 16, 16 } },
+            { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY,
+                // Control
+                0x02, 0x00 /* N/A */,
+                {{ "ENABLE", { 0x01, 16, 16 } }},
+                // Signal
+                0x01, 0x00
+            },
+        },
         { "SST::COREPRIORITY_ENABLE",
-          { SSTMailboxCommand::CORE_PRIORITY, 0x00, 0x1000000, 0x01, 17, 17 } },
+            // 0x03 when enabling; 0x01 when disabling
+            { SSTIOGroup::SSTMailboxCommand::CORE_PRIORITY,
+                // Control
+                0x02, 0x100,
+                {{ "ENABLE", { 0x01, 1, 1 } },
+                 { "DISABLE_RMID_REPORTING", { 0x01, 0, 0 } }},
+                // Signal
+                0x02, 0x00
+            },
+        },
     };
 
     static const std::map<std::string, sst_signal_mmio_fields_s> sst_signal_mmio_fields = {
@@ -263,6 +208,7 @@ namespace geopm
         , m_sstio(sstio)
         , m_is_read(false)
         , m_signal_available()
+        , m_control_available()
         , m_signal_pushed()
         , m_control_pushed()
     {
@@ -270,70 +216,39 @@ namespace geopm
             m_sstio = SSTIO::make_shared(topo.num_domain(GEOPM_DOMAIN_CPU));
         }
 
-        // TODO: might want to replace some autos with types
         for (const auto &kv : sst_signal_mbox_info) {
             auto raw_name = kv.first;
             auto raw_desc = kv.second;
-            auto command = raw_desc.command;
-            auto subcommand = raw_desc.subcommand;
-            auto fields = raw_desc.fields;
 
-            int domain_type = GEOPM_DOMAIN_PACKAGE;
-            int num_domain = m_topo.num_domain(domain_type);
+            add_signals(raw_name, raw_desc.command, raw_desc.subcommand,
+                        raw_desc.fields);
+        }
 
-            for (const auto &ff : fields) {
-                auto field_name = ff.first;
-                auto field_desc = ff.second;
-                auto request_data = field_desc.request_data;
-                auto begin_bit = field_desc.begin_bit;
-                auto end_bit = field_desc.end_bit;
-                double multiplier = field_desc.multiplier;
+        for (const auto &kv : sst_control_mbox_info) {
+            auto raw_name = kv.first;
+            auto raw_desc = kv.second;
 
-                char hex[32];
-                snprintf(hex, 32, "0x%05" PRIx32, request_data);
-                std::string raw_signal_name = raw_name + "_" + hex + "#";
+            // Create a read mask for pre-write reads in the control. The mask
+            // is a union of all known fields.
+            uint32_t control_read_mask = 0;
 
-                // add raw signal for every domain index
-                auto it = m_signal_available.find(raw_signal_name);
-                if (it == m_signal_available.end()) {
-                    // TODO: this part of loop can be factored out if each raw SST
-                    // knows ahead of time the list of request_data values;
-                    // i.e. if request data was part of the raw struct
-                    std::vector<std::shared_ptr<Signal> > signals;
-                    for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
-                        // TODO: assumes using any CPU in package is fine
-                        auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
-                        int cpu_idx = *(cpus.begin());
-                        auto raw_sst = std::make_shared<SSTSignal>(
-                            m_sstio, false, cpu_idx, static_cast<uint16_t>(command),
-                            subcommand, request_data, 0 /* interface parameter */);
-                        signals.push_back(raw_sst);
-                    }
-                    m_signal_available[raw_signal_name] = {
-                        .signals = signals,
-                        .domain = GEOPM_DOMAIN_PACKAGE,
-                        .units = IOGroup::M_UNITS_NONE,
-                        .agg_function = Agg::select_first,
-                        .description = "TODO"
-                    };
-                }
-                std::string field_signal_name = raw_name + ":" + field_name;
-                auto raw_sst_list = m_signal_available.at(raw_signal_name).signals;
-                std::vector<std::shared_ptr<Signal> > signals;
-                for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
-                    auto field_signal = std::make_shared<MSRFieldSignal>(
-                        raw_sst_list[domain_idx], begin_bit, end_bit,
-                        MSR::M_FUNCTION_SCALE, multiplier);
-                    signals.push_back(field_signal);
-                }
-                m_signal_available[field_signal_name] = {
-                    .signals = signals,
-                    .domain = GEOPM_DOMAIN_PACKAGE,
-                    .units = IOGroup::M_UNITS_NONE,
-                    .agg_function = Agg::select_first,
-                    .description = "TODO"
-                };
+            std::map<std::string, sst_signal_mailbox_field_s> fields;
+            for (const auto& field : raw_desc.fields)
+            {
+                fields.emplace(field.first, sst_signal_mailbox_field_s{
+                                                raw_desc.read_request_data,
+                                                field.second.begin_bit,
+                                                field.second.end_bit, 1.0 });
+                auto bit_count = field.second.end_bit - field.second.begin_bit + 1;
+                auto field_mask = ((1ull << bit_count) - 1) << field.second.begin_bit;
+                control_read_mask |= field_mask;
             }
+
+            add_signals(raw_name, raw_desc.command, raw_desc.read_subcommand, fields);
+            // TODO: Get a hold of the unmasked signal info. Give to control for RMW.
+            add_controls(raw_name, raw_desc.command, raw_desc.subcommand,
+                         raw_desc.write_param, raw_desc.fields, raw_desc.read_subcommand,
+                         raw_desc.read_request_data, control_read_mask);
         }
     }
 
@@ -350,11 +265,9 @@ namespace geopm
     std::set<std::string> SSTIOGroup::control_names(void) const
     {
         std::set<std::string> s;
-        std::transform(sst_control_mbox_fields.begin(), sst_control_mbox_fields.end(),
-                       std::inserter(s, s.end()),
-                       [](const decltype(sst_control_mbox_fields)::value_type& p) {
-                           return p.first;
-                       });
+        for (const auto &kv : m_control_available) {
+            s.insert(kv.first);
+        }
         std::transform(sst_control_mmio_fields.begin(), sst_control_mmio_fields.end(),
                        std::inserter(s, s.end()),
                        [](const decltype(sst_control_mmio_fields)::value_type& p) {
@@ -373,8 +286,7 @@ namespace geopm
     bool SSTIOGroup::is_valid_control(const std::string &control_name) const
     {
         return control_name == "SST::COREPRIORITY_ASSOCIATION" ||
-               (sst_control_mbox_fields.find(control_name) !=
-                sst_control_mbox_fields.end()) ||
+               m_control_available.find(control_name) != m_control_available.end() ||
                (sst_control_mmio_fields.find(control_name) !=
                 sst_control_mmio_fields.end());
     }
@@ -476,26 +388,18 @@ namespace geopm
     int SSTIOGroup::push_control(const std::string &control_name, int domain_type, int domain_idx)
     {
         int result = -1;
-        auto mbox_it = sst_control_mbox_fields.find(control_name);
+        auto it = m_control_available.find(control_name);
+//        auto mbox_it = sst_control_mbox_fields.find(control_name);
         auto mmio_it = sst_control_mmio_fields.find(control_name);
-        if (mbox_it != sst_control_mbox_fields.end()) {
-            const auto& field_description = mbox_it->second;
-            if (domain_type != GEOPM_DOMAIN_PACKAGE) {
-                throw Exception("wrong domain type", GEOPM_ERROR_INVALID,
-                                __FILE__, __LINE__);
+        if (it != m_control_available.end()) {
+            if (domain_type != it->second.domain) {
+                throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
-            // TODO: assumes using any CPU in package is fine
-            auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
-            int cpu_idx = *(cpus.begin());
-
-            auto control = std::make_shared<SSTControl>(
-                m_sstio, false, cpu_idx, static_cast<uint16_t>(field_description.command),
-                field_description.subcommand, field_description.write_param,
-                field_description.write_data, field_description.begin_bit,
-                field_description.end_bit);
-            control->setup_batch();
-            result = m_control_pushed.size();
+            auto control = it->second.controls[domain_idx];
+            // TODO: see linear search in MSRIO::push_signal to check for already pushed
+            result = m_signal_pushed.size();
             m_control_pushed.push_back(control);
+            control->setup_batch();
         }
         else if (mmio_it != sst_control_mmio_fields.end()) {
             const auto& field_description = mmio_it->second;
@@ -512,8 +416,8 @@ namespace geopm
             // objects for different interfaces.
             auto control = std::make_shared<SSTControl>(
                 m_sstio, true, cpu_idx, 0x00, 0x00, field_description.register_offset,
-                0x00 /* Write value. adjust later */,
-                field_description.begin_bit, field_description.end_bit);
+                0x00 /* Write value. adjust later */, field_description.begin_bit,
+                field_description.end_bit, 1.0, 0x00, 0x00, 0x00);
             control->setup_batch();
             result = m_control_pushed.size();
             m_control_pushed.push_back(control);
@@ -532,8 +436,8 @@ namespace geopm
             };
             auto control = std::make_shared<SSTControl>(
                 m_sstio, true, cpu_idx, 0x00, 0x00, field_description.register_offset,
-                0x00 /* Write value. adjust later */,
-                field_description.begin_bit, field_description.end_bit);
+                0x00 /* Write value. adjust later */, field_description.begin_bit,
+                field_description.end_bit, 1.0, 0x00, 0x00, 0x00);
             control->setup_batch();
             result = m_control_pushed.size();
             m_control_pushed.push_back(control);
@@ -662,5 +566,118 @@ namespace geopm
             "(description is not yet implemented for SSTIOGroup).";
 
         return result;
+    }
+
+    void SSTIOGroup::add_signals(const std::string &raw_name,
+                                 SSTIOGroup::SSTMailboxCommand command,
+                                 uint16_t subcommand,
+                                 std::map<std::string, sst_signal_mailbox_field_s> &fields)
+
+    {
+        int domain_type = GEOPM_DOMAIN_PACKAGE;
+        int num_domain = m_topo.num_domain(domain_type);
+
+        for (const auto &ff : fields) {
+            auto field_name = ff.first;
+            auto field_desc = ff.second;
+            auto request_data = field_desc.request_data;
+            auto begin_bit = field_desc.begin_bit;
+            auto end_bit = field_desc.end_bit;
+            double multiplier = field_desc.multiplier;
+
+            char hex[32];
+            snprintf(hex, 32, "0x%05" PRIx32, request_data);
+            std::string raw_signal_name = raw_name + "_" + hex + "#";
+
+            // add raw signal for every domain index
+            auto it = m_signal_available.find(raw_signal_name);
+            if (it == m_signal_available.end()) {
+                // TODO: this part of loop can be factored out if each raw SST
+                // knows ahead of time the list of request_data values;
+                // i.e. if request data was part of the raw struct
+                std::vector<std::shared_ptr<Signal> > signals;
+                for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
+                    // TODO: assumes using any CPU in package is fine
+                    auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
+                    int cpu_idx = *(cpus.begin());
+                    auto raw_sst = std::make_shared<SSTSignal>(
+                        m_sstio, false, cpu_idx, static_cast<uint16_t>(command),
+                        subcommand, request_data, 0 /* interface parameter */);
+                    signals.push_back(raw_sst);
+                }
+                m_signal_available[raw_signal_name] = {
+                    .signals = signals,
+                    .domain = GEOPM_DOMAIN_PACKAGE,
+                    .units = IOGroup::M_UNITS_NONE,
+                    .agg_function = Agg::select_first,
+                    .description = "TODO"
+                };
+            }
+            std::string field_signal_name = raw_name + ":" + field_name;
+            auto raw_sst_list = m_signal_available.at(raw_signal_name).signals;
+            std::vector<std::shared_ptr<Signal> > signals;
+            for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
+                auto field_signal = std::make_shared<MSRFieldSignal>(
+                    raw_sst_list[domain_idx], begin_bit, end_bit,
+                    MSR::M_FUNCTION_SCALE, multiplier);
+                signals.push_back(field_signal);
+            }
+            m_signal_available[field_signal_name] = {
+                .signals = signals,
+                .domain = GEOPM_DOMAIN_PACKAGE,
+                .units = IOGroup::M_UNITS_NONE,
+                .agg_function = Agg::select_first,
+                .description = "TODO"
+            };
+        }
+    }
+
+    void SSTIOGroup::add_controls(
+        const std::string &raw_name, SSTMailboxCommand command,
+        uint16_t subcommand, uint32_t write_param,
+        const std::map<std::string, sst_control_mailbox_field_s> &fields,
+        uint16_t read_subcommand, uint32_t read_request_data, uint32_t read_mask)
+    {
+        int domain_type = GEOPM_DOMAIN_PACKAGE;
+        int num_domain = m_topo.num_domain(domain_type);
+
+        for (const auto &ff : fields) {
+            auto field_name = ff.first;
+            auto field_description = ff.second;
+            // TODO write_data not needed at this time for mbox-type
+            // interactions? Only for adjust?
+            auto write_data = field_description.write_data;
+            auto begin_bit = field_description.begin_bit;
+            auto end_bit = field_description.end_bit;
+
+            std::string field_control_name = raw_name + ":" + field_name;
+
+            // add raw control for every domain index
+            auto it = m_control_available.find(field_control_name);
+            if (it == m_control_available.end()) {
+                std::vector<std::shared_ptr<Control> > controls;
+                for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
+                    auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU,
+                                                     domain_type, domain_idx);
+                    int cpu_idx = *(cpus.begin());
+
+                    auto raw_sst = std::make_shared<SSTControl>(
+                        m_sstio, false, cpu_idx, static_cast<uint16_t>(command),
+                        subcommand, write_param, write_data, begin_bit, end_bit,
+                        1.0, read_subcommand, read_request_data, read_mask);
+                    // TODO: Generate read io params for pre-write.All same except
+                    // subcmd and req data. read entire thing instead of per field
+
+                    controls.push_back(raw_sst);
+                }
+                m_control_available[field_control_name] = {
+                    .controls = controls,
+                    .domain = GEOPM_DOMAIN_PACKAGE,
+                    .units = IOGroup::M_UNITS_NONE,
+                    .agg_function = Agg::select_first,
+                    .description = "TODO"
+                };
+            }
+        }
     }
 }

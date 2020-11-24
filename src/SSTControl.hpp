@@ -41,18 +41,20 @@ namespace geopm
     class SSTControl : public geopm::Control
     {
         public:
-            SSTControl(std::shared_ptr<SSTIO> sstio, bool is_mmio,
-                       int cpu_idx, uint32_t command, uint32_t subcommand,
-                       uint32_t interface_parameter, uint32_t write_value,
-                       int begin_bit, int end_bit);
-            virtual ~SSTControl() = default;
-            void setup_batch(void) override;
-            void adjust(double value) override;
-            void write(double value) override;
-            void save(void) override;
-            void restore(void) override;
-            // static SSTControl make_sstmmio_control(... )
-            // static SSTControl make_sstmbox_control (...)
+        SSTControl(std::shared_ptr<SSTIO> sstio, bool is_mmio, int cpu_idx,
+                   uint32_t command, uint32_t subcommand,
+                   uint32_t interface_parameter, uint32_t write_value,
+                   uint32_t begin_bit, uint32_t end_bit, double scale,
+                   uint32_t rmw_subcommand, uint32_t rmw_interface_parameter, 
+                   uint32_t rmw_read_mask);
+        virtual ~SSTControl() = default;
+        void setup_batch(void) override;
+        void adjust(double value) override;
+        void write(double value) override;
+        void save(void) override;
+        void restore(void) override;
+        // static SSTControl make_sstmmio_control(... )
+        // static SSTControl make_sstmbox_control (...)
         private:
             std::shared_ptr<SSTIO> m_sstio;
             const bool m_is_mmio;
@@ -61,8 +63,12 @@ namespace geopm
             const uint32_t m_subcommand;
             const uint32_t m_interface_parameter;
             const uint32_t m_write_value;
-            const int m_shift;
             int m_adjust_idx;
-
+            const int m_shift;
+            const int m_num_bit;
+            const uint64_t m_mask;
+            const uint32_t m_rmw_subcommand;
+            const uint32_t m_rmw_interface_parameter;
+            const uint32_t m_rmw_read_mask;
     };
 }

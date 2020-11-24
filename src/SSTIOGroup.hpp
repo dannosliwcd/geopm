@@ -74,9 +74,103 @@ namespace geopm
             std::string control_description(const std::string &control_name) const override;
             static std::string plugin_name(void);
             static std::unique_ptr<IOGroup> make_plugin(void);
-        private:
-            /////// old above
 
+            enum class SSTMailboxCommand : uint16_t {
+                TURBO_FREQUENCY = 0x7f,
+                CORE_PRIORITY = 0xd0,
+                SUPPORT_CAPABILITIES = 0x94,
+            };
+        private:
+            struct sst_signal_mailbox_field_s {
+                //! Fields for an SST mailbox signal command
+                //! @param request_data Data to write to the mailbox prior to
+                //!        requesting new data. Often used to indicate which data to
+                //!        request for a given subcommand.
+                //! @param begin_bit LSB position to read from the output value.
+                //! @param end_bit MSB position to read from the output value.
+                //! @param multiplier Scaling factor to apply to the read value.
+                sst_signal_mailbox_field_s(uint32_t request_data, uint32_t begin_bit,
+                                           uint32_t end_bit, double multiplier)
+                    : request_data(request_data)
+                    , begin_bit(begin_bit)
+                    , end_bit(end_bit)
+                    , multiplier(multiplier)
+                {
+                }
+                /* TODO: uint32_t request_data won't work alone.
+                 * Most, but not all, fields have config_level encoded into bits [7:0].
+                 * Current version of this iogroup ignores that, effectivly using 0 for all.
+                 *  -- Add bool has_config_level? Could auto-set in internal layers
+                 *  -- Add additional signal names (multiply signal count by 4)
+                 */
+                uint32_t request_data;
+                uint32_t begin_bit;
+                uint32_t end_bit;
+                double multiplier;
+            };
+            struct sst_signal_mailbox_raw_s {
+                //! @param command Which type of mailbox command
+                //! @param subcommand Subtype of the given command
+                //! @param fields Subfields of the mailbox
+                sst_signal_mailbox_raw_s(SSTIOGroup::SSTMailboxCommand command, uint16_t subcommand,
+                                         std::map<std::string, sst_signal_mailbox_field_s> fields)
+                    : command(command)
+                    , subcommand(subcommand)
+                    , fields(fields)
+                {
+                }
+                SSTMailboxCommand command;
+                uint16_t subcommand;
+                std::map<std::string, sst_signal_mailbox_field_s> fields;
+            };
+
+            struct sst_control_mailbox_field_s {
+                sst_control_mailbox_field_s(uint32_t write_data, uint32_t begin_bit,
+                                            uint32_t end_bit)
+                    : write_data(write_data)
+                    , begin_bit(begin_bit)
+                    , end_bit(end_bit)
+                {
+                }
+                uint32_t write_data;
+                uint32_t begin_bit;
+                uint32_t end_bit;
+            };
+            struct sst_control_mailbox_raw_s {
+                //! @param command Which type of mailbox command
+                //! @param subcommand Subtype of the given command
+                //! @param fields Subfields of the mailbox
+                sst_control_mailbox_raw_s(
+                    SSTMailboxCommand command, uint16_t subcommand, uint32_t write_param,
+                    std::map<std::string, sst_control_mailbox_field_s> fields,
+                    uint16_t read_subcommand, uint32_t read_request_data)
+                    : command(command)
+                    , subcommand(subcommand)
+                    , write_param(write_param)
+                    , fields(fields)
+                    , read_subcommand(read_subcommand)
+                    , read_request_data(read_request_data)
+                {
+                }
+                SSTMailboxCommand command;
+                uint16_t subcommand;
+                uint32_t write_param;
+                std::map<std::string, sst_control_mailbox_field_s> fields;
+                uint16_t read_subcommand;
+                uint32_t read_request_data;
+            };
+
+            void add_signals(const std::string &raw_name,
+                             SSTMailboxCommand command, uint16_t subcommand,
+                             std::map<std::string, sst_signal_mailbox_field_s> &fields);
+            void add_controls(const std::string &raw_name, SSTMailboxCommand command,
+                              uint16_t subcommand, uint32_t write_param,
+                              const std::map<std::string, sst_control_mailbox_field_s> &fields,
+                              uint16_t read_subcommand,
+                              uint32_t read_request_data, uint32_t read_mask);
+
+            static const std::map<std::string, sst_signal_mailbox_raw_s> sst_signal_mbox_info;
+            static const std::map<std::string, sst_control_mailbox_raw_s> sst_control_mbox_info;
             const PlatformTopo &m_topo;
             std::shared_ptr<SSTIO> m_sstio;
             bool m_is_read;
@@ -94,6 +188,16 @@ namespace geopm
                 std::string description;
             };
             std::map<std::string, signal_info> m_signal_available;
+
+            struct control_info
+            {
+                std::vector<std::shared_ptr<Control> > controls;
+                int domain;
+                int units;
+                std::function<double(const std::vector<double> &)> agg_function;
+                std::string description;
+            };
+            std::map<std::string, control_info> m_control_available;
 
             // Mapping of signal index to pushed signals.
             std::vector<std::shared_ptr<Signal> > m_signal_pushed;
