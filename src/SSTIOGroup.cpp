@@ -397,7 +397,7 @@ namespace geopm
             }
             auto control = it->second.controls[domain_idx];
             // TODO: see linear search in MSRIO::push_signal to check for already pushed
-            result = m_signal_pushed.size();
+            result = m_control_pushed.size();
             m_control_pushed.push_back(control);
             control->setup_batch();
         }
