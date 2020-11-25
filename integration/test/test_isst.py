@@ -54,38 +54,40 @@ import random
 
 class TestIntegrationISST(unittest.TestCase):
 
-    def get_turbo_freq_status(self):
-        pass
+    # TODO: Replace with commented system calls--need to update status to "enable"/"disable" when you do so
+    def set_turbo_freq(self, status):
+        num_pkg = geopmpy.topo.num_domain('package')
+        for pkg in range(num_pkg):
+            geopmpy.pio.write_control("SST::TURBO_ENABLE:ENABLE", "package", pkg, status)
+        #sst_comm=["intel-speed-select", "-f", "json", "turbo-freq", status, "-l", "0"]
+        #sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
+        #self.assertEqual(0, sst_comm_ret.returncode)
 
-    def enable_turbo_freq(self):
-        sst_comm=["intel-speed-select", "-f", "json", "turbo-freq", "enable", "-l", "0"]
-        sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
-        self.assertEqual(0, sst_comm_ret.returncode)
-        pass
 
-    def disable_turbo_freq(self):
-        sst_comm=["intel-speed-select", "-f", "json", "turbo-freq", "disable", "-l", "0"]
-        sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
-        self.assertEqual(0, sst_comm_ret.returncode)
-
-    def enable_core_power(self):
-        sst_comm=["intel-speed-select", "-f", "json", "core-power", "enable"]
-        sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
-        self.assertEqual(0, sst_comm_ret.returncode)
-    
-    def disable_core_power(self):
-        sst_comm=["intel-speed-select", "-f", "json", "core-power", "disable"]
-        sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
-        self.assertEqual(0, sst_comm_ret.returncode)
-        pass
+    # TODO: Replace with commented system calls--need to update status to "enable"/"disable" when you do so
+    def set_core_power(self, status):
+        num_pkg = geopmpy.topo.num_domain('package')
+        for pkg in range(num_pkg):
+            if status == 0:
+                geopm_tf_status = geopmpy.pio.read_signal("SST::TURBO_ENABLE:ENABLE", "package", pkg)
+                if geopm_tf_status == 1:
+                    self.set_turbo_freq(0)
+            geopmpy.pio.write_control("SST::COREPRIORITY_ENABLE:ENABLE", "package", pkg, status)
+        #sst_comm=["intel-speed-select", "-f", "json", "core-power", status]
+        #sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
+        #self.assertEqual(0, sst_comm_ret.returncode)
+   
 
     def setUp(self):
+        #self.set_turbo_freq(0)
+        #self.set_core_power(0)
         pass
-        # Start each with  tf and cp enabled
-        #self.disable_turbo_freq()
 
 
     def tearDown(self):
+        pass
+
+    def get_turbo_freq_status(self):
         pass
 
     def get_sst_corepower_assoc(self, core_idx):
@@ -96,14 +98,31 @@ class TestIntegrationISST(unittest.TestCase):
             sst_assoc=int(sst_comm_json[key]['get-assoc']['clos'])
         return sst_assoc
 
-    def get_sst_corepower_config(clos_id):
-        sst_comm=["intel-speed-select", "-f", "json", "core-power", "get-config", "-c", str(core_idx)]
+    def get_sst_corepower_config(self, pkg_id, clos_id):
+        num_pkg = geopmpy.topo.num_domain('package')
+        num_core = geopmpy.topo.num_domain('core')
+        core_idx=int(pkg_id*(num_core/num_pkg))
+
+        sst_comm=["intel-speed-select", "-f", "json", "core-power", "get-config", "-c", str(clos_id)]
         sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
         sst_comm_json=json.loads(sst_comm_ret.stderr)
-        for key in sst_comm_json:
-            sst_assoc=int(sst_comm_json[key]['get-assoc']['clos'])
-        return sst_assoc
+        sst_idx="package-" + str(pkg_id) + ":die-0:cpu-" + str(core_idx)
+        min_freq = sst_comm_json[sst_idx]["core-power"]["clos-min"].replace(" MHz", "")
+        max_freq = sst_comm_json[sst_idx]["core-power"]["clos-max"].replace(" MHz", "")
 
+        sst_cp = {}
+        sst_cp['weight'] = int(sst_comm_json[sst_idx]["core-power"]["clos-proportional-priority"])
+        sst_cp['min'] = 1E6 * int(sst_comm_json[sst_idx]["core-power"]["clos-min"].replace(" MHz", ""))
+        sst_cp['max'] = 1E6 * int(sst_comm_json[sst_idx]["core-power"]["clos-max"].replace(" MHz", ""))
+        return sst_cp
+
+    def geopm_get_corepower_config(self, pkg_id, clos_id):
+        geopm_signal_name = "SST::COREPRIORITY_" + str(clos_id)
+        geopm_cp = {}
+        geopm_cp['weight'] = int(geopmpy.pio.read_signal(geopm_signal_name + ":WEIGHT", "package", pkg_id))
+        geopm_cp['min'] = int(geopmpy.pio.read_signal(geopm_signal_name + ":FREQUENCY_MIN", "package", pkg_id))
+        geopm_cp['max'] = int(geopmpy.pio.read_signal(geopm_signal_name + ":FREQUENCY_MAX", "package", pkg_id))
+        return geopm_cp
 
     def test_read_iss_config(self):
         sst_comm=["intel-speed-select", "-f", "json", "perf-profile", "get-config-levels"]
@@ -159,21 +178,16 @@ class TestIntegrationISST(unittest.TestCase):
     def test_turbofreq_status(self):
         num_pkg = geopmpy.topo.num_domain('package')
         for pkg in range(num_pkg):
-
             #Check read in each state
-            for begin_status in ["disable", "enable"]:
-                sst_comm=["intel-speed-select", "-f", "json", "turbo-freq", begin_status, "-l", str(pkg)]
-                sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
+            turbofreq_states = ["disable", "enable"]
+            for st_idx in range(len(turbofreq_states)):
 
+                sst_comm=["intel-speed-select", "-f", "json", "turbo-freq", turbofreq_states[st_idx], "-l", "0"]
+                sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
                 self.assertEqual(0, sst_comm_ret.returncode)
 
                 turbofreq_status = geopmpy.pio.read_signal("SST::TURBO_ENABLE:ENABLE", "package", pkg)
-                if begin_status == "disable":
-                    assert_val = 0
-                else:
-                    assert_val = 1
-                        
-                self.assertEqual(assert_val, turbofreq_status)
+                self.assertEqual(st_idx, int(turbofreq_status))
 
             #Check write in each state
             for begin_status in ["disable", "enable"]:
@@ -182,16 +196,12 @@ class TestIntegrationISST(unittest.TestCase):
                     sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
 
                     self.assertEqual(0, sst_comm_ret.returncode)
-                    geopmpy.pio.write_control("SST::TURBO_ENABLE", "package", pkg, toggle_status)
+                    geopmpy.pio.write_control("SST::TURBO_ENABLE:ENABLE", "package", pkg, toggle_status)
 
                     turbofreq_status = geopmpy.pio.read_signal("SST::TURBO_ENABLE:ENABLE", "package", pkg)
                     self.assertEqual(toggle_status, int(turbofreq_status))
 
     def test_cp_status(self):
-
-        #TODO: Figure out why this is messing up all the tests
-        #self.disable_turbo_freq()
-        #self.disable_core_power()
 
         num_pkg = geopmpy.topo.num_domain('package')
         num_core = geopmpy.topo.num_domain('core')
@@ -199,20 +209,18 @@ class TestIntegrationISST(unittest.TestCase):
         for pkg in range(num_pkg):
             core_idx=int(pkg*(num_core/num_pkg))
 
-            # Test Read
-            self.disable_turbo_freq()
-            self.disable_core_power()
+            self.set_core_power(0)
             geopm_cp_status = geopmpy.pio.read_signal("SST::COREPRIORITY_ENABLE:ENABLE","package", pkg)
             self.assertEqual(0.0, geopm_cp_status)
 
-            self.enable_core_power()
+            self.set_core_power(1)
             geopm_cp_status = geopmpy.pio.read_signal("SST::COREPRIORITY_ENABLE:ENABLE","package", pkg)
             self.assertEqual(1.0, geopm_cp_status)
 
             # Test Write
             state_list=[1.0, 0.0, 1.0]
             for state_idx in state_list:
-                geopmpy.pio.write_control("SST::COREPRIORITY_ENABLE", "package", pkg, state_idx)
+                geopmpy.pio.write_control("SST::COREPRIORITY_ENABLE:ENABLE", "package", pkg, state_idx)
                 geopm_cp_status = geopmpy.pio.read_signal("SST::COREPRIORITY_ENABLE:ENABLE","package", pkg)
                 self.assertEqual(state_idx, geopm_cp_status)
 
@@ -309,12 +317,75 @@ class TestIntegrationISST(unittest.TestCase):
             self.assertEqual(rand_clos, sst_assoc)
            
     def test_read_core_power_config(self):
-        pass
+        rand_clos = random.randint(0, 3) 
+        cp_weight = random.randint(0,15)
+        #Frequencies in 100 MHz
+        #TODO: Do not hardcode frequency range
+        cp_minfreq = random.randint(10, 35)
+        cp_maxfreq = random.randint(cp_minfreq, 40)
+   
+        num_pkg = geopmpy.topo.num_domain('package')
+        num_core = geopmpy.topo.num_domain('core')
+
+        for pkg in range(num_pkg):
+            sst_comm=["intel-speed-select", "-f", "json", "core-power", "config", "-c", str(rand_clos), "-w", str(cp_weight), "-n", str(cp_minfreq*100), "-m", str(cp_maxfreq*100)]
+            sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
+            self.assertEqual(0, sst_comm_ret.returncode)
+
+            sst_config = self.get_sst_corepower_config(pkg, rand_clos)
+
+            geopm_config = self.geopm_get_corepower_config(pkg, rand_clos)
+    
+            self.assertEqual(sst_config['weight'], geopm_config['weight'])
+            self.assertEqual(sst_config['min'], geopm_config['min'])
+            self.assertEqual(sst_config['max'], geopm_config['max'])
 
     def test_write_core_power_config(self):
-        pass
+   
+        num_pkg = geopmpy.topo.num_domain('package')
+        num_core = geopmpy.topo.num_domain('core')
+
+        for pkg in range(num_pkg):
+            rand_clos = random.randint(0, 3) 
+            cp_weight = random.randint(0,15)
+            #TODO: Do not hardcode frequency range
+            cp_minfreq = random.randint(10, 35)
+            cp_maxfreq = random.randint(cp_minfreq, 40)
+
+            geopm_signal_name = "SST::COREPRIORITY_" + str(rand_clos)
+            geopmpy.pio.write_control(geopm_signal_name + ":WEIGHT", "package", pkg, cp_weight)
+            geopmpy.pio.write_control(geopm_signal_name + ":FREQUENCY_MIN", "package", pkg, 1e8 * cp_minfreq)
+            geopmpy.pio.write_control(geopm_signal_name + ":FREQUENCY_MAX", "package", pkg, 1e8 * cp_maxfreq)
+
+            sst_config = self.get_sst_corepower_config(pkg, rand_clos)
+    
+            self.assertEqual(cp_weight, sst_config['weight'])
+            self.assertEqual(1E8 * cp_minfreq, sst_config['min'])
+            self.assertEqual(1E8 * cp_maxfreq, sst_config['max'])
 
     
+    def test_write_core_power_weight(self):
+        num_pkg = geopmpy.topo.num_domain('package')
+
+        for pkg in range(num_pkg):
+            rand_clos = random.randint(0, 3) 
+            cp_weight = random.randint(0,15)
+            
+            sst_init_config = self.get_sst_corepower_config(pkg, rand_clos)
+
+            geopm_signal_name = "SST::COREPRIORITY_" + str(rand_clos)
+            geopmpy.pio.write_control("SST::COREPRIORITY_" + str(rand_clos) + ":WEIGHT", "package", pkg, cp_weight)
+
+            sst_post_config = self.get_sst_corepower_config(pkg, rand_clos)
+    
+            self.assertEqual(cp_weight, sst_post_config['weight'])
+            self.assertEqual(sst_init_config['min'], sst_post_config['min'])
+            self.assertEqual(sst_init_config['max'], sst_post_config['max'])
+
+    def test_write_core_power_minfreq(self):
+        pass
+    def test_write_core_power_maxfreq(self):
+        pass
 
 
 if __name__ == '__main__':
