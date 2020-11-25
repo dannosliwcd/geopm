@@ -62,7 +62,11 @@ namespace geopm
         , m_mbox_rmw_interfaces()
         , m_mbox_rmw_read_masks()
         , m_mbox_rmw_write_masks()
-        , m_mmio_interfaces()
+        , m_mmio_read_interfaces()
+        , m_mmio_write_interfaces()
+        , m_mmio_rmw_interfaces()
+        , m_mmio_rmw_read_masks()
+        , m_mmio_rmw_write_masks()
         , m_added_interfaces()
         , m_mbox_read_batch(nullptr)
         , m_mbox_write_batch(nullptr)
@@ -72,7 +76,7 @@ namespace geopm
     {
         // TODO: error checking
         if (m_fd < 0) {
-            throw Exception("SSTIOImp: failed to open SST driver",
+            throw Exception("SSTIOImp failed to open SST driver",
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
 
         }
@@ -86,8 +90,8 @@ namespace geopm
             batch_read_data);
         int err = ioctl(m_fd, GEOPM_IOC_SST_GET_CPU_ID, batch_read.get());
         if (err == -1) {
-            throw Exception("SSTIOImp::SSTIOImp(): failed to get CPU map",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("SSTIOImp::SSTIOImp() failed to get CPU map",
+                            errno, __FILE__, __LINE__);
         }
 
         for (size_t i = 0; i < batch_read->num_entries; ++i)
@@ -198,8 +202,8 @@ namespace geopm
             .register_offset = register_offset,
             .value = register_value,
         };
-        int mmio_idx = m_mmio_interfaces.size();
-        m_mmio_interfaces.push_back(mmio);
+        int mmio_idx = m_mmio_read_interfaces.size();
+        m_mmio_read_interfaces.push_back(mmio);
 
         int idx = m_added_interfaces.size();
         m_added_interfaces.emplace_back(true, mmio_idx);
@@ -207,7 +211,7 @@ namespace geopm
     }
 
     int SSTIOImp::add_mmio_write(uint32_t cpu_index, uint16_t register_offset,
-                                 uint32_t register_value)
+                                 uint32_t register_value, uint32_t read_mask)
     {
         struct sst_mmio_interface_s mmio {
             .is_write = 1,
@@ -215,8 +219,13 @@ namespace geopm
             .register_offset = register_offset,
             .value = register_value,
         };
-        int mmio_idx = m_mmio_interfaces.size();
-        m_mmio_interfaces.push_back(mmio);
+        int mmio_idx = m_mmio_write_interfaces.size();
+        m_mmio_write_interfaces.push_back(mmio);
+
+        mmio.is_write = 0;
+        m_mmio_rmw_interfaces.push_back(mmio);
+        m_mmio_rmw_read_masks.push_back(read_mask);
+        m_mmio_rmw_write_masks.push_back(0);
 
         int idx = m_added_interfaces.size();
         m_added_interfaces.emplace_back(true, mmio_idx);
@@ -233,18 +242,18 @@ namespace geopm
 
             int err = ioctl(m_fd, GEOPM_IOC_SST_MBOX, m_mbox_read_batch.get());
             if (err == -1) {
-                throw Exception("SSTIOImp::read_batch(): mbox read failed",
-                                GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception("SSTIOImp::read_batch() mbox read failed",
+                                errno, __FILE__, __LINE__);
             }
         }
-        if (!m_mmio_interfaces.empty()) {
+        if (!m_mmio_read_interfaces.empty()) {
             m_mmio_read_batch = ioctl_struct_from_vector<sst_mmio_interface_batch_s>(
-                m_mmio_interfaces);
+                m_mmio_read_interfaces);
 
             int err = ioctl(m_fd, GEOPM_IOC_SST_MMIO, m_mmio_read_batch.get());
             if (err == -1) {
-                throw Exception("SSTIOImp::read_batch(): mmio read failed",
-                                GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception("SSTIOImp::read_batch() mmio read failed",
+                                errno, __FILE__, __LINE__);
             }
         }
     }
@@ -271,8 +280,8 @@ namespace geopm
             // Read existing value (TODO: only need if not whole mask write)
             int err = ioctl(m_fd, GEOPM_IOC_SST_MBOX, m_mbox_write_batch.get());
             if (err == -1) {
-                throw Exception("sstioimp::write_batch(): pre-write read failed",
-                                GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception("sstioimp::write_batch() pre-write mbox read failed",
+                                errno, __FILE__, __LINE__);
             }
 
             // Modify the existing values with the adjusted values, using the
@@ -294,18 +303,42 @@ namespace geopm
             // Write the adjusted value
             err = ioctl(m_fd, GEOPM_IOC_SST_MBOX, m_mbox_write_batch.get());
             if (err == -1) {
-                throw Exception("sstioimp::write_batch(): write failed",
-                                GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception("sstioimp::write_batch() mbox write failed",
+                                errno, __FILE__, __LINE__);
             }
         }
-        if (!m_mmio_interfaces.empty()) {
+        if (!m_mmio_write_interfaces.empty()) {
             m_mmio_write_batch = ioctl_struct_from_vector<sst_mmio_interface_batch_s>(
-                m_mmio_interfaces);
+                m_mmio_rmw_interfaces);
 
+            // Read existing value (TODO: only need if not whole mask write)
             int err = ioctl(m_fd, GEOPM_IOC_SST_MMIO, m_mmio_write_batch.get());
             if (err == -1) {
-                throw Exception("sstioimp::write_batch(): write failed",
-                                GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception("sstioimp::write_batch() pre-write mmio read failed",
+                                errno, __FILE__, __LINE__);
+            }
+
+            // Modify the existing values with the adjusted values, using the
+            // buffer that contains the mailbox write locations (which may be
+            // different from the read locations for some controls)
+            for (size_t i = 0; i < m_mmio_write_batch->num_entries; ++i) {
+                // Mask the read so we only propagate the bits that we are
+                // supposed to read. Mask the write so we only update the
+                // adjusted bits.
+                m_mmio_write_interfaces[i].value |=
+                    ~m_mmio_rmw_write_masks[i] &
+                    (m_mmio_write_batch->interfaces[i].value &
+                     m_mmio_rmw_read_masks[i]);
+            }
+
+            m_mmio_write_batch = ioctl_struct_from_vector<sst_mmio_interface_batch_s>(
+                m_mmio_write_interfaces);
+
+            // Write the adjusted value
+            err = ioctl(m_fd, GEOPM_IOC_SST_MMIO, m_mmio_write_batch.get());
+            if (err == -1) {
+                throw Exception("sstioimp::write_batch() mmio write failed",
+                                errno, __FILE__, __LINE__);
             }
         }
     }
@@ -315,12 +348,15 @@ namespace geopm
         // TODO: check index in range, check value in maxk
         const auto& interface = m_added_interfaces[index];
         auto &write_destination = interface.first
-                                ? m_mmio_interfaces[interface.second].value
+                                ? m_mmio_write_interfaces[interface.second].value
                                 : m_mbox_write_interfaces[interface.second].write_value;
         write_destination &= ~write_mask;
         write_destination |= write_value;
         if (!interface.first) {
             m_mbox_rmw_write_masks[interface.second] |= write_mask;
+        }
+        else {
+            m_mmio_rmw_write_masks[interface.second] |= write_mask;
         }
     }
 

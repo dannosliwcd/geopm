@@ -56,6 +56,7 @@ namespace geopm
         , m_rmw_subcommand(rmw_subcommand)
         , m_rmw_interface_parameter(rmw_interface_parameter)
         , m_rmw_read_mask(rmw_read_mask)
+        , m_multiplier(scale)
     {
 
     }
@@ -64,7 +65,7 @@ namespace geopm
     {
         if (m_is_mmio) {
             m_adjust_idx = m_sstio->add_mmio_write(
-                m_cpu_idx, m_interface_parameter, m_write_value);
+                m_cpu_idx, m_interface_parameter, m_write_value, m_rmw_read_mask);
         }
         else {
             m_adjust_idx = m_sstio->add_mbox_write(
@@ -77,7 +78,9 @@ namespace geopm
     {
         // TODO: check if value in range of uint32_t
         //     : Or check if in range of mask
-        m_sstio->adjust(m_adjust_idx, static_cast<uint64_t>(value) << m_shift, m_mask);
+        m_sstio->adjust(m_adjust_idx,
+                        static_cast<uint64_t>(value * m_multiplier) << m_shift,
+                        m_mask);
     }
 
     void SSTControl::write(double value)

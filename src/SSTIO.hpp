@@ -48,7 +48,6 @@ namespace geopm
                                       uint16_t subcommand, uint32_t subcommand_arg,
                                       uint32_t interface_parameter) = 0;
 
-            // TODO: write_value probably will go away
             /// Interact with the mailbox on commands that are not expected to return data
             virtual int add_mbox_write(uint32_t cpu_index, uint16_t command,
                                        uint16_t subcommand, uint32_t interface_parameter,
@@ -60,26 +59,15 @@ namespace geopm
             virtual int add_mmio_read(uint32_t cpu_index, uint16_t register_offset,
                                       uint32_t register_value) = 0;
 
-            // TODO: write_value probably will go away
             /// Interact with the mmio interface on commands that are not expected to return data
             virtual int add_mmio_write(uint32_t cpu_index, uint16_t register_offset,
-                                       uint32_t register_value) = 0;
+                                       uint32_t register_value,
+                                       uint32_t read_mask) = 0;
 
-            // /// Read data from the mmio interface
-            // virtual int add_mmio_read(uint32_t cpu_index, uint32_t register_offset) = 0;
-
-            // /// Write data to the mmio interface
-            // virtual int add_mmio_write(uint32_t cpu_index, uint32_t register_offset,
-            //                         uint32_t value) = 0;
-
-            // call ioctl() for both mbox list and mmio list,
-            // unless we end up splitting this class
             virtual void read_batch(void) = 0;
 
-            // TODO: might need separate call for mbox and mmio
             virtual uint64_t sample(int index) const = 0;
 
-            // See also the mock implementation
             virtual void write_batch(void) = 0;
 
             virtual void adjust(int index, uint64_t write_value, uint64_t write_mask) = 0;

@@ -160,17 +160,66 @@ namespace geopm
                 uint32_t read_request_data;
             };
 
-            void add_signals(const std::string &raw_name,
-                             SSTMailboxCommand command, uint16_t subcommand,
-                             std::map<std::string, sst_signal_mailbox_field_s> &fields);
-            void add_controls(const std::string &raw_name, SSTMailboxCommand command,
-                              uint16_t subcommand, uint32_t write_param,
-                              const std::map<std::string, sst_control_mailbox_field_s> &fields,
-                              uint16_t read_subcommand,
-                              uint32_t read_request_data, uint32_t read_mask);
+            struct sst_control_mmio_field_s {
+                sst_control_mmio_field_s(uint32_t begin_bit, uint32_t end_bit,
+                                         double multiplier)
+                    : begin_bit(begin_bit)
+                    , end_bit(end_bit)
+                    , multiplier(multiplier)
+                {
+                }
+                uint32_t begin_bit;
+                uint32_t end_bit;
+                double multiplier;
+            };
+            struct sst_control_mmio_raw_s {
+                //! @param command Which type of mailbox command
+                //! @param subcommand Subtype of the given command
+                //! @param fields Subfields of the mailbox
+                sst_control_mmio_raw_s(uint32_t register_offset,
+                                       std::map<std::string, sst_control_mmio_field_s> fields)
+                    : register_offset(register_offset)
+                    , fields(fields)
+                {
+                }
+                uint32_t register_offset;
+                std::map<std::string, sst_control_mmio_field_s> fields;
+            };
+
+            struct sst_signal_mmio_field_s {
+                sst_signal_mmio_field_s(uint32_t write_value, uint32_t begin_bit,
+                                        uint32_t end_bit, double multiplier)
+                    : write_value(write_value)
+                    , begin_bit(begin_bit)
+                    , end_bit(end_bit)
+                    , multiplier(multiplier)
+                {
+                }
+                uint32_t write_value;
+                uint32_t begin_bit;
+                uint32_t end_bit;
+                double multiplier;
+            };
+
+            void add_mbox_signals(const std::string &raw_name,
+                                  SSTMailboxCommand command, uint16_t subcommand,
+                                  std::map<std::string, sst_signal_mailbox_field_s> &fields);
+            void add_mbox_controls(
+                const std::string &raw_name, SSTMailboxCommand command,
+                uint16_t subcommand, uint32_t write_param,
+                const std::map<std::string, sst_control_mailbox_field_s> &fields,
+                uint16_t read_subcommand, uint32_t read_request_data,
+                uint32_t read_mask);
+
+            void add_mmio_signals(const std::string &raw_name, uint32_t register_offset,
+                                  std::map<std::string, sst_signal_mmio_field_s> &fields);
+            void add_mmio_controls(const std::string &raw_name, uint32_t register_offset,
+                                   const std::map<std::string, sst_control_mmio_field_s> &fields,
+                                   uint32_t read_mask);
 
             static const std::map<std::string, sst_signal_mailbox_raw_s> sst_signal_mbox_info;
             static const std::map<std::string, sst_control_mailbox_raw_s> sst_control_mbox_info;
+            static const std::map<std::string, sst_control_mmio_raw_s> sst_control_mmio_info;
             const PlatformTopo &m_topo;
             std::shared_ptr<SSTIO> m_sstio;
             bool m_is_read;
