@@ -71,7 +71,7 @@ TEST_F(SSTSignalTest, mailbox_read_batch)
     uint32_t sub_arg = 0x56;
     uint32_t interface_param = 0x93;
 
-    SSTSignal sig {m_sstio, false, cpu, command, subcommand, sub_arg,
+    SSTSignal sig {m_sstio, SSTSignal::MBOX, cpu, command, subcommand, sub_arg,
                    interface_param};
 
     int batch_idx = 42;

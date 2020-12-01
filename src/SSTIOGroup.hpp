@@ -176,12 +176,14 @@ namespace geopm
                 //! @param command Which type of mailbox command
                 //! @param subcommand Subtype of the given command
                 //! @param fields Subfields of the mailbox
-                sst_control_mmio_raw_s(uint32_t register_offset,
+                sst_control_mmio_raw_s(int domain_type, uint32_t register_offset,
                                        std::map<std::string, sst_control_mmio_field_s> fields)
-                    : register_offset(register_offset)
+                    : domain_type(domain_type)
+                    , register_offset(register_offset)
                     , fields(fields)
                 {
                 }
+                int domain_type;
                 uint32_t register_offset;
                 std::map<std::string, sst_control_mmio_field_s> fields;
             };
@@ -211,9 +213,11 @@ namespace geopm
                 uint16_t read_subcommand, uint32_t read_request_data,
                 uint32_t read_mask);
 
-            void add_mmio_signals(const std::string &raw_name, uint32_t register_offset,
+            void add_mmio_signals(const std::string &raw_name, int domain_type,
+                                  uint32_t register_offset,
                                   std::map<std::string, sst_signal_mmio_field_s> &fields);
-            void add_mmio_controls(const std::string &raw_name, uint32_t register_offset,
+            void add_mmio_controls(const std::string &raw_name, int domain_type,
+                                   uint32_t register_offset,
                                    const std::map<std::string, sst_control_mmio_field_s> &fields,
                                    uint32_t read_mask);
 

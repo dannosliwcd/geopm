@@ -49,6 +49,7 @@
 #include "SSTIO.hpp"
 #include "SSTSignal.hpp"
 #include "geopm_debug.hpp"
+#include "geopm_topo.h"
 
 namespace geopm
 {
@@ -143,25 +144,28 @@ namespace geopm
 
     const std::map<std::string, SSTIOGroup::sst_control_mmio_raw_s> SSTIOGroup::sst_control_mmio_info = {
         { "SST::COREPRIORITY_0",
-          { 0x08,
+          { GEOPM_DOMAIN_PACKAGE, 0x08,
             { { "WEIGHT", { 4, 7, 1.0 } },
               { "FREQUENCY_MIN", { 8, 15, 1e-8 } },
               { "FREQUENCY_MAX", { 16, 23, 1e-8 } } } } },
         { "SST::COREPRIORITY_1",
-          { 0x0c,
+          { GEOPM_DOMAIN_PACKAGE, 0x0c,
             { { "WEIGHT", { 4, 7, 1.0 } },
               { "FREQUENCY_MIN", { 8, 15, 1e-8 } },
               { "FREQUENCY_MAX", { 16, 23, 1e-8 } } } } },
         { "SST::COREPRIORITY_2",
-          { 0x10,
+          { GEOPM_DOMAIN_PACKAGE, 0x10,
             { { "WEIGHT", { 4, 7, 1.0 } },
               { "FREQUENCY_MIN", { 8, 15, 1e-8 } },
               { "FREQUENCY_MAX", { 16, 23, 1e-8 } } } } },
         { "SST::COREPRIORITY_3",
-          { 0x14,
+          { GEOPM_DOMAIN_PACKAGE, 0x14,
             { { "WEIGHT", { 4, 7, 1.0 } },
               { "FREQUENCY_MIN", { 8, 15, 1e-8 } },
               { "FREQUENCY_MAX", { 16, 23, 1e-8 } } } } },
+        { "SST::COREPRIORITY",
+          { GEOPM_DOMAIN_CORE, 0x20, /* offset will be augmented by core index */
+            { { "ASSOCIATION", { 16, 17, 1.0 } } } } },
     };
 
     SSTIOGroup::SSTIOGroup(const PlatformTopo &topo, std::shared_ptr<SSTIO> sstio)
@@ -239,8 +243,8 @@ namespace geopm
                 control_read_mask |= field_mask;
             }
 
-            add_mmio_signals(raw_name, raw_desc.register_offset, fields);
-            add_mmio_controls(raw_name, raw_desc.register_offset,
+            add_mmio_signals(raw_name, raw_desc.domain_type, raw_desc.register_offset, fields);
+            add_mmio_controls(raw_name, raw_desc.domain_type, raw_desc.register_offset,
                               raw_desc.fields, control_read_mask);
         }
     }
@@ -251,7 +255,6 @@ namespace geopm
         for (const auto &kv : m_signal_available) {
             result.insert(kv.first);
         }
-        result.insert("SST::COREPRIORITY_ASSOCIATION");
         return result;
     }
 
@@ -261,30 +264,25 @@ namespace geopm
         for (const auto &kv : m_control_available) {
             s.insert(kv.first);
         }
-        s.insert("SST::COREPRIORITY_ASSOCIATION");
         return s;
     }
 
     bool SSTIOGroup::is_valid_signal(const std::string &signal_name) const
     {
-        return (signal_name == "SST::COREPRIORITY_ASSOCIATION" ||
-                m_signal_available.find(signal_name) != m_signal_available.end());
+        return (m_signal_available.find(signal_name) != m_signal_available.end());
     }
 
     bool SSTIOGroup::is_valid_control(const std::string &control_name) const
     {
-        return control_name == "SST::COREPRIORITY_ASSOCIATION" ||
-               m_control_available.find(control_name) != m_control_available.end();
+        return m_control_available.find(control_name) != m_control_available.end();
     }
 
     int SSTIOGroup::signal_domain_type(const std::string &signal_name) const
     {
-        // TODO: use struct?
         int result = GEOPM_DOMAIN_INVALID;
-        if (is_valid_signal(signal_name)) {
-            result = signal_name == "SST::COREPRIORITY_ASSOCIATION"
-                         ? GEOPM_DOMAIN_CORE
-                         : GEOPM_DOMAIN_PACKAGE;
+        auto it = m_signal_available.find(signal_name);
+        if (it != m_signal_available.end()) {
+            result = it->second.domain;
         }
         return result;
     }
@@ -292,10 +290,9 @@ namespace geopm
     int SSTIOGroup::control_domain_type(const std::string &control_name) const
     {
         int result = GEOPM_DOMAIN_INVALID;
-        if (is_valid_control(control_name)) {
-            result = control_name == "SST::COREPRIORITY_ASSOCIATION"
-                         ? GEOPM_DOMAIN_CORE
-                         : GEOPM_DOMAIN_PACKAGE;
+        auto it = m_control_available.find(control_name);
+        if (it != m_control_available.end()) {
+            result = it->second.domain;
         }
         return result;
     }
@@ -303,12 +300,10 @@ namespace geopm
     int SSTIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         int result = -1;
-        // TODO: TBD: per-signal domain type and is batch read
         auto it = m_signal_available.find(signal_name);
         if (it != m_signal_available.end()) {
 
-            // TODO: check *it.domain
-            if (domain_type != GEOPM_DOMAIN_PACKAGE) {
+            if (domain_type != it->second.domain) {
                 throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             auto signal = it->second.signals[domain_idx];
@@ -316,26 +311,6 @@ namespace geopm
             result = m_signal_pushed.size();
             m_signal_pushed.push_back(signal);
             signal->setup_batch();
-        }
-        else if (signal_name == "SST::COREPRIORITY_ASSOCIATION") {
-            if (domain_type != GEOPM_DOMAIN_CORE) {
-                throw Exception("wrong domain type", GEOPM_ERROR_INVALID,
-                                __FILE__, __LINE__);
-            }
-            auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
-            int cpu_idx = *(cpus.begin());
-
-            uint32_t register_offset = 0x20 + m_sstio->get_punit_from_cpu(domain_idx) * 4;
-            sst_signal_mmio_field_s field_description{ 0, 16, 17, 1.0 };
-            std::shared_ptr<Signal> signal = std::make_shared<MSRFieldSignal>(
-                std::make_shared<SSTSignal>(m_sstio, SSTSignal::MMIO, cpu_idx,
-                                            0x00, 0x00, register_offset,
-                                            field_description.write_value),
-                field_description.begin_bit, field_description.end_bit,
-                MSR::M_FUNCTION_SCALE, field_description.multiplier);
-            signal->setup_batch();
-            result = m_signal_pushed.size();
-            m_signal_pushed.push_back(signal);
         }
         else {
             throw Exception("invalid signal", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
@@ -357,24 +332,6 @@ namespace geopm
             result = m_control_pushed.size();
             m_control_pushed.push_back(control);
             control->setup_batch();
-        }
-        else if (control_name == "SST::COREPRIORITY_ASSOCIATION") {
-            if (domain_type != GEOPM_DOMAIN_CORE) {
-                throw Exception("wrong domain type", GEOPM_ERROR_INVALID,
-                                __FILE__, __LINE__);
-            }
-            auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
-            int cpu_idx = *(cpus.begin());
-
-            uint32_t register_offset = 0x20 + m_sstio->get_punit_from_cpu(domain_idx) * 4;
-            sst_control_mmio_field_s field_description{ 16, 17, 1.0 };
-            auto control = std::make_shared<SSTControl>(
-                m_sstio, SSTSignal::MMIO, cpu_idx, 0x00, 0x00, register_offset,
-                0x00 /* Write value. adjust later */, field_description.begin_bit,
-                field_description.end_bit, 1.0, 0x00, 0x00, 0x00);
-            control->setup_batch();
-            result = m_control_pushed.size();
-            m_control_pushed.push_back(control);
         }
         else {
             throw Exception("invalid control", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
@@ -419,6 +376,7 @@ namespace geopm
         auto idx = push_signal(signal_name, domain_type, domain_idx);
         read_batch();
         return sample(idx);
+
     }
 
     void SSTIOGroup::write_control(const std::string &control_name,
@@ -540,7 +498,7 @@ namespace geopm
                 }
                 m_signal_available[raw_signal_name] = {
                     .signals = signals,
-                    .domain = GEOPM_DOMAIN_PACKAGE,
+                    .domain = domain_type,
                     .units = IOGroup::M_UNITS_NONE,
                     .agg_function = Agg::select_first,
                     .description = "TODO"
@@ -557,7 +515,7 @@ namespace geopm
             }
             m_signal_available[field_signal_name] = {
                 .signals = signals,
-                .domain = GEOPM_DOMAIN_PACKAGE,
+                .domain = domain_type,
                 .units = IOGroup::M_UNITS_NONE,
                 .agg_function = Agg::select_first,
                 .description = "TODO"
@@ -605,7 +563,7 @@ namespace geopm
                 }
                 m_control_available[field_control_name] = {
                     .controls = controls,
-                    .domain = GEOPM_DOMAIN_PACKAGE,
+                    .domain = domain_type,
                     .units = IOGroup::M_UNITS_NONE,
                     .agg_function = Agg::select_first,
                     .description = "TODO"
@@ -615,10 +573,9 @@ namespace geopm
     }
 
     void SSTIOGroup::add_mmio_signals(const std::string &raw_name,
-                                      uint32_t register_offset,
+                                      int domain_type, uint32_t register_offset,
                                       std::map<std::string, sst_signal_mmio_field_s> &fields)
     {
-        int domain_type = GEOPM_DOMAIN_PACKAGE;
         int num_domain = m_topo.num_domain(domain_type);
 
         for (const auto &ff : fields) {
@@ -641,14 +598,17 @@ namespace geopm
                     // TODO: assumes using any CPU in package is fine
                     auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
                     int cpu_idx = *(cpus.begin());
+                    uint32_t augmented_offset = domain_type == GEOPM_DOMAIN_CORE
+                        ? register_offset + m_sstio->get_punit_from_cpu(domain_idx) * 4
+                        : register_offset;
                     auto raw_sst = std::make_shared<SSTSignal>(
-                        m_sstio, SSTSignal::MMIO, cpu_idx, 0x00, 0x00, register_offset, write_value);
+                        m_sstio, SSTSignal::MMIO, cpu_idx, 0x00, 0x00, augmented_offset, write_value);
 
                     signals.push_back(raw_sst);
                 }
                 m_signal_available[raw_signal_name] = {
                     .signals = signals,
-                    .domain = GEOPM_DOMAIN_PACKAGE,
+                    .domain = domain_type,
                     .units = IOGroup::M_UNITS_NONE,
                     .agg_function = Agg::select_first,
                     .description = "TODO"
@@ -666,7 +626,7 @@ namespace geopm
             }
             m_signal_available[field_signal_name] = {
                 .signals = signals,
-                .domain = GEOPM_DOMAIN_PACKAGE,
+                .domain = domain_type,
                 .units = IOGroup::M_UNITS_NONE,
                 .agg_function = Agg::select_first,
                 .description = "TODO"
@@ -675,10 +635,9 @@ namespace geopm
     }
 
     void SSTIOGroup::add_mmio_controls(
-        const std::string &raw_name, uint32_t register_offset,
+        const std::string &raw_name, int domain_type, uint32_t register_offset,
         const std::map<std::string, sst_control_mmio_field_s> &fields, uint32_t read_mask)
     {
-        int domain_type = GEOPM_DOMAIN_PACKAGE;
         int num_domain = m_topo.num_domain(domain_type);
 
         for (const auto &ff : fields) {
@@ -697,8 +656,11 @@ namespace geopm
                     // TODO: assumes using any CPU in package is fine
                     auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
                     int cpu_idx = *(cpus.begin());
+                    uint32_t augmented_offset = domain_type == GEOPM_DOMAIN_CORE
+                        ? register_offset + m_sstio->get_punit_from_cpu(domain_idx) * 4
+                        : register_offset;
                     auto control = std::make_shared<SSTControl>(
-                        m_sstio, SSTControl::MMIO, cpu_idx, 0x00, 0x00, register_offset,
+                        m_sstio, SSTControl::MMIO, cpu_idx, 0x00, 0x00, augmented_offset,
                         0x00 /* Write value. adjust later */, begin_bit,
                         end_bit, multiplier, 0x00, 0x00, read_mask);
 
@@ -706,7 +668,7 @@ namespace geopm
                 }
                 m_control_available[raw_control_name] = {
                     .controls = controls,
-                    .domain = GEOPM_DOMAIN_PACKAGE,
+                    .domain = domain_type,
                     .units = IOGroup::M_UNITS_NONE,
                     .agg_function = Agg::select_first,
                     .description = "TODO"
