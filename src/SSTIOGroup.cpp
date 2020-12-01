@@ -52,15 +52,6 @@
 
 namespace geopm
 {
-    // TODO: do we want JSON config like for MSRs?
-    // Mailbox signals
-    // Mailbox Controls
-
-    /// MMIO - no signals
-    // For derived controls. This is a vector of (base control name, adjuster function)
-    using adjuster_function = std::function<void(Control& c, double val)>;
-    using base_adjusters = std::vector<std::pair<std::string, adjuster_function> >;
-
     const std::map<std::string, SSTIOGroup::sst_signal_mailbox_raw_s> SSTIOGroup::sst_signal_mbox_info = {
         { "SST::CONFIG_LEVEL",
           { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x00,
@@ -127,7 +118,6 @@ namespace geopm
           } }
     };
 
-    // TODO: third list of control-readers
     const std::map<std::string, SSTIOGroup::sst_control_mailbox_raw_s> SSTIOGroup::sst_control_mbox_info = {
         { "SST::TURBO_ENABLE",
             { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY,
@@ -187,6 +177,7 @@ namespace geopm
             m_sstio = SSTIO::make_shared(topo.num_domain(GEOPM_DOMAIN_CPU));
         }
 
+        // Directly register MBOX-based signals
         for (const auto &kv : sst_signal_mbox_info) {
             auto raw_name = kv.first;
             auto raw_desc = kv.second;
@@ -195,6 +186,9 @@ namespace geopm
                              raw_desc.fields);
         }
 
+        // For MBOX-based controls, register both a control and a signal. The
+        // control needs to be aware of how the signal reads are performed so
+        // it can do software read/modify/write.
         for (const auto &kv : sst_control_mbox_info) {
             auto raw_name = kv.first;
             auto raw_desc = kv.second;
@@ -217,13 +211,16 @@ namespace geopm
 
             add_mbox_signals(raw_name, raw_desc.command,
                              raw_desc.read_subcommand, fields);
-            // TODO: Get a hold of the unmasked signal info. Give to control for RMW.
             add_mbox_controls(raw_name, raw_desc.command, raw_desc.subcommand,
                               raw_desc.write_param, raw_desc.fields,
                               raw_desc.read_subcommand,
                               raw_desc.read_request_data, control_read_mask);
         }
 
+        // This IOGroup currently has no MMIO-based signals, except for those
+        // that are registered with their related controls below.
+
+        // For MMIO-based controls, register both a control and a signal.
         for (const auto &kv : sst_control_mmio_info) {
             auto raw_name = kv.first;
             auto raw_desc = kv.second;
@@ -331,8 +328,8 @@ namespace geopm
             uint32_t register_offset = 0x20 + m_sstio->get_punit_from_cpu(domain_idx) * 4;
             sst_signal_mmio_field_s field_description{ 0, 16, 17, 1.0 };
             std::shared_ptr<Signal> signal = std::make_shared<MSRFieldSignal>(
-                std::make_shared<SSTSignal>(m_sstio, true, cpu_idx, 0x00, 0x00,
-                                            register_offset,
+                std::make_shared<SSTSignal>(m_sstio, SSTSignal::MMIO, cpu_idx,
+                                            0x00, 0x00, register_offset,
                                             field_description.write_value),
                 field_description.begin_bit, field_description.end_bit,
                 MSR::M_FUNCTION_SCALE, field_description.multiplier);
@@ -372,7 +369,7 @@ namespace geopm
             uint32_t register_offset = 0x20 + m_sstio->get_punit_from_cpu(domain_idx) * 4;
             sst_control_mmio_field_s field_description{ 16, 17, 1.0 };
             auto control = std::make_shared<SSTControl>(
-                m_sstio, true, cpu_idx, 0x00, 0x00, register_offset,
+                m_sstio, SSTSignal::MMIO, cpu_idx, 0x00, 0x00, register_offset,
                 0x00 /* Write value. adjust later */, field_description.begin_bit,
                 field_description.end_bit, 1.0, 0x00, 0x00, 0x00);
             control->setup_batch();
@@ -537,7 +534,7 @@ namespace geopm
                     auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
                     int cpu_idx = *(cpus.begin());
                     auto raw_sst = std::make_shared<SSTSignal>(
-                        m_sstio, false, cpu_idx, static_cast<uint16_t>(command),
+                        m_sstio, SSTSignal::MBOX, cpu_idx, static_cast<uint16_t>(command),
                         subcommand, request_data, 0 /* interface parameter */);
                     signals.push_back(raw_sst);
                 }
@@ -598,7 +595,7 @@ namespace geopm
                     int cpu_idx = *(cpus.begin());
 
                     auto raw_sst = std::make_shared<SSTControl>(
-                        m_sstio, false, cpu_idx, static_cast<uint16_t>(command),
+                        m_sstio, SSTControl::MBOX, cpu_idx, static_cast<uint16_t>(command),
                         subcommand, write_param, write_data, begin_bit, end_bit,
                         1.0, read_subcommand, read_request_data, read_mask);
                     // TODO: Generate read io params for pre-write.All same except
@@ -645,7 +642,7 @@ namespace geopm
                     auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
                     int cpu_idx = *(cpus.begin());
                     auto raw_sst = std::make_shared<SSTSignal>(
-                        m_sstio, true, cpu_idx, 0x00, 0x00, register_offset, write_value);
+                        m_sstio, SSTSignal::MMIO, cpu_idx, 0x00, 0x00, register_offset, write_value);
 
                     signals.push_back(raw_sst);
                 }
@@ -701,7 +698,7 @@ namespace geopm
                     auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
                     int cpu_idx = *(cpus.begin());
                     auto control = std::make_shared<SSTControl>(
-                        m_sstio, true, cpu_idx, 0x00, 0x00, register_offset,
+                        m_sstio, SSTControl::MMIO, cpu_idx, 0x00, 0x00, register_offset,
                         0x00 /* Write value. adjust later */, begin_bit,
                         end_bit, multiplier, 0x00, 0x00, read_mask);
 

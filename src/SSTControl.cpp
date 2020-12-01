@@ -37,14 +37,14 @@
 
 namespace geopm
 {
-    SSTControl::SSTControl(std::shared_ptr<SSTIO> sstio, bool is_mmio,
+    SSTControl::SSTControl(std::shared_ptr<SSTIO> sstio, ControlType control_type,
                            int cpu_idx, uint32_t command, uint32_t subcommand,
                            uint32_t interface_parameter, uint32_t write_value,
                            uint32_t begin_bit, uint32_t end_bit, double scale,
                            uint32_t rmw_subcommand,
                            uint32_t rmw_interface_parameter, uint32_t rmw_read_mask)
         : m_sstio(sstio)
-        , m_is_mmio(is_mmio)
+        , m_control_type(control_type)
         , m_cpu_idx(cpu_idx)
         , m_command(command)
         , m_subcommand(subcommand)
@@ -63,7 +63,7 @@ namespace geopm
 
     void SSTControl::setup_batch(void)
     {
-        if (m_is_mmio) {
+        if (m_control_type == MMIO) {
             m_adjust_idx = m_sstio->add_mmio_write(
                 m_cpu_idx, m_interface_parameter, m_write_value, m_rmw_read_mask);
         }

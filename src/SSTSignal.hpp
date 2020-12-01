@@ -41,37 +41,31 @@ namespace geopm
 {
     class SSTIO;
 
-    // TODO: think about whether to use same class with multiple constructors
-    // for both MMIO and Mailbox, or different signal types
     class SSTSignal : public geopm::Signal
     {
         public:
-            // signal that does not need a subcommand arg
+            enum SignalType
+            {
+                MBOX,
+                MMIO
+            };
+
             SSTSignal(std::shared_ptr<geopm::SSTIO> sstio,
-                      bool is_mmio,
+                      SignalType signal_type,
                       int cpu_idx,
                       uint16_t command,
                       uint16_t subcommand,
                       uint32_t subcommand_arg,
                       uint32_t interface_parameter);
 
-            // // signal that requires dynamic subcommand arg value
-            // SSTSignal(std::shared_ptr<geopm::SSTIO> sstio,
-            //           std::shared_ptr<geopm::Signal> subcommand_arg,
-            //           uint32_t command,
-            //           uint32_t subcommand,
-            //           int start_bit,
-            //           int end_bit);
-
             virtual ~SSTSignal() = default;
 
             void setup_batch(void) override;
             double sample(void) override;
             double read(void) const override;
-
         private:
             std::shared_ptr<geopm::SSTIO> m_sstio;
-            bool m_is_mmio;
+            SignalType m_signal_type;
             const int m_cpu_idx;
             const uint16_t m_command;
             const uint16_t m_subcommand;

@@ -40,12 +40,12 @@
 namespace geopm
 {
 
-    SSTSignal::SSTSignal(std::shared_ptr<geopm::SSTIO> sstio, bool is_mmio,
+    SSTSignal::SSTSignal(std::shared_ptr<geopm::SSTIO> sstio, SignalType signal_type,
                          int cpu_idx, uint16_t command, uint16_t subcommand,
                          uint32_t subcommand_arg,      // write_value
                          uint32_t interface_parameter) // mbox_interface_param
         : m_sstio(sstio)
-        , m_is_mmio(is_mmio)
+        , m_signal_type(signal_type)
         , m_cpu_idx(cpu_idx)
         , m_command(command)
         , m_subcommand(subcommand)
@@ -59,12 +59,11 @@ namespace geopm
     void SSTSignal::setup_batch(void)
     {
         if (m_batch_idx == -1) {
-            if (m_is_mmio) {
+            if (m_signal_type == MMIO) {
                 m_batch_idx = m_sstio->add_mmio_read(m_cpu_idx, m_subcommand_arg,
                                                      m_interface_parameter);
             }
             else {
-                // commit will be called by iogroup read_batch()
                 m_batch_idx = m_sstio->add_mbox_read(m_cpu_idx, m_command,
                                                      m_subcommand, m_subcommand_arg,
                                                      m_interface_parameter);

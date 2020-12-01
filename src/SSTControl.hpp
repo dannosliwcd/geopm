@@ -40,8 +40,14 @@ namespace geopm
 
     class SSTControl : public geopm::Control
     {
-        public:
-        SSTControl(std::shared_ptr<SSTIO> sstio, bool is_mmio, int cpu_idx,
+    public:
+        enum ControlType
+        {
+            MBOX,
+            MMIO
+        };
+
+        SSTControl(std::shared_ptr<SSTIO> sstio, ControlType control_type, int cpu_idx,
                    uint32_t command, uint32_t subcommand,
                    uint32_t interface_parameter, uint32_t write_value,
                    uint32_t begin_bit, uint32_t end_bit, double scale,
@@ -57,7 +63,7 @@ namespace geopm
         // static SSTControl make_sstmbox_control (...)
         private:
             std::shared_ptr<SSTIO> m_sstio;
-            const bool m_is_mmio;
+            const ControlType m_control_type;
             const int m_cpu_idx;
             const uint32_t m_command;
             const uint32_t m_subcommand;
