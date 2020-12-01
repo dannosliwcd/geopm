@@ -227,9 +227,9 @@ TEST_F(SSTIOGroupTest, adjust_turbo_enable)
     int pkg_0_cpu = 0;
     int pkg_1_cpu = 2;
 
-    EXPECT_CALL(*m_sstio, add_mbox_write(pkg_0_cpu, 0x7F, 0x02, 0x00, 0x01))
+    EXPECT_CALL(*m_sstio, add_mbox_write(pkg_0_cpu, 0x7F, 0x02, 0x00, 0x01, 0x00, 0x10000))
         .WillOnce(Return(TURBO_ENABLE_0));
-    EXPECT_CALL(*m_sstio, add_mbox_write(pkg_1_cpu, 0x7F, 0x02, 0x00, 0x01))
+    EXPECT_CALL(*m_sstio, add_mbox_write(pkg_1_cpu, 0x7F, 0x02, 0x00, 0x01, 0x00, 0x10000))
         .WillOnce(Return(TURBO_ENABLE_1));
 
     int idx0 = m_group->push_control("SST::TURBO_ENABLE", GEOPM_DOMAIN_PACKAGE, 0);
@@ -237,8 +237,8 @@ TEST_F(SSTIOGroupTest, adjust_turbo_enable)
     EXPECT_NE(idx0, idx1);
 
     int shift = 16;  // bit 16
-    EXPECT_CALL(*m_sstio, adjust(idx0, 0x1 << shift));
-    EXPECT_CALL(*m_sstio, adjust(idx1, 0x0 << shift));
+    EXPECT_CALL(*m_sstio, adjust(idx0, 0x1 << shift, 0x10000));
+    EXPECT_CALL(*m_sstio, adjust(idx1, 0x0 << shift, 0x10000));
     m_group->adjust(idx0, 0x1);
     m_group->adjust(idx1, 0x0);
 }
