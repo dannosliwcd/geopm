@@ -56,66 +56,67 @@ namespace geopm
     const std::map<std::string, SSTIOGroup::sst_signal_mailbox_raw_s> SSTIOGroup::sst_signal_mbox_info = {
         { "SST::CONFIG_LEVEL",
           { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x00,
-            {{ "LEVEL", {0x00, 16, 23, 1.0 } }}
+            {{ "LEVEL", { 0x00, 16, 23, 1.0, M_UNITS_NONE,
+                            "SST configuration level" } }}
           } },
         { "SST::TURBOFREQ_SUPPORT",
           { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x01,
-            {{ "SUPPORTED", { 0x00, 0, 0, 1.0 } }}
+            {{ "SUPPORTED", { 0x00, 0, 0, 1.0, M_UNITS_NONE, "SST-TF is supported" } }}
           } },
         { "SST::HIGHPRIORITY_NCORES",
           { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x10,
-            {{ "0", { 0x0000, 0, 7, 1.0 } },
-             { "1", { 0x0000, 8, 15, 1.0 } },
-             { "2", { 0x0000, 16, 23, 1.0 } },
-             { "3", { 0x0000, 24, 31, 1.0 } },
-             { "4", { 0x0100, 0, 7, 1.0 } },
-             { "5", { 0x0100, 8, 15, 1.0 } },
-             { "6", { 0x0100, 16, 23, 1.0 } },
-             { "7", { 0x0100, 24, 31, 1.0 } }}
+            {{ "0", { 0x0000, 0, 7, 1.0, M_UNITS_NONE, "Count of high-priority turbo frequency cores in bucket 0" } },
+             { "1", { 0x0000, 8, 15, 1.0, M_UNITS_NONE, "Count of high-priority turbo frequency cores in bucket 1" } },
+             { "2", { 0x0000, 16, 23, 1.0, M_UNITS_NONE, "Count of high-priority turbo frequency cores in bucket 2" } },
+             { "3", { 0x0000, 24, 31, 1.0, M_UNITS_NONE, "Count of high-priority turbo frequency cores in bucket 3" } },
+             { "4", { 0x0100, 0, 7, 1.0, M_UNITS_NONE, "Count of high-priority turbo frequency cores in bucket 4" } },
+             { "5", { 0x0100, 8, 15, 1.0, M_UNITS_NONE, "Count of high-priority turbo frequency cores in bucket 5" } },
+             { "6", { 0x0100, 16, 23, 1.0, M_UNITS_NONE, "Count of high-priority turbo frequency cores in bucket 6" } },
+             { "7", { 0x0100, 24, 31, 1.0, M_UNITS_NONE, "Count of high-priority turbo frequency cores in bucket 7" } }}
           } },
         { "SST::HIGHPRIORITY_FREQUENCY_SSE",
           { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
             {
-             { "0", { 0x000000, 0, 7, 1e8 } },
-             { "1", { 0x000000, 8, 15, 1e8 } },
-             { "2", { 0x000000, 16, 23, 1e8 } },
-             { "3", { 0x000000, 24, 31, 1e8 } },
-             { "4", { 0x000100, 0, 7, 1e8 } },
-             { "5", { 0x000100, 8, 15, 1e8 } },
-             { "6", { 0x000100, 16, 23, 1e8 } },
-             { "7", { 0x000100, 24, 31, 1e8 } }}
+             { "0", { 0x000000, 0, 7, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 0 at the SSE license level" } },
+             { "1", { 0x000000, 8, 15, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 1 at the SSE license level" } },
+             { "2", { 0x000000, 16, 23, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 2 at the SSE license level" } },
+             { "3", { 0x000000, 24, 31, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 3 at the SSE license level" } },
+             { "4", { 0x000100, 0, 7, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 4 at the SSE license level" } },
+             { "5", { 0x000100, 8, 15, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 5 at the SSE license level" } },
+             { "6", { 0x000100, 16, 23, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 6 at the SSE license level" } },
+             { "7", { 0x000100, 24, 31, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 7 at the SSE license level" } }}
           } },
         { "SST::HIGHPRIORITY_FREQUENCY_AVX2",
           { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
-            {{ "0", { 0x010000, 0, 7, 1e8 } },
-             { "1", { 0x010000, 8, 15, 1e8 } },
-             { "2", { 0x010000, 16, 23, 1e8 } },
-             { "3", { 0x010000, 24, 31, 1e8 } },
-             { "4", { 0x010100, 0, 7, 1e8 } },
-             { "5", { 0x010100, 8, 15, 1e8 } },
-             { "6", { 0x010100, 16, 23, 1e8 } },
-             { "7", { 0x010100, 24, 31, 1e8 } }}
+            {{ "0", { 0x010000, 0, 7, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 0 at the AVX2 license level" } },
+             { "1", { 0x010000, 8, 15, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 1 at the AVX2 license level" } },
+             { "2", { 0x010000, 16, 23, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 2 at the AVX2 license level" } },
+             { "3", { 0x010000, 24, 31, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 3 at the AVX2 license level" } },
+             { "4", { 0x010100, 0, 7, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 4 at the AVX2 license level" } },
+             { "5", { 0x010100, 8, 15, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 5 at the AVX2 license level" } },
+             { "6", { 0x010100, 16, 23, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 6 at the AVX2 license level" } },
+             { "7", { 0x010100, 24, 31, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 7 at the AVX2 license level" } }}
           } },
         { "SST::HIGHPRIORITY_FREQUENCY_AVX512",
           { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x11,
-            {{ "0", { 0x020000, 0, 7, 1e8 } },
-             { "1", { 0x020000, 8, 15, 1e8 } },
-             { "2", { 0x020000, 16, 23, 1e8 } },
-             { "3", { 0x020000, 24, 31, 1e8 } },
-             { "4", { 0x020100, 0, 7, 1e8 } },
-             { "5", { 0x020100, 8, 15, 1e8 } },
-             { "6", { 0x020100, 16, 23, 1e8 } },
-             { "7", { 0x020100, 24, 31, 1e8 } }}
+            {{ "0", { 0x020000, 0, 7, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 0 at the AVX2 license level" } },
+             { "1", { 0x020000, 8, 15, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 1 at the AVX2 license level" } },
+             { "2", { 0x020000, 16, 23, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 2 at the AVX2 license level" } },
+             { "3", { 0x020000, 24, 31, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 3 at the AVX2 license level" } },
+             { "4", { 0x020100, 0, 7, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 4 at the AVX2 license level" } },
+             { "5", { 0x020100, 8, 15, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 5 at the AVX2 license level" } },
+             { "6", { 0x020100, 16, 23, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 6 at the AVX2 license level" } },
+             { "7", { 0x020100, 24, 31, 1e8, M_UNITS_HERTZ, "High-priority turbo frequency for bucket 7 at the AVX2 license level" } }}
           } },
         { "SST::LOWPRIORITY_FREQUENCY",
           { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY, 0x12,
-            {{ "SSE", { 0x00, 0, 7, 1e8 } },
-             { "AVX2", { 0x00, 8, 15, 1e8 } },
-             { "AVX512", { 0x00, 16, 23, 1e8 } }}
+            {{ "SSE", { 0x00, 0, 7, 1e8, M_UNITS_HERTZ, "Low-priority turbo frequency at the SSE license level" } },
+             { "AVX2", { 0x00, 8, 15, 1e8, M_UNITS_HERTZ, "Low-priority turbo frequency at the AVX2 license level" } },
+             { "AVX512", { 0x00, 16, 23, 1e8, M_UNITS_HERTZ, "Low-priority turbo frequency at the AVX512 license level" } }}
           } },
         { "SST::COREPRIORITY_SUPPORT",
           { SSTIOGroup::SSTMailboxCommand::SUPPORT_CAPABILITIES, 0x03,
-            {{ "CAPABILITIES", { 0x00, 0, 0, 1.0 } }}
+            {{ "CAPABILITIES", { 0x00, 0, 0, 1.0, M_UNITS_NONE, "SST-CP is supported" } }}
           } }
     };
 
@@ -124,7 +125,7 @@ namespace geopm
             { SSTIOGroup::SSTMailboxCommand::TURBO_FREQUENCY,
                 // Control
                 0x02, 0x00 /* N/A */,
-                {{ "ENABLE", { 0x01, 16, 16 } }},
+                {{ "ENABLE", { 0x01, 16, 16, M_UNITS_NONE, "SST-TF is enabled" } }},
                 // Signal
                 0x01, 0x00
             },
@@ -134,8 +135,8 @@ namespace geopm
             { SSTIOGroup::SSTMailboxCommand::CORE_PRIORITY,
                 // Control
                 0x02, 0x100,
-                {{ "ENABLE", { 0x01, 1, 1 } },
-                 { "DISABLE_RMID_REPORTING", { 0x01, 0, 0 } }},
+                {{ "ENABLE", { 0x01, 1, 1, M_UNITS_NONE, "SST-CP is enabled" } },
+                 { "DISABLE_RMID_REPORTING", { 0x01, 0, 0, M_UNITS_NONE, "SST RMID reporting is disabled"  } }},
                 // Signal
                 0x02, 0x00
             },
@@ -145,27 +146,27 @@ namespace geopm
     const std::map<std::string, SSTIOGroup::sst_control_mmio_raw_s> SSTIOGroup::sst_control_mmio_info = {
         { "SST::COREPRIORITY:0",
           { GEOPM_DOMAIN_PACKAGE, 0x08,
-            { { "WEIGHT", { 4, 7, 1.0 } },
-              { "FREQUENCY_MIN", { 8, 15, 1e-8 } },
-              { "FREQUENCY_MAX", { 16, 23, 1e-8 } } } } },
+            { { "WEIGHT", { 4, 7, 1.0, M_UNITS_NONE, "Proportional priority for core priority level 0"  } },
+              { "FREQUENCY_MIN", { 8, 15, 1e-8, M_UNITS_HERTZ, "Minimum frequency of core priority level 0"  } },
+              { "FREQUENCY_MAX", { 16, 23, 1e-8, M_UNITS_HERTZ, "Maximum frequency of core priority level 0"  } } } } },
         { "SST::COREPRIORITY:1",
           { GEOPM_DOMAIN_PACKAGE, 0x0c,
-            { { "WEIGHT", { 4, 7, 1.0 } },
-              { "FREQUENCY_MIN", { 8, 15, 1e-8 } },
-              { "FREQUENCY_MAX", { 16, 23, 1e-8 } } } } },
+            { { "WEIGHT", { 4, 7, 1.0, M_UNITS_NONE, "Proportional priority for core priority level 1"  } },
+              { "FREQUENCY_MIN", { 8, 15, 1e-8, M_UNITS_HERTZ, "Minimum frequency of core priority level 1"  } },
+              { "FREQUENCY_MAX", { 16, 23, 1e-8, M_UNITS_HERTZ, "Maximum frequency of core priority level 1"  } } } } },
         { "SST::COREPRIORITY:2",
           { GEOPM_DOMAIN_PACKAGE, 0x10,
-            { { "WEIGHT", { 4, 7, 1.0 } },
-              { "FREQUENCY_MIN", { 8, 15, 1e-8 } },
-              { "FREQUENCY_MAX", { 16, 23, 1e-8 } } } } },
+            { { "WEIGHT", { 4, 7, 1.0, M_UNITS_NONE, "Proportional priority for core priority level 2"  } },
+              { "FREQUENCY_MIN", { 8, 15, 1e-8, M_UNITS_HERTZ, "Minimum frequency of core priority level 2"  } },
+              { "FREQUENCY_MAX", { 16, 23, 1e-8, M_UNITS_HERTZ, "Maximum frequency of core priority level 2"  } } } } },
         { "SST::COREPRIORITY:3",
           { GEOPM_DOMAIN_PACKAGE, 0x14,
-            { { "WEIGHT", { 4, 7, 1.0 } },
-              { "FREQUENCY_MIN", { 8, 15, 1e-8 } },
-              { "FREQUENCY_MAX", { 16, 23, 1e-8 } } } } },
+            { { "WEIGHT", { 4, 7, 1.0, M_UNITS_NONE, "Proportional priority for core priority level 3"  } },
+              { "FREQUENCY_MIN", { 8, 15, 1e-8, M_UNITS_HERTZ, "Minimum frequency of core priority level 3"  } },
+              { "FREQUENCY_MAX", { 16, 23, 1e-8, M_UNITS_HERTZ, "Maximum frequency of core priority level 3"  } } } } },
         { "SST::COREPRIORITY",
           { GEOPM_DOMAIN_CORE, 0x20, /* offset will be augmented by core index */
-            { { "ASSOCIATION", { 16, 17, 1.0 } } } } },
+            { { "ASSOCIATION", { 16, 17, 1.0, M_UNITS_NONE, "Assigned core priority level"  } } } } },
     };
 
     SSTIOGroup::SSTIOGroup(const PlatformTopo &topo, std::shared_ptr<SSTIO> sstio)
@@ -204,10 +205,11 @@ namespace geopm
             std::map<std::string, sst_signal_mailbox_field_s> fields;
             for (const auto& field : raw_desc.fields)
             {
-                fields.emplace(field.first, sst_signal_mailbox_field_s{
-                                                raw_desc.read_request_data,
-                                                field.second.begin_bit,
-                                                field.second.end_bit, 1.0 });
+                fields.emplace(field.first,
+                               sst_signal_mailbox_field_s{
+                                   raw_desc.read_request_data, field.second.begin_bit,
+                                   field.second.end_bit, 1.0, field.second.units,
+                                   field.second.description });
                 auto bit_count = field.second.end_bit - field.second.begin_bit + 1;
                 auto field_mask = ((1ull << bit_count) - 1) << field.second.begin_bit;
                 control_read_mask |= field_mask;
@@ -234,10 +236,11 @@ namespace geopm
             std::map<std::string, sst_signal_mmio_field_s> fields;
             for (const auto& field : raw_desc.fields)
             {
-                fields.emplace(field.first, sst_signal_mmio_field_s{
-                                                0, field.second.begin_bit,
-                                                field.second.end_bit,
-                                                1 / field.second.multiplier });
+                fields.emplace(field.first,
+                               sst_signal_mmio_field_s{
+                                   0, field.second.begin_bit, field.second.end_bit,
+                                   1 / field.second.multiplier, field.second.units,
+                                   field.second.description });
                 auto bit_count = field.second.end_bit - field.second.begin_bit + 1;
                 auto field_mask = ((1ull << bit_count) - 1) << field.second.begin_bit;
                 control_read_mask |= field_mask;
@@ -430,34 +433,40 @@ namespace geopm
 
     std::string SSTIOGroup::signal_description(const std::string &signal_name) const
     {
-        if (!is_valid_signal(signal_name)) {
+        auto it = m_signal_available.find(signal_name);
+        if (it == m_signal_available.end()) {
             throw Exception("SSTIOGroup::signal_description(): " + signal_name +
-                            "not valid for SSTIOGroup",
+                                "not valid for SSTIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
-        std::string result = "Invalid signal description: no description found.";
-        result = "    description: Time since the start of application profiling.\n";
-        result += "    units: " + IOGroup::units_to_string(M_UNITS_SECONDS) + '\n';
-        result += "    aggregation: " + Agg::function_to_name(Agg::select_first) + '\n';
-        result += "    domain: " + platform_topo().domain_type_to_name(GEOPM_DOMAIN_CPU) + '\n';
-        result += "    iogroup: SSTIOGroup";
+        std::ostringstream oss;
+        oss << "    description: " << it->second.description << "\n"
+            << "    units: " << IOGroup::units_to_string(it->second.units) << "\n"
+            << "    aggregation: " << Agg::function_to_name(Agg::select_first) << "\n"
+            << "    domain: " << platform_topo().domain_type_to_name(it->second.domain) << "\n"
+            << "    iogroup: SSTIOGroup";
 
-        return result;
+        return oss.str();
     }
 
     std::string SSTIOGroup::control_description(const std::string &control_name) const
     {
-        if (!is_valid_control(control_name)) {
+        auto it = m_control_available.find(control_name);
+        if (it == m_control_available.end()) {
             throw Exception("SSTIOGroup::control_description(): " + control_name +
-                            "not valid for SSTIOGroup",
+                                "not valid for SSTIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
-        std::string result = "Invalid control description: no description found "
-            "(description is not yet implemented for SSTIOGroup).";
+        std::ostringstream oss;
+        oss << "    description: " << it->second.description << "\n"
+            << "    units: " << IOGroup::units_to_string(it->second.units) << "\n"
+            << "    aggregation: " << Agg::function_to_name(Agg::select_first) << "\n"
+            << "    domain: " << platform_topo().domain_type_to_name(it->second.domain) << "\n"
+            << "    iogroup: SSTIOGroup";
 
-        return result;
+        return oss.str();
     }
 
     void SSTIOGroup::add_mbox_signals(
@@ -474,6 +483,8 @@ namespace geopm
             auto request_data = field_desc.request_data;
             auto begin_bit = field_desc.begin_bit;
             auto end_bit = field_desc.end_bit;
+            auto description = field_desc.description;
+            auto units = field_desc.units;
             double multiplier = field_desc.multiplier;
 
             char hex[32];
@@ -499,9 +510,9 @@ namespace geopm
                 m_signal_available[raw_signal_name] = {
                     .signals = signals,
                     .domain = domain_type,
-                    .units = IOGroup::M_UNITS_NONE,
+                    .units = units,
                     .agg_function = Agg::select_first,
-                    .description = "TODO"
+                    .description = description
                 };
             }
             std::string field_signal_name = raw_name + ":" + field_name;
@@ -516,9 +527,9 @@ namespace geopm
             m_signal_available[field_signal_name] = {
                 .signals = signals,
                 .domain = domain_type,
-                .units = IOGroup::M_UNITS_NONE,
+                .units = units,
                 .agg_function = Agg::select_first,
-                .description = "TODO"
+                .description = description
             };
         }
     }
@@ -540,6 +551,8 @@ namespace geopm
             auto write_data = field_description.write_data;
             auto begin_bit = field_description.begin_bit;
             auto end_bit = field_description.end_bit;
+            auto description = field_description.description;
+            auto units = field_description.units;
 
             std::string field_control_name = raw_name + ":" + field_name;
 
@@ -564,9 +577,9 @@ namespace geopm
                 m_control_available[field_control_name] = {
                     .controls = controls,
                     .domain = domain_type,
-                    .units = IOGroup::M_UNITS_NONE,
+                    .units = units,
                     .agg_function = Agg::select_first,
-                    .description = "TODO"
+                    .description = description
                 };
             }
         }
@@ -584,6 +597,8 @@ namespace geopm
             auto write_value = field_desc.write_value;
             auto begin_bit = field_desc.begin_bit;
             auto end_bit = field_desc.end_bit;
+            auto description = field_desc.description;
+            auto units = field_desc.units;
             double multiplier = field_desc.multiplier;
 
             char hex[32];
@@ -609,9 +624,9 @@ namespace geopm
                 m_signal_available[raw_signal_name] = {
                     .signals = signals,
                     .domain = domain_type,
-                    .units = IOGroup::M_UNITS_NONE,
+                    .units = units,
                     .agg_function = Agg::select_first,
-                    .description = "TODO"
+                    .description = description
                 };
             }
 
@@ -627,9 +642,9 @@ namespace geopm
             m_signal_available[field_signal_name] = {
                 .signals = signals,
                 .domain = domain_type,
-                .units = IOGroup::M_UNITS_NONE,
+                .units = units,
                 .agg_function = Agg::select_first,
-                .description = "TODO"
+                .description = description
             };
         }
     }
@@ -645,6 +660,8 @@ namespace geopm
             auto field_desc = ff.second;
             auto begin_bit = field_desc.begin_bit;
             auto end_bit = field_desc.end_bit;
+            auto description = field_desc.description;
+            auto units = field_desc.units;
             double multiplier = field_desc.multiplier;
 
             // add raw control for every domain index
@@ -669,9 +686,9 @@ namespace geopm
                 m_control_available[raw_control_name] = {
                     .controls = controls,
                     .domain = domain_type,
-                    .units = IOGroup::M_UNITS_NONE,
+                    .units = units,
                     .agg_function = Agg::select_first,
-                    .description = "TODO"
+                    .description = description
                 };
             }
         }

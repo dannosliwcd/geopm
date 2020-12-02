@@ -90,23 +90,22 @@ namespace geopm
                 //! @param end_bit MSB position to read from the output value.
                 //! @param multiplier Scaling factor to apply to the read value.
                 sst_signal_mailbox_field_s(uint32_t request_data, uint32_t begin_bit,
-                                           uint32_t end_bit, double multiplier)
+                                           uint32_t end_bit, double multiplier,
+                                           int units, const std::string &description)
                     : request_data(request_data)
                     , begin_bit(begin_bit)
                     , end_bit(end_bit)
                     , multiplier(multiplier)
+                    , units(units)
+                    , description(description)
                 {
                 }
-                /* TODO: uint32_t request_data won't work alone.
-                 * Most, but not all, fields have config_level encoded into bits [7:0].
-                 * Current version of this iogroup ignores that, effectivly using 0 for all.
-                 *  -- Add bool has_config_level? Could auto-set in internal layers
-                 *  -- Add additional signal names (multiply signal count by 4)
-                 */
                 uint32_t request_data;
                 uint32_t begin_bit;
                 uint32_t end_bit;
                 double multiplier;
+                int units;
+                std::string description;
             };
             struct sst_signal_mailbox_raw_s {
                 //! @param command Which type of mailbox command
@@ -126,15 +125,20 @@ namespace geopm
 
             struct sst_control_mailbox_field_s {
                 sst_control_mailbox_field_s(uint32_t write_data, uint32_t begin_bit,
-                                            uint32_t end_bit)
+                                            uint32_t end_bit, int units,
+                                            const std::string &description)
                     : write_data(write_data)
                     , begin_bit(begin_bit)
                     , end_bit(end_bit)
+                    , units(units)
+                    , description(description)
                 {
                 }
                 uint32_t write_data;
                 uint32_t begin_bit;
                 uint32_t end_bit;
+                int units;
+                std::string description;
             };
             struct sst_control_mailbox_raw_s {
                 //! @param command Which type of mailbox command
@@ -162,15 +166,20 @@ namespace geopm
 
             struct sst_control_mmio_field_s {
                 sst_control_mmio_field_s(uint32_t begin_bit, uint32_t end_bit,
-                                         double multiplier)
+                                         double multiplier, int units,
+                                         const std::string &description)
                     : begin_bit(begin_bit)
                     , end_bit(end_bit)
                     , multiplier(multiplier)
+                    , units(units)
+                    , description(description)
                 {
                 }
                 uint32_t begin_bit;
                 uint32_t end_bit;
                 double multiplier;
+                int units;
+                std::string description;
             };
             struct sst_control_mmio_raw_s {
                 //! @param command Which type of mailbox command
@@ -190,17 +199,22 @@ namespace geopm
 
             struct sst_signal_mmio_field_s {
                 sst_signal_mmio_field_s(uint32_t write_value, uint32_t begin_bit,
-                                        uint32_t end_bit, double multiplier)
+                                        uint32_t end_bit, double multiplier,
+                                        int units, const std::string &description)
                     : write_value(write_value)
                     , begin_bit(begin_bit)
                     , end_bit(end_bit)
                     , multiplier(multiplier)
+                    , units(units)
+                    , description(description)
                 {
                 }
                 uint32_t write_value;
                 uint32_t begin_bit;
                 uint32_t end_bit;
                 double multiplier;
+                int units;
+                std::string description;
             };
 
             void add_mbox_signals(const std::string &raw_name,
