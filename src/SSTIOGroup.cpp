@@ -494,9 +494,6 @@ namespace geopm
             // add raw signal for every domain index
             auto it = m_signal_available.find(raw_signal_name);
             if (it == m_signal_available.end()) {
-                // TODO: this part of loop can be factored out if each raw SST
-                // knows ahead of time the list of request_data values;
-                // i.e. if request data was part of the raw struct
                 std::vector<std::shared_ptr<Signal> > signals;
                 for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
                     // TODO: assumes using any CPU in package is fine
@@ -546,8 +543,6 @@ namespace geopm
         for (const auto &ff : fields) {
             auto field_name = ff.first;
             auto field_description = ff.second;
-            // TODO write_data not needed at this time for mbox-type
-            // interactions? Only for adjust?
             auto write_data = field_description.write_data;
             auto begin_bit = field_description.begin_bit;
             auto end_bit = field_description.end_bit;
@@ -569,8 +564,6 @@ namespace geopm
                         m_sstio, SSTControl::MBOX, cpu_idx, static_cast<uint16_t>(command),
                         subcommand, write_param, write_data, begin_bit, end_bit,
                         1.0, read_subcommand, read_request_data, read_mask);
-                    // TODO: Generate read io params for pre-write.All same except
-                    // subcmd and req data. read entire thing instead of per field
 
                     controls.push_back(raw_sst);
                 }
@@ -610,7 +603,6 @@ namespace geopm
             if (it == m_signal_available.end()) {
                 std::vector<std::shared_ptr<Signal> > signals;
                 for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
-                    // TODO: assumes using any CPU in package is fine
                     auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
                     int cpu_idx = *(cpus.begin());
                     uint32_t augmented_offset = domain_type == GEOPM_DOMAIN_CORE
@@ -670,7 +662,6 @@ namespace geopm
             if (it == m_control_available.end()) {
                 std::vector<std::shared_ptr<Control> > controls;
                 for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
-                    // TODO: assumes using any CPU in package is fine
                     auto cpus = m_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
                     int cpu_idx = *(cpus.begin());
                     uint32_t augmented_offset = domain_type == GEOPM_DOMAIN_CORE
