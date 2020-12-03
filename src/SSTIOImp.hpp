@@ -30,8 +30,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <cstring>
+#include <algorithm>
 #include <map>
+#include <memory>
 #include <string>
 
 #include "SSTIO.hpp"
@@ -71,6 +72,21 @@ namespace geopm
             uint32_t get_punit_from_cpu(uint32_t cpu_index) override;
 
         private:
+            enum message_type_e
+            {
+                MBOX,
+                MMIO
+            };
+
+            struct sst_version_s
+            {
+                uint16_t interface_version;
+                uint16_t driver_version;
+                uint16_t batch_command_limit;
+                uint8_t is_mbox_supported;
+                uint8_t is_mmio_supported;
+            };
+
             struct sst_cpu_map_interface_s
             {
                 uint32_t cpu_index;
@@ -125,35 +141,45 @@ namespace geopm
             using InnerStruct =
                 typename std::remove_all_extents<decltype(OuterStruct::interfaces)>::type;
 
+            // Given a single vector of messages to send to an ioctl, split it
+            // into multiple structs to send to that ioctl. Each InnerStruct
+            // contains a single message. Each OuterStruct contains multiple
+            // messages, with size upper-bounded by m_batch_command_limit.
             template<typename OuterStruct>
-            std::unique_ptr<OuterStruct>
-                ioctl_struct_from_vector(std::vector<InnerStruct<OuterStruct>> commands)
+            std::vector<std::unique_ptr<OuterStruct> >
+                ioctl_structs_from_vector(const std::vector<InnerStruct<OuterStruct> >& commands)
 
             {
-                std::unique_ptr<OuterStruct> outer_struct(reinterpret_cast<OuterStruct *>(
-                    new char[sizeof(OuterStruct::num_entries) +
-                             sizeof(InnerStruct<OuterStruct>) *
-                                 commands.size()]));
+                std::vector<std::unique_ptr<OuterStruct> > outer_structs;
 
-                outer_struct->num_entries = commands.size();
-                std::memcpy(outer_struct->interfaces, commands.data(),
-                            outer_struct->num_entries *
-                                sizeof(InnerStruct<OuterStruct>));
+                int handled_commands = 0;
+                while (handled_commands < commands.size())
+                {
+                    size_t batch_size = std::min(
+                        m_batch_command_limit,
+                        static_cast<int>(commands.size() - handled_commands));
 
-                return outer_struct;
+                    // The inner struct is embedded in the outer struct, and
+                    // the inner struct's size depends on how many entries it
+                    // can contain. That size is dynamically determined, so we
+                    // manually allocate the outer struct here.
+                    outer_structs.emplace_back(reinterpret_cast<OuterStruct *>(
+                        new char[sizeof(OuterStruct::num_entries) +
+                                 sizeof(InnerStruct<OuterStruct>) * commands.size()]));
+                    outer_structs.back()->num_entries = batch_size;
+                    std::copy(commands.data() + handled_commands,
+                              commands.data() + handled_commands + batch_size,
+                              outer_structs.back()->interfaces);
+
+                    handled_commands += batch_size;
+                }
+
+                return outer_structs;
             }
 
             std::string m_path;
             int m_fd;
-            // TODO:
-            //  vector<mbox> m_mbox_interface
-            //  vector<mmio> m_mmio_interface
-            //  vector< pair<which_list, list_idx> > pushed_offsets;
-            //   `-- push_xyz() returns an index to this, where the value
-            //       at that index indicates either mmio or mbox, and the
-            //       offset within that mmio/mbox list
-            //
-            //
+            int m_batch_command_limit;
             std::vector<struct sst_mbox_interface_s> m_mbox_read_interfaces;
             std::vector<struct sst_mbox_interface_s> m_mbox_write_interfaces;
             std::vector<struct sst_mbox_interface_s> m_mbox_rmw_interfaces;
@@ -164,11 +190,11 @@ namespace geopm
             std::vector<struct sst_mmio_interface_s> m_mmio_rmw_interfaces;
             std::vector<uint32_t> m_mmio_rmw_read_masks;
             std::vector<uint32_t> m_mmio_rmw_write_masks;
-            std::vector<std::pair<bool /*TODO:enum interface type*/, size_t> > m_added_interfaces;
-            std::unique_ptr<sst_mbox_interface_batch_s> m_mbox_read_batch;
-            std::unique_ptr<sst_mbox_interface_batch_s> m_mbox_write_batch;
-            std::unique_ptr<sst_mmio_interface_batch_s> m_mmio_read_batch;
-            std::unique_ptr<sst_mmio_interface_batch_s> m_mmio_write_batch;
+            std::vector<std::pair<message_type_e, size_t> > m_added_interfaces;
+            std::vector<std::unique_ptr<sst_mbox_interface_batch_s> > m_mbox_read_batch;
+            std::vector<std::unique_ptr<sst_mbox_interface_batch_s> > m_mbox_write_batch;
+            std::vector<std::unique_ptr<sst_mmio_interface_batch_s> > m_mmio_read_batch;
+            std::vector<std::unique_ptr<sst_mmio_interface_batch_s> > m_mmio_write_batch;
             std::map<uint32_t, uint32_t> m_cpu_punit_core_map;
     };
 }
