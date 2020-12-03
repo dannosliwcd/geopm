@@ -49,6 +49,7 @@ import geopmpy.topo
 import geopmpy.pio
 import geopm_test_launcher
 import random
+from time import sleep
 
 # Check running as root
 
@@ -107,13 +108,14 @@ class TestIntegrationISST(unittest.TestCase):
         sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
         sst_comm_json=json.loads(sst_comm_ret.stderr)
         sst_idx="package-" + str(pkg_id) + ":die-0:cpu-" + str(core_idx)
-        min_freq = sst_comm_json[sst_idx]["core-power"]["clos-min"].replace(" MHz", "")
-        max_freq = sst_comm_json[sst_idx]["core-power"]["clos-max"].replace(" MHz", "")
 
         sst_cp = {}
         sst_cp['weight'] = int(sst_comm_json[sst_idx]["core-power"]["clos-proportional-priority"])
         sst_cp['min'] = 1E6 * int(sst_comm_json[sst_idx]["core-power"]["clos-min"].replace(" MHz", ""))
-        sst_cp['max'] = 1E6 * int(sst_comm_json[sst_idx]["core-power"]["clos-max"].replace(" MHz", ""))
+        if sst_comm_json[sst_idx]["core-power"]["clos-max"] == "Max Turbo frequency":
+            sst_cp['max'] = 255 #TODO: Don't hardcode this
+        else:
+            sst_cp['max'] = 1E6 * int(sst_comm_json[sst_idx]["core-power"]["clos-max"].replace(" MHz", ""))
         return sst_cp
 
     def geopm_get_corepower_config(self, pkg_id, clos_id):
@@ -374,8 +376,8 @@ class TestIntegrationISST(unittest.TestCase):
             sst_init_config = self.get_sst_corepower_config(pkg, rand_clos)
 
             geopm_signal_name = "SST::COREPRIORITY:" + str(rand_clos)
-            geopmpy.pio.write_control("SST::COREPRIORITY:" + str(rand_clos) + ":WEIGHT", "package", pkg, cp_weight)
-
+            geopmpy.pio.write_control(geopm_signal_name + ":WEIGHT", "package", pkg, cp_weight)
+            
             sst_post_config = self.get_sst_corepower_config(pkg, rand_clos)
     
             self.assertEqual(cp_weight, sst_post_config['weight'])
@@ -383,9 +385,40 @@ class TestIntegrationISST(unittest.TestCase):
             self.assertEqual(sst_init_config['max'], sst_post_config['max'])
 
     def test_write_core_power_minfreq(self):
-        pass
+        num_pkg = geopmpy.topo.num_domain('package')
+
+        for pkg in range(num_pkg):
+            rand_clos = random.randint(0, 3) 
+            sst_init_config = self.get_sst_corepower_config(pkg, rand_clos)
+            #TODO: Do not hardcode frequency
+            cp_min = 1E8 * random.randint(0,sst_init_config['max']/1E8)
+
+            geopm_signal_name = "SST::COREPRIORITY:" + str(rand_clos)
+            geopmpy.pio.write_control(geopm_signal_name + ":FREQUENCY_MIN", "package", pkg, cp_min)
+
+            sst_post_config = self.get_sst_corepower_config(pkg, rand_clos)
+    
+            self.assertEqual(sst_init_config['weight'], sst_post_config['weight'])
+            self.assertEqual(cp_min, sst_post_config['min'])
+            self.assertEqual(sst_init_config['max'], sst_post_config['max'])
+
     def test_write_core_power_maxfreq(self):
-        pass
+        num_pkg = geopmpy.topo.num_domain('package')
+
+        for pkg in range(num_pkg):
+            rand_clos = random.randint(0, 3) 
+            sst_init_config = self.get_sst_corepower_config(pkg, rand_clos)
+            #TODO: Do not hardcode frequency
+            cp_max = 1E8 * random.randint(sst_init_config['min']/1E8, 255)
+            
+            geopm_signal_name = "SST::COREPRIORITY:" + str(rand_clos)
+            geopmpy.pio.write_control(geopm_signal_name + ":FREQUENCY_MAX", "package", pkg, cp_max)
+
+            sst_post_config = self.get_sst_corepower_config(pkg, rand_clos)
+    
+            self.assertEqual(sst_init_config['weight'], sst_post_config['weight'])
+            self.assertEqual(sst_init_config['min'], sst_post_config['min'])
+            self.assertEqual(cp_max, sst_post_config['max'])
 
 
 if __name__ == '__main__':
