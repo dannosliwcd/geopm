@@ -117,7 +117,7 @@ class TestIntegrationISST(unittest.TestCase):
         return sst_cp
 
     def geopm_get_corepower_config(self, pkg_id, clos_id):
-        geopm_signal_name = "SST::COREPRIORITY_" + str(clos_id)
+        geopm_signal_name = "SST::COREPRIORITY:" + str(clos_id)
         geopm_cp = {}
         geopm_cp['weight'] = int(geopmpy.pio.read_signal(geopm_signal_name + ":WEIGHT", "package", pkg_id))
         geopm_cp['min'] = int(geopmpy.pio.read_signal(geopm_signal_name + ":FREQUENCY_MIN", "package", pkg_id))
@@ -304,7 +304,7 @@ class TestIntegrationISST(unittest.TestCase):
 
         for core_idx in range(num_core):
             sst_assoc = self.get_sst_corepower_assoc(core_idx)
-            geopm_assoc = int(geopmpy.pio.read_signal("SST::COREPRIORITY_ASSOCIATION", "core", core_idx))
+            geopm_assoc = int(geopmpy.pio.read_signal("SST::COREPRIORITY:ASSOCIATION", "core", core_idx))
             self.assertEqual(sst_assoc, geopm_assoc)
 
     def test_write_core_power_assoc(self):
@@ -312,7 +312,7 @@ class TestIntegrationISST(unittest.TestCase):
 
         for core_idx in range(num_core):
             rand_clos = random.randint(0, 3) 
-            geopmpy.pio.write_control("SST::COREPRIORITY_ASSOCIATION", "core", core_idx, rand_clos)
+            geopmpy.pio.write_control("SST::COREPRIORITY:ASSOCIATION", "core", core_idx, rand_clos)
             sst_assoc = self.get_sst_corepower_assoc(core_idx)
             self.assertEqual(rand_clos, sst_assoc)
            
@@ -352,7 +352,7 @@ class TestIntegrationISST(unittest.TestCase):
             cp_minfreq = random.randint(10, 35)
             cp_maxfreq = random.randint(cp_minfreq, 40)
 
-            geopm_signal_name = "SST::COREPRIORITY_" + str(rand_clos)
+            geopm_signal_name = "SST::COREPRIORITY:" + str(rand_clos)
             geopmpy.pio.write_control(geopm_signal_name + ":WEIGHT", "package", pkg, cp_weight)
             geopmpy.pio.write_control(geopm_signal_name + ":FREQUENCY_MIN", "package", pkg, 1e8 * cp_minfreq)
             geopmpy.pio.write_control(geopm_signal_name + ":FREQUENCY_MAX", "package", pkg, 1e8 * cp_maxfreq)
@@ -373,8 +373,8 @@ class TestIntegrationISST(unittest.TestCase):
             
             sst_init_config = self.get_sst_corepower_config(pkg, rand_clos)
 
-            geopm_signal_name = "SST::COREPRIORITY_" + str(rand_clos)
-            geopmpy.pio.write_control("SST::COREPRIORITY_" + str(rand_clos) + ":WEIGHT", "package", pkg, cp_weight)
+            geopm_signal_name = "SST::COREPRIORITY:" + str(rand_clos)
+            geopmpy.pio.write_control("SST::COREPRIORITY:" + str(rand_clos) + ":WEIGHT", "package", pkg, cp_weight)
 
             sst_post_config = self.get_sst_corepower_config(pkg, rand_clos)
     
