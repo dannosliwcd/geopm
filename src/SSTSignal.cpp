@@ -78,8 +78,15 @@ namespace geopm
 
     double SSTSignal::read(void) const
     {
-        // mbox_read()
-        // commit
-        return -1;
+        uint32_t ret;
+        if (m_signal_type == MMIO) {
+            ret = m_sstio->read_mmio_once(m_cpu_idx, m_subcommand_arg,
+                                          m_interface_parameter);
+        }
+        else {
+            ret = m_sstio->read_mbox_once(m_cpu_idx, m_command, m_subcommand,
+                                          m_subcommand_arg, m_interface_parameter);
+        }
+        return geopm_field_to_signal(ret);
     }
 }

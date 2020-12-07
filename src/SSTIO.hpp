@@ -70,6 +70,26 @@ namespace geopm
 
             virtual void write_batch(void) = 0;
 
+            virtual uint32_t read_mbox_once(uint32_t cpu_index, uint16_t command,
+                                            uint16_t subcommand, uint32_t subcommand_arg,
+                                            uint32_t interface_parameter) = 0;
+
+            virtual void write_mbox_once(uint32_t cpu_index, uint16_t command,
+                                         uint16_t subcommand,
+                                         uint32_t interface_parameter,
+                                         uint16_t read_subcommand,
+                                         uint32_t read_interface_parameter,
+                                         uint32_t read_mask, uint64_t write_value,
+                                         uint64_t write_mask) = 0;
+
+            virtual uint32_t read_mmio_once(uint32_t cpu_index, uint16_t register_offset,
+                                            uint32_t register_value) = 0;
+
+            virtual void write_mmio_once(uint32_t cpu_index, uint16_t register_offset,
+                                         uint32_t register_value,
+                                         uint32_t read_mask, uint64_t write_value,
+                                         uint64_t write_mask) = 0;
+
             virtual void adjust(int index, uint64_t write_value, uint64_t write_mask) = 0;
 
             virtual uint32_t get_punit_from_cpu(uint32_t cpu_index) = 0;

@@ -37,6 +37,7 @@
 #include <algorithm>
 #include <cinttypes>
 #include <iomanip>
+#include <iterator>
 #include <sstream>
 
 #include "Agg.hpp"
@@ -310,15 +311,20 @@ namespace geopm
                 throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             auto signal = it->second.signals[domain_idx];
-            // TODO: see linear search in MSRIO::push_signal to check for already pushed
-            result = m_signal_pushed.size();
-            m_signal_pushed.push_back(signal);
-            signal->setup_batch();
+            auto already_pushed_signal = std::find(m_signal_pushed.begin(),
+                                                   m_signal_pushed.end(), signal);
+            if (already_pushed_signal == m_signal_pushed.end()) {
+                result = m_signal_pushed.size();
+                m_signal_pushed.push_back(signal);
+                signal->setup_batch();
+            }
+            else {
+                result = std::distance(m_signal_pushed.begin(), already_pushed_signal);
+            }
         }
         else {
             throw Exception("invalid signal", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
-        // TODO: TBD vector of m_is_signal_pushed = true;
         return result;
     }
 
@@ -331,10 +337,16 @@ namespace geopm
                 throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             auto control = it->second.controls[domain_idx];
-            // TODO: see linear search in MSRIO::push_signal to check for already pushed
-            result = m_control_pushed.size();
-            m_control_pushed.push_back(control);
-            control->setup_batch();
+            auto already_pushed_control = std::find(
+                m_control_pushed.begin(), m_control_pushed.end(), control);
+            if (already_pushed_control == m_control_pushed.end()) {
+                result = m_control_pushed.size();
+                m_control_pushed.push_back(control);
+                control->setup_batch();
+            }
+            else {
+                result = std::distance(m_control_pushed.begin(), already_pushed_control);
+            }
         }
         else {
             throw Exception("invalid control", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
@@ -375,30 +387,49 @@ namespace geopm
     double SSTIOGroup::read_signal(const std::string &signal_name,
                                    int domain_type, int domain_idx)
     {
-        // TODO: This needs to call SSTSignal::read();
-        auto idx = push_signal(signal_name, domain_type, domain_idx);
-        read_batch();
-        return sample(idx);
+        auto it = m_signal_available.find(signal_name);
+        if (it == m_signal_available.end()) {
+            throw Exception("invalid signal", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        }
 
+        if (domain_type != it->second.domain) {
+            throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        }
+
+        return it->second.signals[domain_idx]->read();
     }
 
     void SSTIOGroup::write_control(const std::string &control_name,
                                    int domain_type, int domain_idx, double setting)
     {
-        // TODO: This needs to call SSTSignal::read();
-        auto idx = push_control(control_name, domain_type, domain_idx);
-        adjust(idx, setting);
-        write_batch();
+        auto it = m_control_available.find(control_name);
+        if (it == m_control_available.end()) {
+            throw Exception("invalid control", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        }
+
+        if (domain_type != it->second.domain) {
+            throw Exception("wrong domain type", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        }
+
+        it->second.controls[domain_idx]->write(setting);
     }
 
     void SSTIOGroup::save_control(void)
     {
-
+        for (auto &control : m_control_available) {
+            for (auto &domain_control : control.second.controls) {
+                domain_control->save();
+            }
+        }
     }
 
     void SSTIOGroup::restore_control(void)
     {
-
+        for (auto &control : m_control_available) {
+            for (auto &domain_control : control.second.controls) {
+                domain_control->restore();
+            }
+        }
     }
 
     std::string SSTIOGroup::plugin_name(void)

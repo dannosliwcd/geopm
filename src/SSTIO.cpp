@@ -385,6 +385,113 @@ namespace geopm
         }
     }
 
+    uint32_t SSTIOImp::read_mbox_once(uint32_t cpu_index, uint16_t command,
+                                      uint16_t subcommand, uint32_t subcommand_arg,
+                                      uint32_t interface_parameter)
+    {
+        sst_mbox_interface_batch_s read_batch{
+            .num_entries = 1,
+            .interfaces = { { .cpu_index = cpu_index,
+                              .mbox_interface_param = interface_parameter,
+                              .write_value = subcommand_arg,
+                              .read_value = 0,
+                              .command = command,
+                              .subcommand = subcommand } }
+        };
+
+        int err = ioctl(m_fd, GEOPM_IOC_SST_MBOX, &read_batch);
+        if (err == -1) {
+            throw Exception("sstioimp::read_mbox_once() mbox read failed",
+                            errno, __FILE__, __LINE__);
+        }
+
+        return read_batch.interfaces[0].read_value;
+    }
+
+    void SSTIOImp::write_mbox_once(uint32_t cpu_index, uint16_t command,
+                                   uint16_t subcommand, uint32_t interface_parameter,
+                                   uint16_t read_subcommand,
+                                   uint32_t read_interface_parameter, uint32_t read_mask,
+                                   uint64_t write_value, uint64_t write_mask)
+    {
+        sst_mbox_interface_batch_s batch{
+            .num_entries = 1,
+            .interfaces = { { .cpu_index = cpu_index,
+                              .mbox_interface_param = read_interface_parameter,
+                              .write_value = 0,
+                              .read_value = 0,
+                              .command = command,
+                              .subcommand = read_subcommand } }
+        };
+        int err = ioctl(m_fd, GEOPM_IOC_SST_MBOX, &batch);
+        if (err == -1) {
+            throw Exception("sstioimp::write_mbox_once() pre-write mbox read failed",
+                            errno, __FILE__, __LINE__);
+        }
+        batch.interfaces[0].write_value =
+            write_value |
+            (~write_mask & (batch.interfaces[0].read_value & read_mask));
+        batch.interfaces[0].mbox_interface_param = interface_parameter;
+        batch.interfaces[0].read_value = 0;
+        batch.interfaces[0].subcommand = subcommand;
+
+        err = ioctl(m_fd, GEOPM_IOC_SST_MBOX, &batch);
+        if (err == -1) {
+            throw Exception("sstioimp::write_mbox_once() mbox write failed",
+                            errno, __FILE__, __LINE__);
+        }
+    }
+
+    uint32_t SSTIOImp::read_mmio_once(uint32_t cpu_index, uint16_t register_offset,
+                                      uint32_t register_value)
+    {
+        sst_mmio_interface_batch_s read_batch{
+            .num_entries = 1,
+            .interfaces = { { .is_write = 0,
+                              .cpu_index = cpu_index,
+                              .register_offset = register_offset,
+                              .value = 0 } }
+        };
+
+        int err = ioctl(m_fd, GEOPM_IOC_SST_MMIO, &read_batch);
+        if (err == -1) {
+            throw Exception("sstioimp::read_mmio_once() mmio read failed",
+                            errno, __FILE__, __LINE__);
+        }
+
+        return read_batch.interfaces[0].value;
+    }
+
+    void SSTIOImp::write_mmio_once(uint32_t cpu_index, uint16_t register_offset,
+                                   uint32_t register_value, uint32_t read_mask,
+                                   uint64_t write_value, uint64_t write_mask)
+    {
+        sst_mmio_interface_batch_s batch{
+            .num_entries = 1,
+            .interfaces = { { .is_write = 0,
+                              .cpu_index = cpu_index,
+                              .register_offset = register_offset,
+                              .value = 0 } }
+        };
+
+        int err = ioctl(m_fd, GEOPM_IOC_SST_MMIO, &batch);
+        if (err == -1) {
+            throw Exception("sstioimp::write_mmio_once() pre-write mmio read failed",
+                            errno, __FILE__, __LINE__);
+        }
+
+        batch.interfaces[0].is_write = 1;
+        batch.interfaces[0].value =
+            write_value | (~write_mask & (batch.interfaces[0].value & read_mask));
+
+        err = ioctl(m_fd, GEOPM_IOC_SST_MMIO, &batch);
+        if (err == -1) {
+            throw Exception("sstioimp::write_mmio_once() mmio write failed",
+                            errno, __FILE__, __LINE__);
+        }
+    }
+
+
     void SSTIOImp::adjust(int index, uint64_t write_value, uint64_t write_mask)
     {
         // TODO: check index in range, check value in maxk

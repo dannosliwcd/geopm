@@ -76,8 +76,6 @@ namespace geopm
 
     void SSTControl::adjust(double value)
     {
-        // TODO: check if value in range of uint32_t
-        //     : Or check if in range of mask
         m_sstio->adjust(m_adjust_idx,
                         static_cast<uint64_t>(value * m_multiplier) << m_shift,
                         m_mask);
@@ -85,6 +83,17 @@ namespace geopm
 
     void SSTControl::write(double value)
     {
+        if (m_control_type == MMIO) {
+            m_sstio->write_mmio_once(
+                m_cpu_idx, m_interface_parameter, m_write_value, m_rmw_read_mask,
+                static_cast<uint64_t>(value * m_multiplier) << m_shift, m_mask);
+        }
+        else {
+            m_sstio->write_mbox_once(
+                m_cpu_idx, m_command, m_subcommand, m_interface_parameter,
+                m_rmw_subcommand, m_rmw_interface_parameter, m_rmw_read_mask,
+                static_cast<uint64_t>(value * m_multiplier) << m_shift, m_mask);
+        }
     }
 
     void SSTControl::save(void)
