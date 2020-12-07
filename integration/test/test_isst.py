@@ -127,7 +127,7 @@ class TestIntegrationISST(unittest.TestCase):
         return geopm_cp
 
     def test_read_iss_config(self):
-        sst_comm=["intel-speed-select", "-f", "json", "perf-profile", "get-config-levels"]
+        sst_comm=["intel-speed-select", "-f", "json", "perf-profile", "get-config-current-level"]
         sst_comm_ret=subprocess.run(sst_comm, capture_output=True)
         sst_comm_json=json.loads(sst_comm_ret.stderr)
 
@@ -137,7 +137,7 @@ class TestIntegrationISST(unittest.TestCase):
         for pkg in range(num_pkg):
             core_idx=int(pkg*(num_core/num_pkg))
             sst_idx="package-" + str(pkg) + ":die-0:cpu-" + str(core_idx)
-            sst_config_level=sst_comm_json[sst_idx]["get-config-levels"]
+            sst_config_level=sst_comm_json[sst_idx]["get-config-current_level"]
 
             geopm_config_level = geopmpy.pio.read_signal("SST::CONFIG_LEVEL:LEVEL", "package", pkg)
             self.assertEqual(int(sst_config_level), int(geopm_config_level))
