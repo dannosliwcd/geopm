@@ -35,15 +35,14 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 
-#include "SSTSignal.hpp"
+#include "SSTControl.hpp"
 #include "MockSSTIO.hpp"
 #include "geopm_hash.h"
 
-using geopm::SSTSignal;
+using geopm::SSTControl;
 using testing::Return;
-using testing::_;
 
-class SSTSignalTest : public :: testing :: Test
+class SSTControlTest : public :: testing :: Test
 {
     protected:
         void SetUp(void);
@@ -52,60 +51,78 @@ class SSTSignalTest : public :: testing :: Test
         int m_num_cpu = 4;
 };
 
-void SSTSignalTest::SetUp(void)
+void SSTControlTest::SetUp(void)
 {
     m_sstio = std::make_shared<MockSSTIO>();
 }
 
-void SSTSignalTest::TearDown(void)
+void SSTControlTest::TearDown(void)
 {
 
 }
 
-TEST_F(SSTSignalTest, mailbox_read_batch)
+TEST_F(SSTControlTest, mailbox_adjust_batch)
 {
     int cpu = 3;
     uint16_t command = 0x7f;
     uint16_t subcommand = 0x33;
-    uint32_t sub_arg = 0x56;
     uint32_t interface_param = 0x93;
+    uint32_t write_value = 0x56;
+    uint32_t begin_bit = 4;
+    uint32_t end_bit = 5;
+    double scale = 2.0;
 
-    SSTSignal sig {m_sstio, SSTSignal::MBOX, cpu, command, subcommand, sub_arg,
-                   interface_param};
+    uint32_t read_subcommand = 0x34;
+    uint32_t read_interface_param = 0x94;
+    uint32_t read_mask = 0xf0;
+
+    SSTControl control{ m_sstio, SSTControl::MBOX, cpu, command, subcommand,
+                        interface_param, write_value, begin_bit, end_bit, scale,
+                        read_subcommand, read_interface_param, read_mask };
 
     int batch_idx = 42;
-    EXPECT_CALL(*m_sstio, add_mbox_read(cpu, command, subcommand, sub_arg, interface_param))
+    EXPECT_CALL(*m_sstio,
+                add_mbox_write(cpu, command, subcommand, interface_param,
+                               read_subcommand, read_interface_param, read_mask))
         .WillOnce(Return(batch_idx));
 
-    sig.setup_batch();
+    control.setup_batch();
 
-    double expected = 6.0;
-    EXPECT_CALL(*m_sstio, sample(batch_idx)).WillOnce(Return(geopm_signal_to_field(expected)));
-
-    double result = sig.sample();
-    EXPECT_EQ(expected, result);
+    double user_write_value = 1.0;
+    uint32_t internal_write_value = 2 /* scaled */ << begin_bit;
+    uint32_t write_mask = 0x30;
+    EXPECT_CALL(*m_sstio, adjust(batch_idx, internal_write_value, write_mask));
+    control.adjust(user_write_value);
 }
 
-TEST_F(SSTSignalTest, mmio_read_batch)
+TEST_F(SSTControlTest, mmio_adjust_batch)
 {
     int cpu = 3;
     uint16_t command = 0x7f;
     uint16_t subcommand = 0x33;
-    uint32_t sub_arg = 0x56;
     uint32_t interface_param = 0x93;
+    uint32_t write_value = 0x56;
+    uint32_t begin_bit = 4;
+    uint32_t end_bit = 5;
+    double scale = 2.0;
 
-    SSTSignal sig {m_sstio, SSTSignal::MMIO, cpu, command, subcommand, sub_arg,
-                   interface_param};
+    uint32_t read_subcommand = 0x34;
+    uint32_t read_interface_param = 0x94;
+    uint32_t read_mask = 0xf0;
+
+    SSTControl control{ m_sstio, SSTControl::MMIO, cpu, command, subcommand,
+                        interface_param, write_value, begin_bit, end_bit, scale,
+                        read_subcommand, read_interface_param, read_mask };
 
     int batch_idx = 42;
-    EXPECT_CALL(*m_sstio, add_mmio_read(cpu, sub_arg, interface_param))
+    EXPECT_CALL(*m_sstio, add_mmio_write(cpu, interface_param, write_value, read_mask))
         .WillOnce(Return(batch_idx));
 
-    sig.setup_batch();
+    control.setup_batch();
 
-    double expected = 6.0;
-    EXPECT_CALL(*m_sstio, sample(batch_idx)).WillOnce(Return(geopm_signal_to_field(expected)));
-
-    double result = sig.sample();
-    EXPECT_EQ(expected, result);
+    double user_write_value = 1.0;
+    uint32_t internal_write_value = 2 /* scaled */ << begin_bit;
+    uint32_t write_mask = 0x30;
+    EXPECT_CALL(*m_sstio, adjust(batch_idx, internal_write_value, write_mask));
+    control.adjust(user_write_value);
 }

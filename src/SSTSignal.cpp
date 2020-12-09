@@ -36,7 +36,6 @@
 #include "geopm_hash.h"
 #include "SSTIO.hpp"
 
-// TODO: fix problems with NAN and replace -1 below
 namespace geopm
 {
 
@@ -53,7 +52,6 @@ namespace geopm
         , m_interface_parameter(interface_parameter)
         , m_batch_idx(-1)
     {
-
     }
 
     void SSTSignal::setup_batch(void)

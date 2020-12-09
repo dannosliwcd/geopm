@@ -439,8 +439,19 @@ GTEST_TESTS = test/gtest_links/AcceleratorTopoTest.default_config \
               test/gtest_links/SharedMemoryTest.lock_shmem_u \
               test/gtest_links/SharedMemoryTest.share_data \
               test/gtest_links/SharedMemoryTest.share_data_ipc \
-              test/gtest_links/SSTIOGroupTest.all_the_tests \
-              test/gtest_links/SSTSignalTest.all_the_tests \
+              test/gtest_links/SSTControlTest.mailbox_adjust_batch \
+              test/gtest_links/SSTControlTest.mmio_adjust_batch \
+              test/gtest_links/SSTIOGroupTest.adjust_mbox_control \
+              test/gtest_links/SSTIOGroupTest.adjust_mmio_control \
+              test/gtest_links/SSTIOGroupTest.sample_mbox_control \
+              test/gtest_links/SSTIOGroupTest.sample_mbox_signal \
+              test/gtest_links/SSTIOGroupTest.sample_mmio_percore_control \
+              test/gtest_links/SSTIOGroupTest.valid_control_domains \
+              test/gtest_links/SSTIOGroupTest.valid_control_names \
+              test/gtest_links/SSTIOGroupTest.valid_signal_domains \
+              test/gtest_links/SSTIOGroupTest.valid_signal_names \
+              test/gtest_links/SSTSignalTest.mailbox_read_batch \
+              test/gtest_links/SSTSignalTest.mmio_read_batch \
               test/gtest_links/TimeIOGroupTest.adjust \
               test/gtest_links/TimeIOGroupTest.is_valid \
               test/gtest_links/TimeIOGroupTest.push \
@@ -641,6 +652,7 @@ test_geopm_test_SOURCES = test/AcceleratorTopoTest.cpp \
                           test/SampleRegulatorTest.cpp \
                           test/SchedTest.cpp \
                           test/SharedMemoryTest.cpp \
+                          test/SSTControlTest.cpp \
                           test/SSTIOGroupTest.cpp \
                           test/SSTSignalTest.cpp \
                           test/TimeIOGroupTest.cpp \
