@@ -600,6 +600,8 @@ libgeopmpolicy_la_SOURCES = contrib/json11/json11.cpp \
                             src/SSTIO.cpp \
                             src/SSTIOImp.hpp \
                             src/SSTIO.hpp \
+                            src/SSTControl.cpp \
+                            src/SSTControl.hpp \
                             src/SSTSignal.cpp \
                             src/SSTSignal.hpp \
                             src/TimeIOGroup.cpp \
