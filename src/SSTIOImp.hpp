@@ -34,19 +34,20 @@
 #define SSTIOIMP_HPP_INCLUDE
 
 #include <algorithm>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 #include "SSTIO.hpp"
-#include <type_traits>
 
 namespace geopm
 {
     class SSTIOImp : public SSTIO
     {
         public:
-            SSTIOImp(int max_cpus);
+            SSTIOImp(uint32_t max_cpus);
             virtual ~SSTIOImp() = default;
 
             /// Interact with the mailbox on commands that are expected to return data
@@ -66,8 +67,7 @@ namespace geopm
             // unless we end up splitting this class
             void read_batch(void) override;
 
-            // TODO: might need separate call for mbox and mmio
-            uint64_t sample(int index) const override;
+            uint64_t sample(int batch_idx) const override;
             void write_batch(void) override;
             uint32_t read_mbox_once(uint32_t cpu_index, uint16_t command,
                                     uint16_t subcommand, uint32_t subcommand_arg,
@@ -83,7 +83,7 @@ namespace geopm
             void write_mmio_once(uint32_t cpu_index, uint16_t register_offset,
                                  uint32_t register_value, uint32_t read_mask,
                                  uint64_t write_value, uint64_t write_mask) override;
-            void adjust(int index, uint64_t write_value, uint64_t write_mask) override;
+            void adjust(int batch_idx, uint64_t write_value, uint64_t write_mask) override;
             uint32_t get_punit_from_cpu(uint32_t cpu_index) override;
 
         private:
@@ -142,14 +142,7 @@ namespace geopm
             struct sst_mbox_interface_batch_s
             {
                 uint32_t num_entries;
-                sst_mbox_interface_s interfaces[1];  // TODO: might need to be array instead
-            };
-
-            template<typename ListStruct, typename CommandStruct>
-            class CommandList
-            {
-                public:
-                explicit CommandList(size_t command_count);
+                sst_mbox_interface_s interfaces[1];
             };
 
             template<typename OuterStruct>
@@ -167,12 +160,12 @@ namespace geopm
             {
                 std::vector<std::unique_ptr<OuterStruct> > outer_structs;
 
-                int handled_commands = 0;
+                size_t handled_commands = 0;
                 while (handled_commands < commands.size())
                 {
                     size_t batch_size = std::min(
-                        m_batch_command_limit,
-                        static_cast<int>(commands.size() - handled_commands));
+                        static_cast<size_t>(m_batch_command_limit),
+                        commands.size() - handled_commands);
 
                     // The inner struct is embedded in the outer struct, and
                     // the inner struct's size depends on how many entries it

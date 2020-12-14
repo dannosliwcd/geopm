@@ -50,36 +50,19 @@
 
 namespace geopm
 {
-    std::shared_ptr<SSTIO> SSTIO::make_shared(int max_cpus)
+    std::shared_ptr<SSTIO> SSTIO::make_shared(uint32_t max_cpus)
     {
         return std::make_shared<SSTIOImp>(max_cpus);
     }
 
-    SSTIOImp::SSTIOImp(int max_cpus)
+    SSTIOImp::SSTIOImp(uint32_t max_cpus)
         : m_path("/dev/isst_interface")
         , m_fd(open(m_path.c_str(), O_RDWR))
         , m_batch_command_limit(0)
-        , m_mbox_read_interfaces()
-        , m_mbox_write_interfaces()
-        , m_mbox_rmw_interfaces()
-        , m_mbox_rmw_read_masks()
-        , m_mbox_rmw_write_masks()
-        , m_mmio_read_interfaces()
-        , m_mmio_write_interfaces()
-        , m_mmio_rmw_interfaces()
-        , m_mmio_rmw_read_masks()
-        , m_mmio_rmw_write_masks()
-        , m_added_interfaces()
-        , m_mbox_read_batch()
-        , m_mbox_write_batch()
-        , m_mmio_read_batch()
-        , m_mmio_write_batch()
-        , m_cpu_punit_core_map()
     {
         if (m_fd < 0) {
             throw Exception("SSTIOImp failed to open SST driver",
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
-
         }
 
         sst_version_s sst_version;
@@ -88,18 +71,15 @@ namespace geopm
             throw Exception("SSTIOImp::SSTIOImp() failed to get the SST driver version information",
                             errno, __FILE__, __LINE__);
         }
-        if (!sst_version.is_mbox_supported)
-        {
+        if (!sst_version.is_mbox_supported) {
             throw Exception("SSTIOImp::SSTIOImp() SST driver does not support MBOX messages",
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
-        if (!sst_version.is_mmio_supported)
-        {
+        if (!sst_version.is_mmio_supported) {
             throw Exception("SSTIOImp::SSTIOImp() SST driver does not support MMIO messages",
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
-        if (sst_version.batch_command_limit == 0)
-        {
+        if (sst_version.batch_command_limit == 0) {
             throw Exception("SSTIOImp::SSTIOImp() SST driver reports 0-command batch size limit",
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
@@ -107,8 +87,8 @@ namespace geopm
 
         std::vector<sst_cpu_map_interface_s> batch_read_data;
         batch_read_data.reserve(max_cpus);
-        for (int i = 0; i < max_cpus; ++i) {
-            batch_read_data.emplace_back(sst_cpu_map_interface_s{static_cast<uint32_t>(i), 0});
+        for (uint32_t i = 0; i < max_cpus; ++i) {
+            batch_read_data.emplace_back(sst_cpu_map_interface_s{ i, 0 });
         }
         auto batch_reads = ioctl_structs_from_vector<sst_cpu_map_interface_batch_s>(
             batch_read_data);
@@ -288,8 +268,13 @@ namespace geopm
 
     uint64_t SSTIOImp::sample(int batch_idx) const
     {
-        const auto& interface = m_added_interfaces[batch_idx];
+        const auto &interface = m_added_interfaces[batch_idx];
         uint64_t sample_value;
+        // All interfaces in the list are divided into groups limited by a
+        // system-defined maximum size per group of commands. We use division
+        // to determine which group contains the requested sample. The modulo
+        // operation determines which sample within that group is the one we
+        // need.
         if (interface.first == MMIO) {
             size_t mmio_batch_idx = interface.second / m_batch_command_limit;
             size_t mmio_interface_idx = interface.second % m_batch_command_limit;
@@ -490,15 +475,18 @@ namespace geopm
         }
     }
 
-
-    void SSTIOImp::adjust(int index, uint64_t write_value, uint64_t write_mask)
+    void SSTIOImp::adjust(int batch_idx, uint64_t write_value, uint64_t write_mask)
     {
-        const auto& interface = m_added_interfaces[index];
-        auto &write_destination = interface.first == MMIO
-                                ? m_mmio_write_interfaces[interface.second].value
-                                : m_mbox_write_interfaces[interface.second].write_value;
+        const auto &interface = m_added_interfaces[batch_idx];
+        auto &write_destination =
+            interface.first == MMIO
+                ? m_mmio_write_interfaces[interface.second].value
+                : m_mbox_write_interfaces[interface.second].write_value;
         write_destination &= ~write_mask;
         write_destination |= write_value;
+
+        // Update the write masks so we know which bits to use in the write
+        // phase of the ioctl RMW operations.
         if (interface.first == MBOX) {
             m_mbox_rmw_write_masks[interface.second] |= write_mask;
         }
