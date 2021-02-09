@@ -48,6 +48,7 @@
 #include "PowerGovernorAgent.hpp"
 #include "EnergyEfficientAgent.hpp"
 #include "FrequencyMapAgent.hpp"
+#include "ClosMapAgent.hpp"
 #include "Environment.hpp"
 #include "Helper.hpp"
 
@@ -77,6 +78,10 @@ namespace geopm
                         FrequencyMapAgent::make_plugin,
                         Agent::make_dictionary(FrequencyMapAgent::policy_names(),
                                                FrequencyMapAgent::sample_names()));
+        register_plugin(ClosMapAgent::plugin_name(),
+                        ClosMapAgent::make_plugin,
+                        Agent::make_dictionary(ClosMapAgent::policy_names(),
+                                               ClosMapAgent::sample_names()));
     }
 
 

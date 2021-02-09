@@ -472,6 +472,8 @@ libgeopmpolicy_la_SOURCES = contrib/json11/json11.cpp \
                             src/ApplicationStatus.cpp \
                             src/ApplicationStatus.hpp \
                             src/CircularBuffer.hpp \
+                            src/ClosMapAgent.cpp \
+                            src/ClosMapAgent.hpp \
                             src/CNLIOGroup.cpp \
                             src/CNLIOGroup.hpp \
                             src/CombinedSignal.cpp \
