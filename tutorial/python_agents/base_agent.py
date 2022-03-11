@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#  Copyright (c) 2015 - 2021, Intel Corporation
+#  Copyright (c) 2015 - 2022, Intel Corporation
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
@@ -31,15 +31,13 @@
 #  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
-'''
-This package provides a BaseAgent class for monitoring jobs. One can also
-extends this class to implement more functionality around the convenience
-provided by it.
+"""
+This package provides a BaseAgent class to monitor processes. Extend this class
+to implement additional agent functionality.
 
-In addition, the package provides parse_common_args and run_controller
-convenience methods for easily creating command line for classes that extend
-BaseAgent.
-'''
+The package provides parse_common_args and run_controller functions
+to create an argument parser for classes that extend BaseAgent.
+"""
 
 import sys
 import os
@@ -50,13 +48,12 @@ import yaml
 
 import geopmdpy
 import geopmdpy.runtime
+import geopmdpy.pio
 import geopmpy.reporter
 
 
 CSV_SEP_CHAR = "|"
-
 DOMAIN_SEP_CHAR = "-"
-
 TIME_SIGNAL = ("TIME", geopmdpy.topo.DOMAIN_BOARD, 0, "-")
 
 DEFAULT_SIGNAL_LIST = [
@@ -70,88 +67,130 @@ DEFAULT_SIGNAL_LIST = [
     ("ENERGY_PACKAGE",               geopmdpy.topo.DOMAIN_BOARD,        0, "incr"),
 ]
 
+def generate_signal_list_from_user_list(user_list):
+    signal_list = DEFAULT_SIGNAL_LIST
+    if user_list is not None:
+        signal_specifications = user_list.split(',')
+        for specification in signal_specifications:
+            specification_parts = specification.split('@')
+            if len(specification_parts) == 1:
+                signal_name = specification_parts[0]
+                signal_domain = geopmdpy.topo.DOMAIN_BOARD
+            elif len(specification_parts) == 2:
+                signal_name, signal_domain = specification_parts
+            else:
+                print(f'Error: invalid signal specification: {specification}',
+                      file=sys.stderr)
+                exit(1)
+
+            _, _, behavior = geopmdpy.pio.signal_info(signal_name)
+            behavior_str = 'incr' if behavior == 1 else 'avg'
+
+            for domain_index in range(geopmdpy.topo.num_domain(signal_domain)):
+                signal_list.append((signal_name, signal_domain, domain_index, behavior_str))
+
 
 class BaseAgent(geopmdpy.runtime.Agent):
-    ''' Simple GEOPM python agent that only monitors jobs. It is similar to but not an
-    equivalent of the GEOPM C++ monitor agent. In the general scheme, one can use this agent to
-    monitor a running job or use it as a base class (or template) for agents with more
-    functionality.
+    """GEOPM python agent that only monitors an application. It is similar to
+    the GEOPM monitor agent.
 
-    The monitored signals are passed via the signal_list argument of the class constructor. This
-    list defines the signal name, domain, instance, signal type (monotonically increasing or not)
-    and the line format in the report for each signal. TIME signal is added by this class by
-    default and need not to be defined by the user. An extending class should not override the
-    get_signals method and instead should pass the monitored signal list via the constructor.
-    '''
+    This class may be used directly as a monitor-only agent, or as a base class
+    for other agents.
 
-    def __init__(self, signal_list=DEFAULT_SIGNAL_LIST, period=1):
-        ''' Initialize the base agent.
+    The monitored signals are passed via the signal_list argument in the class
+    constructor. This list defines the signal name, domain, instance, signal
+    type (monotonically increasing or not) and the line format in the report
+    for each signal. The TIME signal is added by default and does not need to
+    be defined by the user. An extending class should not override the
+    get_signals method and instead should pass the monitored signal list via
+    the constructor.
+    """
+
+    def __init__(self, signal_list=None, period_seconds=1, initialize_controls=None):
+        """Initialize the base agent.
 
         Args
 
-        signal_list (list of tuples): Each element of the list is a 5 element tuple that
-        represents one signal: signal text, domain from geopmdpy.topo, domain
-        instance, and an 'incr' or 'avg' string representing the type of signal.
+        signal_list (list of tuples): Each element of the list is a tuple that
+        represents one signal: signal name, domain from geopmdpy.topo, domain
+        index, and an 'incr' or 'avg' string representing the type of signal.
 
-        The 'incr' and 'avg' signal types determine if a signal is monotonically increasing or if it
-        is an averaged value such as frequency or power. Monotonically increasing signals will
-        appear in the final report as the diff of the values at the first and last update calls.
-        Averaged signals will appear in the final report as the time weighted average among all
-        samples.
+        The 'incr' and 'avg' signal types determine whether a signal is
+        monotonically increasing or if it is an averaged value such as
+        frequency or power. Monotonically increasing signals appear in the
+        final report as the diff of the values at the first and last update
+        calls.  Averaged signals appear in the final report as the
+        time-weighted average among all samples.
 
-        period (float): Agent sampling period, in seconds.
-        '''
+        period_seconds (float): Agent sampling period, in seconds.
+        """
+        if signal_list is None:
+            signal_list = DEFAULT_SIGNAL_LIST
         self._signal_list = list(signal_list) + [TIME_SIGNAL]
-        self._control_period = period
+        self._control_period = period_seconds
 
-        # List of variables used in this class for documentation purposes and keeping lint happy.
+        if initialize_controls is not None:
+            ## TODO Try except, print error and exit
+            try:
+                for control_specification in initialize_controls:
+                    control_name, value = control_specification.split('=')
+                    control_domain = geopmdpy.pio.control_domain_type(control_name)
+                    for domain_index in range(geopmdpy.topo.num_domain(control_domain)):
+                        geopmdpy.pio.write_control(
+                            control_name, control_domain, domain_index, float(value))
+            except ValueError:
+                print(f'Error: invalid control specification: {control_specification}',
+                      file=sys.stderr)
+                exit(1)
+
         # These signals are initialized per run in run_begin.
         self._loop_idx = None
-        self._signals_last = None
+        self._last_signals = None
         self._last_time = None
         self._start_time = None
-        self._signal_acc = None
-        self._tfile = None
-        self._hostname = socket.gethostname()
+        self._signal_accumulator = None
+        self._trace_file = None
+        self._host_name = socket.gethostname()
         geopmpy.reporter.init()
 
     def run_begin(self, policy):
-        '''
+        """
         Args
 
-        policy (tuple(str, bool)): A tuple of trace file name and True if the output should be
-        appended to the file or if it should overwrite the file.
-        '''
+        policy (tuple(str, bool)): A tuple of trace file name and True if the
+        output should be appended to the file or if it should overwrite the
+        file.
+        """
         if policy is None:
-            tracefile, trace_append = None, False
+            trace_file, trace_append = None, False
         else:
-            tracefile, trace_append = policy
+            trace_file, trace_append = policy
         self._loop_idx = 0
-        self._signals_last = None
+        self._last_signals = None
         self._last_time = None
         self._start_time = None
-        self._signal_acc = [0] * len(self._signal_list)
+        self._signal_accumulator = [0] * len(self._signal_list)
 
-        self._tfile = None
-        if tracefile is not None:
-            if isinstance(tracefile, str):
-                tfile_mode = "w"
+        self._trace_file = None
+        if trace_file is not None:
+            if isinstance(trace_file, str):
+                trace_file_mode = "w"
                 if trace_append:
-                    tfile_mode = "a"
-                self._tfile = open(tracefile, tfile_mode)
+                    trace_file_mode = "a"
+                self._trace_file = open(trace_file, trace_file_mode)
             else:
-                self._tfile = tracefile
-            self._tfile.write(CSV_SEP_CHAR.join(self.get_trace_header()) + "\n")
+                self._trace_file = trace_file
+            self._trace_file.write(CSV_SEP_CHAR.join(self.get_trace_header()) + "\n")
 
     def policy_repr(self, policy):
-        ''' Create a string representation of a policy suitable for printing.
-        ''' 
+        """Create a string representation of a policy suitable for printing.
+        """
         return f"Trace file: {policy[0]} Append to trace: {policy[1]}"
 
     def get_signals(self):
-        '''
+        """
         Extending class should not override this method.
-        '''
+        """
         return [(signal[0], signal[1], signal[2]) for signal in self._signal_list]
 
     def get_debug_fields(self):
@@ -161,12 +200,12 @@ class BaseAgent(geopmdpy.runtime.Agent):
         return []
 
     def update(self, signals):
-        '''
+        """
         Extending class should not override this method. Instead override agent_update.
-        '''
+        """
         if self._loop_idx == 0:
             self._start_time = signals[-1]
-            self._signals_last = list(signals[:-1])
+            self._last_signals = list(signals[:-1])
             delta_time = 0
         elif self._loop_idx != 0:
             delta_time = signals[-1] - self._last_time
@@ -179,8 +218,8 @@ class BaseAgent(geopmdpy.runtime.Agent):
         delta_sigs = list(signals[:-1])
         for idx, signal in enumerate(self._signal_list[:-1]):
             if signal[3] == "incr":
-                processed_sigs[idx] = signals[idx] - self._signals_last[idx]
-                delta_sigs[idx] = signals[idx] - self._signals_last[idx]
+                processed_sigs[idx] = signals[idx] - self._last_signals[idx]
+                delta_sigs[idx] = signals[idx] - self._last_signals[idx]
             elif signal[3] == "avg":
                 if delta_time == 0:
                     # Explicitly doing this allows the final value to be 0 even if
@@ -189,7 +228,9 @@ class BaseAgent(geopmdpy.runtime.Agent):
                 else:
                     processed_sigs[idx] *= delta_time
 
-        self._signal_acc = [aa + bb for (aa, bb) in zip(self._signal_acc, processed_sigs)]
+        self._signal_accumulator = [aa + bb
+                                    for (aa, bb)
+                                    in zip(self._signal_accumulator, processed_sigs)]
 
         ret = self.agent_update(delta_sigs, delta_time, signals[:-1], signals[-1])
         geopmpy.reporter.update()
@@ -200,30 +241,30 @@ class BaseAgent(geopmdpy.runtime.Agent):
         elif len(ret) == 3:
             controls, trace_fields, debug_fields = ret
 
-        if self._tfile is not None and trace_fields is not None:
-            self._tfile.write(
+        if self._trace_file is not None and trace_fields is not None:
+            self._trace_file.write(
                 CSV_SEP_CHAR.join(
                     [str(signal) for signal in trace_fields] +
                     [str(control) for control in controls] +
                     [str(field) for field in debug_fields]) +
                 "\n")
 
-        self._signals_last = list(signals[:-1])
+        self._last_signals = list(signals[:-1])
         self._last_time = signals[-1]
         self._loop_idx += 1
 
         return controls
 
     def loop_idx(self):
-        '''
+        """
         Retuns
 
         The count of how many times update method was called on the agent by the controller.
-        '''
+        """
         return self._loop_idx
 
     def agent_update(self, delta_signals, delta_time, signals, time):
-        ''' This method is called once per update after the diff (delta) values are computed for
+        """This method is called once per update after the diff (delta) values are computed for
         signals. The default implementation is a noop but an extending class can make decisions
         on what controls to apply and what to print in the trace line. If this method returns
         control signal values, get_controls method need to be overridden appropriately.
@@ -249,15 +290,15 @@ class BaseAgent(geopmdpy.runtime.Agent):
 
         trace_values (list of float): Value per signal in get_signals method prepended by the value
         for the TIME column.
-        '''
+        """
         return [], [delta_time] + delta_signals
 
     def get_trace_header(self):
-        '''
+        """
         Returns the header line for the trace output. An extending class should not have a need
         to override this.
-        '''
-        return (["TIME"] + 
+        """
+        return (["TIME"] +
                 [sig[0] + DOMAIN_SEP_CHAR + geopmdpy.topo.domain_name(sig[1]) + "-" + str(sig[2])
                  for sig in self.get_signals()[:-1]] +
                 ['control{sep}{name}{sep}{domain}{sep}{domain_idx}'.format(
@@ -273,11 +314,11 @@ class BaseAgent(geopmdpy.runtime.Agent):
         return self._control_period
 
     def run_end(self):
-        if self._tfile is not None and self._tfile is not sys.stdout:
-            self._tfile.close()
+        if self._trace_file is not None and self._trace_file is not sys.stdout:
+            self._trace_file.close()
 
     def get_report(self, profile):
-        '''
+        """
         Returns a report dictionary specific to the run from the call to
         run_start to run_end. The output contains a line For each signal passed
         to the class constructor in signal_list. Avg signals are time averaged
@@ -290,7 +331,7 @@ class BaseAgent(geopmdpy.runtime.Agent):
         Returns
 
         Report dictionary.
-        '''
+        """
         report = yaml.load(geopmpy.reporter.generate(profile, self.__class__.__name__),
                            Loader=yaml.SafeLoader)
         sig_list_w_time = [self._signal_list[-1]] + self._signal_list[:-1]
@@ -301,22 +342,22 @@ class BaseAgent(geopmdpy.runtime.Agent):
                 + DOMAIN_SEP_CHAR + str(sig_list_w_time[idx][2])
             )
 
-            report['Hosts'][self._hostname]['Application Totals'][signal_name] = val
+            report['Hosts'][self._host_name]['Application Totals'][signal_name] = val
         return yaml.dump(report, default_flow_style=False, sort_keys=False)
 
     def get_report_values(self):
-        ''' Calculate the final report value of each monitored signal.
+        """Calculate the final report value of each monitored signal.
 
         Returns
 
         Dict of signal name to its final reported value.
-        '''
+        """
         if self._loop_idx == 1:
             return {"TIME": 0}
 
         total_time = self._last_time - self._start_time
 
-        modified_vals = list(self._signal_acc)
+        modified_vals = list(self._signal_accumulator)
         for idx, _ in enumerate(modified_vals):
             if self._signal_list[idx][3] == "avg":
                 modified_vals[idx] /= total_time
@@ -328,8 +369,8 @@ class BaseAgent(geopmdpy.runtime.Agent):
         return OrderedDict(zip(headers, [total_time] + modified_vals))
 
 
-def parse_common_args(help_text=None, parser=None, parse_known_args=True):
-    '''
+def parse_common_args(help_text=None, parser=None):
+    """
     Parses the command arguments that should be common to all classes that expand BaseAgent.
 
     Args
@@ -340,74 +381,62 @@ def parse_common_args(help_text=None, parser=None, parse_known_args=True):
     parser (argparse.ArgumentParser): Use an already defined argument parser. Allows for user to
     add more commands.
 
-    parse_known_args (bool): If True (default), command line will expect additional arguments to
-    be passed to the app and will return them. For safe parsing app arguments can be passed after
-    a '--', which will not be returned.
-
     Returns
 
     A tuple of ArgumentParser and list of str:
 
     ArgumentParser object is for the agent/experiment. The second value (list of str) are the
-    command line for running the app. This value is None if parse_known_args is False.
-    '''
+    command line for running the app.
+    """
 
     if help_text is None:
-        help_text = "Run GEOPM base agent with an app for monitoring. App arguments should come " \
-                    "after -- for safe execution.\nExample:\n" \
-                    "    ./{os.path.basename(__file__)}} srun -N 1 -n 4 -- echo Hello World"
+        help_text = (
+            "Monitor an application with the GEOPM base agent. Add a '--' argument \n"
+            "to separate GEOPM options from application options. For Example:\n"
+            f"    ./{os.path.basename(__file__)} -r geopm_ls.report -- ls -r")
 
     if parser is None:
-        parser = argparse.ArgumentParser(description=help_text,
-                                         formatter_class=argparse.RawTextHelpFormatter)
-    parser.add_argument('--control-period', '-p', dest="control_period", default=1, type=float,
-                        help='GEOPM Agent control period in secs.')
-    parser.add_argument('--trace', '-t', nargs='?', const="",
-                        help='Enable trace output. Input needs to be a filename or no argument.')
-    parser.add_argument('--append-trace', dest="append_trace", action="store_true",
-                        help='If trace is being written to a file, append instead of oevrwriting.')
-    parser.add_argument('--report', '-r', nargs='?', const="",
-                        help='Enable report output. Input needs to be a filename or no argument.')
+        parser = argparse.ArgumentParser(
+            description=help_text, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('--control-period', '-p', default=1, type=float,
+                        help='GEOPM Agent control period, in seconds.')
+    parser.add_argument('--trace', '-t',
+                        metavar='TRACE_FILE',
+                        help='Write trace output to TRACE_FILE. Default: no trace file is written.')
+    parser.add_argument('--append-trace', action="store_true",
+                        help='Append to trace files instead of overwriting.')
+    parser.add_argument('--report', '-r', metavar='REPORT_FILE',
+                        help='Write report output to REPORT_FILE.')
+    parser.add_argument('--signal-list',
+                        help='Additional signals to include in the report and trace.')
+    parser.add_argument('--initialize-control',
+                        action='append',
+                        help='Initialize a control to a given value, separated by an "=" symbol. '
+                        'e.g., to run at a cpu frequency of 2 GHz: '
+                        '--initialize-control CPU_FREQUENCY_CONTROL=2e9')
     parser.add_argument('--profile',
-                        help='Override the report profile name. Otherwise, the launched command is used')
+                        help='Override the report profile name. Default: the launched command')
 
-    app_args = None
-    if parse_known_args:
-        args, app_args = parser.parse_known_args()
+    args, app_args = parser.parse_known_args()
 
-        if len(app_args) == 0:
-            sys.stderr.write("ERROR: No command given to run.\n")
-            sys.exit(1)
+    if len(app_args) == 0:
+        print("ERROR: No command given to run.")
+        parser.print_help()
+        parser.exit()
 
-        if app_args[0] != "--" and "--" in app_args:
-            sys.stderr.write("ERROR: Argument not known: " + app_args[0] + "\n")
-            sys.exit(1)
-
-        # -- puts everything into positional args then to app_args. For some reason, when there is
-        # no positional arguments -- is passed to app_args (not the case if there were any
-        # positional arguments).
+    if app_args[0] == "--":
         app_args = app_args[1:]
-    else:
-        args = parser.parse_args()
 
-    if args.trace is not None:
-        if args.trace != "":
-            if os.path.isfile(args.trace):
-                print("ERROR: File already exists: " + args.trace)
-                sys.exit(1)
-        else:
-            args.trace = sys.stdout
-
-    if args.report is not None and args.report != "":
-        if os.path.isfile(args.report):
-            print("ERROR: File already exists: " + args.report)
-            sys.exit(1)
+    if len(app_args) == 0:
+        print("ERROR: No command given to run.")
+        parser.print_help()
+        parser.exit()
 
     return args, app_args
 
 
 def run_controller(agent, args, app_args):
-    '''
+    """
     Convenience method for running an agent via geopmdpy.runtime.Controller. Meant for classes
     that extend BaseAgent and use base_agent.parse_common_args to create a command line.
 
@@ -420,7 +449,7 @@ def run_controller(agent, args, app_args):
 
     app_args (list of str): Typically from the output of parse_common_args. Command line for running
     the app, split to individual strings.
-    '''
+    """
     controller = geopmdpy.runtime.Controller(agent)
     report = controller.run(app_args, (args.trace, args.append_trace))
 
@@ -433,10 +462,14 @@ def run_controller(agent, args, app_args):
 
 
 def main():
-    ''' Default main method for monitor runs.
-    '''
+    """Default main method for monitor runs.
+    """
     args, app_args = parse_common_args()
-    agent = BaseAgent(period=args.control_period)
+
+    signal_list = generate_signal_list_from_user_list(args.signal_list)
+
+    agent = BaseAgent(signal_list=signal_list, period_seconds=args.control_period,
+                      initialize_controls=args.initialize_control)
 
     run_controller(agent, args, app_args)
 
