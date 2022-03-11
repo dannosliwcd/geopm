@@ -169,11 +169,11 @@ class MLAgent(base_agent.BaseAgent):
         for gpu_idx in range(self._gpu_count):
             old_len = len(signal_list)
             signal_list.extend([
-                ('NVML::TOTAL_ENERGY_CONSUMPTION', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "incr"),
-                ('NVML::FREQUENCY', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
-                ('NVML::POWER', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
-                ('NVML::UTILIZATION_ACCELERATOR', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
-                ('DCGM::SM_ACTIVE', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
+                ('GPU_ENERGY', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "incr"),
+                ('GPU_FREQUENCY_STATUS', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
+                ('GPU_POWER', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
+                ('GPU_UTILIZATION', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
+                ('GPU_COMPUTE_ACTIVITY', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
                 ('DCGM::DRAM_ACTIVE', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
             ])
 
@@ -181,9 +181,9 @@ class MLAgent(base_agent.BaseAgent):
             # model for this gpu. These must be in the same order as the
             # signals used when training the model.
             self._model_signal_idx_by_gpu.append([
-                len(signal_list) - 5, # NVML::FREQUENCY
-                len(signal_list) - 4, # NVML::POWER
-                len(signal_list) - 3, # NVML::UTILIZATION_ACCELERATOR
+                len(signal_list) - 5, # GPU_FREQUENCY_STATUS
+                len(signal_list) - 4, # GPU_POWER
+                len(signal_list) - 3, # GPU_UTILIZATION
                 len(signal_list) - 2, # SM_ACTIVE
                 len(signal_list) - 1, # DRAM_ACTIVE
             ])
@@ -191,10 +191,10 @@ class MLAgent(base_agent.BaseAgent):
                 len(signal_list) - 2 # SM_ACTIVE
             )
             self._gpu_frequency_signal_idx.append(
-                len(signal_list) - 5 # NVML::FREQUENCY
+                len(signal_list) - 5 # GPU_FREQUENCY_STATUS
             )
             self._gpu_energy_signal_idx.append(
-                len(signal_list) - 6 # NVML::TOTAL_ENERGY_CONSUMPTION
+                len(signal_list) - 6 # GPU_ENERGY
             )
 
         super().__init__(period=period, signal_list=signal_list)
@@ -224,7 +224,7 @@ class MLAgent(base_agent.BaseAgent):
         self._roi_gpu_cycle_sums = None # Sum of cycles in the ROI
 
         if self._freq_gpu is not None:
-            os.system(f'geopmwrite NVML::FREQUENCY_CONTROL board 0 {self._freq_gpu}')
+            os.system(f'geopmwrite GPU_FREQUENCY_CONTROL board 0 {self._freq_gpu}')
         if self._freq_core is not None:
             os.system(f"geopmwrite CPU_FREQUENCY_CONTROL board 0 {self._freq_core}")
 
@@ -234,7 +234,7 @@ class MLAgent(base_agent.BaseAgent):
         controls = list()
         if self._gpu_model is not None:
             controls.extend([
-                ('NVML::FREQUENCY_CONTROL', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx)
+                ('GPU_FREQUENCY_CONTROL', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx)
                 for gpu_idx in range(self._gpu_count)])
         if self._cpu_model is not None:
                 controls.append(("CPU_FREQUENCY_CONTROL", geopmdpy.topo.DOMAIN_BOARD, 0))
@@ -367,7 +367,7 @@ class MLAgent(base_agent.BaseAgent):
             gpu_energies = [e2 - e1
                 for e1, e2 in zip(self._roi_start_gpu_energies, self._roi_end_gpu_energies)]
             for gpu_idx, gpu_roi_energy in enumerate(gpu_energies):
-                roi_totals[f'NVML::TOTAL_ENERGY_CONSUMPTION-board_accelerator-{gpu_idx}'] = gpu_roi_energy
+                roi_totals[f'GPU_ENERGY-board_accelerator-{gpu_idx}'] = gpu_roi_energy
 
             cpu_energies = [e2 - e1
                 for e1, e2 in zip(self._roi_start_cpu_energies, self._roi_end_cpu_energies)]
@@ -377,7 +377,7 @@ class MLAgent(base_agent.BaseAgent):
                 gpu_frequencies = [cycles / time_in_roi
                                    for cycles in self._roi_gpu_cycle_sums]
                 for gpu_idx, gpu_frequency in enumerate(gpu_frequencies):
-                    roi_totals[f'NVML::FREQUENCY-board_accelerator-{gpu_idx}'] = gpu_frequency
+                    roi_totals[f'GPU_FREQUENCY_STATUS-board_accelerator-{gpu_idx}'] = gpu_frequency
             report['Hosts'][self._hostname]['ROI Totals'] = roi_totals
 
         if self._gpu_model is not None:

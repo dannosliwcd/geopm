@@ -54,8 +54,8 @@ def main():
     X_columns = [
             'NVML::FREQUENCY-board_accelerator-0',
             'NVML::POWER-board_accelerator-0',
-            'NVML::UTILIZATION_ACCELERATOR-board_accelerator-0',
-            'DCGM::SM_ACTIVE-board_accelerator-0',
+            'GPU_UTILIZATION-board_accelerator-0',
+            'GPU_COMPUTE_ACTIVITY-board_accelerator-0',
             'DCGM::DRAM_ACTIVE-board_accelerator-0',
             'phi',
             ]

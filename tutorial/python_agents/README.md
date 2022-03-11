@@ -18,7 +18,7 @@ signals in your traces and reports:
  * NVML::TOTAL\_ENERGY\_CONSUMPTION@board\_accelerator
  * NVML::POWER@board\_accelerator
  * NVML::UTILIZATION\_ACCELERATOR@board\_accelerator
- * DCGM::SM\_ACTIVE@board\_accelerator
+ * GPU\_COMPUTE\_ACTIVITY@board\_accelerator
  * DCGM::DRAM\_ACTIVE@board\_accelerator
 
 Ensure each file in the sweep contains a period-separated set of properties
