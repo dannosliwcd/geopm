@@ -67,6 +67,7 @@ DEFAULT_SIGNAL_LIST = [
     ("ENERGY_PACKAGE",               geopmdpy.topo.DOMAIN_BOARD,        0, "incr"),
 ]
 
+
 def generate_signal_list_from_user_list(user_list):
     signal_list = DEFAULT_SIGNAL_LIST
     if user_list is not None:
@@ -130,7 +131,6 @@ class BaseAgent(geopmdpy.runtime.Agent):
         self._control_period = period_seconds
 
         if initialize_controls is not None:
-            ## TODO Try except, print error and exit
             try:
                 for control_specification in initialize_controls:
                     control_name, value = control_specification.split('=')
