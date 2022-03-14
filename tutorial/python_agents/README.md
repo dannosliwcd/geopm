@@ -18,7 +18,7 @@ signals in your traces and reports:
  * GPU\_POWER@board\_accelerator
  * GPU\_UTILIZATION@board\_accelerator
  * GPU\_COMPUTE\_ACTIVITY@board\_accelerator
- * DCGM::DRAM\_ACTIVE@board\_accelerator
+ * GPU\_MEMORY\_ACTIVITY@board\_accelerator
 
 Ensure each file in the sweep contains a unique name to avoid overwriting report
 or trace contents at later steps of the sweep. For example:
@@ -61,7 +61,7 @@ do
         ./base_agent.py --initialize-control GPU_FREQUENCY_CONTROL=${gpu_freq}e6 --initialize-control CPU_FREQUENCY_CONTROL=${max_cpu_freq} \
             --report="${out_dir}/agent_${agent}.${APPNAME}.gpufreq_${gpu_freq}.trial_${trial}.report" \
             --trace="${out_dir}/agent_${agent}.${APPNAME}.gpufreq_${gpu_freq}.trial_${trial}.trace-${host}" \
-            --signal-list="GPU_FREQUENCY_STATUS@board_accelerator,GPU_ENERGY@board_accelerator,GPU_POWER@board_accelerator,GPU_UTILIZATION@board_accelerator,GPU_COMPUTE_ACTIVITY@board_accelerator,DCGM::DRAM_ACTIVE@board_accelerator" \
+            --signal-list="GPU_FREQUENCY_STATUS@board_accelerator,GPU_ENERGY@board_accelerator,GPU_POWER@board_accelerator,GPU_UTILIZATION@board_accelerator,GPU_COMPUTE_ACTIVITY@board_accelerator,GPU_MEMORY_ACTIVITY@board_accelerator" \
             --control-period=0.05 \
             -- \
             ${EXEC}

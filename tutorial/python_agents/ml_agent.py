@@ -174,7 +174,7 @@ class MLAgent(base_agent.BaseAgent):
                 ('GPU_POWER', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
                 ('GPU_UTILIZATION', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
                 ('GPU_COMPUTE_ACTIVITY', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
-                ('DCGM::DRAM_ACTIVE', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
+                ('GPU_MEMORY_ACTIVITY', geopmdpy.topo.DOMAIN_BOARD_ACCELERATOR, gpu_idx, "avg"),
             ])
 
             # Add the geopm signal indices of the inputs for our tensorflow
