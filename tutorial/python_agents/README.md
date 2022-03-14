@@ -82,16 +82,16 @@ results. Example:
 
 ```bash
 sweep_dir=${HOME}/my_sweep_1234
-./process_gpu_frequency_sweep.py $(hostname) mysweepdata ${sweep_dir}
+./process_gpu_frequency_sweep.py $(hostname) gpu mysweepdata.hdf ${sweep_dir}
 ```
 
 ## 3) Train a model
-Now you have a .h5 file that contains all of your frequency sweep data, along
-with some additional derived data. Use that file as an input to the
+Now you have a file that contains all of your frequency sweep data, along with
+some additional derived data. Use that file as an input to the
 train\_gpu\_model.py script to create your model. This may take a long time,
 depending on how much trace data is available for training. The script will
 display time estimates for each of its iterations over the training data.
 
 ```bash
-./train_gpu_model.py ./mysweepdata.h5 mygpumodel
+./train_gpu_model.py ./mysweepdata.hdf mygpumodel
 ```

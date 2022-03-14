@@ -129,11 +129,13 @@ class BaseAgent(geopmdpy.runtime.Agent):
             signal_list = DEFAULT_SIGNAL_LIST
         self._signal_list = list(signal_list) + [TIME_SIGNAL]
         self._control_period = period_seconds
+        self._initial_controls = dict()
 
         if initialize_controls is not None:
             try:
                 for control_specification in initialize_controls:
                     control_name, value = control_specification.split('=')
+                    self._initial_controls[control_name] = float(value)
                     control_domain = geopmdpy.pio.control_domain_type(control_name)
                     for domain_index in range(geopmdpy.topo.num_domain(control_domain)):
                         geopmdpy.pio.write_control(
@@ -343,6 +345,8 @@ class BaseAgent(geopmdpy.runtime.Agent):
             )
 
             report['Hosts'][self._host_name]['Application Totals'][signal_name] = val
+
+        report['Policy']['Initial Controls'] = self._initial_controls
         return yaml.dump(report, default_flow_style=False, sort_keys=False)
 
     def get_report_values(self):

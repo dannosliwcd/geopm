@@ -65,7 +65,7 @@ class MLAgent(base_agent.BaseAgent):
     is read via tensorflow.keras.models.load_model(). Input should be a
     directory, not an HDF compressed file.
     '''
-    def __init__(self, cpu_model, gpu_model, period, freq_controls=True,
+    def __init__(self, cpu_model, gpu_model, period_seconds, freq_controls=True,
                  freq_core=None, freq_gpu=None, phi=0.0):
         '''
         Initialize the ML agent. Setting the initial frequency to a value
@@ -74,7 +74,7 @@ class MLAgent(base_agent.BaseAgent):
         Args:
         cpu_model (str): Path to the saved CPU NN.
         gpu_model (str): Path to the saved GPU NN.
-        period (double): Agent sampling and control period, in seconds.
+        period_seconds (double): Agent sampling and control period, in seconds.
         freq_controls (bool): Enforce NN output frequencies if True. If False,
                               monitor only.
         freq_core (float): Initial CPU core frequency in Hz. Core frequency
@@ -197,7 +197,7 @@ class MLAgent(base_agent.BaseAgent):
                 len(signal_list) - 6 # GPU_ENERGY
             )
 
-        super().__init__(period=period, signal_list=signal_list)
+        super().__init__(period_seconds=period_seconds, signal_list=signal_list)
 
     def run_begin(self, policy):
         self._gpu_frequency_control_accumulator = [0] * self._gpu_count
@@ -378,7 +378,7 @@ class MLAgent(base_agent.BaseAgent):
                                    for cycles in self._roi_gpu_cycle_sums]
                 for gpu_idx, gpu_frequency in enumerate(gpu_frequencies):
                     roi_totals[f'GPU_FREQUENCY_STATUS-board_accelerator-{gpu_idx}'] = gpu_frequency
-            report['Hosts'][self._hostname]['ROI Totals'] = roi_totals
+            report['Hosts'][self._host_name]['ROI Totals'] = roi_totals
 
         if self._gpu_model is not None:
             for gpu_idx in range(self._gpu_count):
@@ -420,7 +420,7 @@ def parse_common_args(parser=None):
 def create_instance(args):
     return MLAgent(cpu_model=args.cpu_model,
                    gpu_model=args.gpu_model,
-                   period=args.control_period,
+                   period_seconds=args.control_period,
                    freq_controls=not args.no_freq_controls,
                    freq_core=args.freq_core,
                    freq_gpu=args.freq_gpu,

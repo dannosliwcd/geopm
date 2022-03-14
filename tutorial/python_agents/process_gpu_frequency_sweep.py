@@ -127,8 +127,7 @@ if __name__ == "__main__":
                         choices=['gpu', 'node'],
                         help='Analyze gpu energy at node (all gpu) or single gpu level. default: gpu')
     parser.add_argument('output',
-                        help='Name of the HDF file to write the output. '
-                             'The h5 extension will be added')
+                        help='Name of the HDF file to write the output.')
     parser.add_argument('frequency_sweep_dirs',
                         nargs='+',
                         help='Directories containing reports and traces from frequency sweeps')
@@ -157,8 +156,8 @@ if __name__ == "__main__":
                             'gpu-energy (J)']).mean())
         elif args.domain == 'gpu':
             relative_energy = config_groups.apply(
-                lambda x: x['GPU_ENERGY@board_accelerator-0'] / (x.loc[x['gpu-frequency'] == max_gpu_freq,
-                            'GPU_ENERGY@board_accelerator-0']).mean())
+                lambda x: x['GPU_ENERGY-board_accelerator-0'] / (x.loc[x['gpu-frequency'] == max_gpu_freq,
+                            'GPU_ENERGY-board_accelerator-0']).mean())
 
         reports_df['energy-vs-max'] = relative_energy.T if config_groups.ngroups == 1 else relative_energy
         reports_df['performance-loss'] = reports_df['runtime-vs-maxfreq'] - 1
@@ -173,7 +172,7 @@ if __name__ == "__main__":
         elif args.domain == 'gpu':
             min_energy_frequencies = reports_df.pivot_table(
                     #for gpu 0 only
-                    values='GPU_ENERGY@board_accelerator-0',
+                    values='GPU_ENERGY-board_accelerator-0',
                     index=['app-config'],
                     columns='gpu-frequency').idxmin(axis=1).rename('Min-Energy GPU Frequency')
 
@@ -221,4 +220,4 @@ if __name__ == "__main__":
     # multiple models with different applications ignored. This lets us spend
     # less time preprocessing for leave-one-out testing.
     pd.concat(processed_sweeps).to_hdf(
-        args.output + ".h5", nodename + "_training_data", mode='w')
+        args.output, nodename + "_training_data", mode='w')
