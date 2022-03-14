@@ -48,49 +48,38 @@ def process_report_files(input_dir, nodename, app_index):
         app_totals['app-index'] = app_index
         app_totals['gpu-frequency'] = np.nan
         app_totals['trial'] = np.nan
+        app_totals['experiment-name'] = experiment_name
 
         # Help uniquely identify different configurations of a single app
-        config_name = str(app_index)
+        app_totals['app-config'] = str(app_index) + ' ' + report['Profile']
+
+        if 'Initial Controls' in report['Policy']:
+            controls = report['Policy']['Initial Controls']
+            if 'GPU_FREQUENCY_CONTROL' in controls:
+                app_totals['gpu-frequency'] = controls['GPU_FREQUENCY_CONTROL']
 
         for part, value in name_parts:
-            if part == 'gpufreq':
-                app_totals['gpu-frequency'] = int(value) * 1e6
-            if part == 'memratio':
-                config_name += '-' + value
-            if part == 'precision':
-                config_name += '-' + value
             if part == 'trial':
                 app_totals['trial'] = int(value)
-        app_totals['app-config'] = config_name
 
         reports.append(app_totals)
     return pd.DataFrame(reports)
 
 
-def read_trace_files(sweep_dir, nodename, app_index):
+def read_trace_files(sweep_dir, nodename, reports_df):
+    report_fields_by_experiment = reports_df.groupby('experiment-name')[
+        ['gpu-frequency', 'trial', 'app-index', 'app-config']].first().T.to_dict()
+
     all_dfs = []
     for trace_file in glob.iglob(os.path.join(sweep_dir, f'*.trace-{nodename}')):
         trace_df = pd.read_csv(trace_file, sep='|', comment='#', na_values='NAN')
         trace_df['node'] = nodename
         experiment_name = os.path.splitext(os.path.basename(trace_file))[0]
-        trace_df['app-index'] = app_index
-        name_parts = [part.split('_') for part in experiment_name.split('.') if '_' in part]
-        trace_df['gpu-frequency'] = np.nan
-        trace_df['trial'] = np.nan
-
-        # Help uniquely identify different configurations of a single app
-        config_name = str(app_index)
-
-        for part, value in name_parts:
-            if part == 'gpufreq':
-                trace_df['gpu-frequency'] = int(value) * 1e6
-            if part == 'memratio':
-                config_name += '-' + value
-            if part == 'precision':
-                config_name += '-' + value
-            if part == 'trial':
-                trace_df['trial'] = int(value)
-        trace_df['app-config'] = config_name
+        report_fields = report_fields_by_experiment[experiment_name]
+        trace_df['app-index'] = report_fields['app-index']
+        trace_df['gpu-frequency'] = report_fields['gpu-frequency']
+        trace_df['trial'] = report_fields['trial']
+        trace_df['app-config'] = report_fields['app-config']
 
         # Apply a heuristic to ignore setup/teardown parts of workloads. Treat
         # the region of interest as the section of the trace between the first
@@ -200,7 +189,7 @@ if __name__ == "__main__":
         # that mapping. In other words, each trace increases in width by 2
         # columns and increases in height by the number of columns generated in
         # the loop before this block.
-        df_traces = read_trace_files(full_sweep_dir, nodename, app_index)
+        df_traces = read_trace_files(full_sweep_dir, nodename, reports_df)
         if reports_df['app-config'].count().max() > 0:
             df_traces = df_traces.merge(min_energy_frequencies, how='left', on='app-config')
         else:
