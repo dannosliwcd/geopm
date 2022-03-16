@@ -48,18 +48,13 @@ BuildRequires: systemd-devel
 %define python_major_version 3
 BuildRequires: python3
 BuildRequires: python3-devel
+BuildRequires: python3-setuptools
 %define python_bin %{__python3}
 
 %if 0%{?suse_version}
-BuildRequires: python3-setuptools
-BuildRequires: libdbus-1-3
-Requires: libdbus-1-3
-Requires: python3-gobject
-%else
-Requires: python3-gobject-base
+Requires: dbus-1
+BuildRequires: python-rpm-generators
 %endif
-Requires: python3-dasbus
-Requires: python3-jsonschema
 
 Prefix: %{_prefix}
 
@@ -80,16 +75,22 @@ The service package for GEOPM that runs the geopmd daemon.
 
 %package -n python%{python3_pkgversion}-geopmdpy
 Summary: Global Extensible Open Power Manager Service - python %{python_major_version}
-Group: System Environment/Libraries
+Group: Development/Libraries/Python
 Requires: geopm-service
 %{?python_provide:%python_provide python%{python3_pkgversion}-geopmdpy}
+# Generate the python3-modulename dependencies from our setup.py
+%{?python_enable_dependency_generator}
 
 %description -n python%{python3_pkgversion}-geopmdpy
 Python %{python_major_version} package for GEOPM service.
 
 %package devel
 Summary: Global Extensible Open Power Manager Service - development
-Group: System Environment/Libraries
+# RH packaging guidelines recommend avoiding group tags.
+# SUSE packaging guidelines recommend specific group names.
+%if %{defined suse_version}
+Group: Development/Libraries/C and C++
+%endif
 Requires: geopm-service
 
 %description devel
