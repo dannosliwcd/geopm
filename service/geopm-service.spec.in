@@ -53,6 +53,7 @@ BuildRequires: python3-setuptools
 
 %if 0%{?suse_version}
 Requires: dbus-1
+BuildRequires: dbus-1
 BuildRequires: python-rpm-generators
 %endif
 
