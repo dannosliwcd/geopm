@@ -115,4 +115,34 @@ namespace geopm
         total = total / m_num_process;
         return total;
     }
+
+    std::vector<double> ProcessRegionAggregatorImp::get_runtime_totals(std::vector<uint64_t> region_hash) const
+    {
+        std::vector<double> totals(m_num_process);
+        for (const auto &kv : m_region_info) {
+            auto process = kv.first;
+            for (auto hash : region_hash) {
+                auto it = kv.second.find(hash);
+                if (it != kv.second.end()) {
+                    totals[process] += it->second.total_runtime;
+                }
+            }
+        }
+        return totals;
+    }
+
+    std::vector<double> ProcessRegionAggregatorImp::get_count_totals(std::vector<uint64_t> region_hash) const
+    {
+        std::vector<double> totals(m_num_process);
+        for (const auto &kv : m_region_info) {
+            auto process = kv.first;
+            for (auto hash : region_hash) {
+                auto it = kv.second.find(hash);
+                if (it != kv.second.end()) {
+                    totals[process] += it->second.total_count;
+                }
+            }
+        }
+        return totals;
+    }
 }

@@ -10,6 +10,7 @@
 
 #include <map>
 #include <memory>
+#include <vector>
 
 namespace geopm
 {
@@ -33,6 +34,14 @@ namespace geopm
             ///
             /// @param [in] region_hash Hash of the region.
             virtual double get_count_average(uint64_t region_hash) const = 0;
+            /// @brief Returns total time spent in a region in each process.
+            ///
+            /// @param [in] region_hash Hash of the region.
+            virtual std::vector<double> get_runtime_totals(std::vector<uint64_t> region_hash) const = 0;
+            /// @brief Returns the total number of entries into a region in each process.
+            ///
+            /// @param [in] region_hash Hash of the region.
+            virtual std::vector<double> get_count_totals(std::vector<uint64_t> region_hash) const = 0;
             static std::unique_ptr<ProcessRegionAggregator> make_unique(void);
     };
 
@@ -47,6 +56,8 @@ namespace geopm
             void update(void) override;
             double get_runtime_average(uint64_t region_hash) const override;
             double get_count_average(uint64_t region_hash) const override;
+            std::vector<double> get_runtime_totals(std::vector<uint64_t> region_hash) const override;
+            std::vector<double> get_count_totals(std::vector<uint64_t> region_hash) const override;
         private:
             ApplicationSampler &m_app_sampler;
             int m_num_process;

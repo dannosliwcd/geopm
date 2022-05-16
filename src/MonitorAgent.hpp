@@ -14,6 +14,8 @@
 
 #include "Agent.hpp"
 #include "geopm_time.h"
+#include "ProcessRegionAggregator.hpp"
+#include "ApplicationSampler.hpp"
 
 namespace geopm
 {
@@ -55,7 +57,13 @@ namespace geopm
             /// @return a list of sample names
             static std::vector<std::string> sample_names(void);
         private:
+            ApplicationSampler& m_app_sampler;
+            std::unique_ptr<ProcessRegionAggregator> m_region_aggregator;
+            std::set<uint64_t> m_network_hints_set;
+            std::vector<uint64_t> m_network_hints;
             struct geopm_time_s m_last_wait;
+            std::vector<double> m_network_time_per_core;
+            std::vector<double> m_network_count_per_core;
             const double M_WAIT_SEC;
     };
 }
