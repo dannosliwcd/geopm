@@ -271,6 +271,10 @@ GTEST_TESTS = test/gtest_links/AccumulatorTest.empty \
               test/gtest_links/SchedTest.test_proc_cpuset_6 \
               test/gtest_links/SchedTest.test_proc_cpuset_7 \
               test/gtest_links/SchedTest.test_proc_cpuset_8 \
+              test/gtest_links/SSTFrequencyLimitDetectorTest.returns_single_core_limit_by_default \
+              test/gtest_links/SSTFrequencyLimitDetectorTest.detects_nearest_license_level_limit \
+              test/gtest_links/SSTFrequencyLimitDetectorTest.returns_max_observed_frequency_when_sst_disabled_bucket_0 \
+              test/gtest_links/SSTFrequencyLimitDetectorTest.returns_max_observed_frequency_when_sst_disabled_bucket_1 \
               test/gtest_links/TracerTest.columns \
               test/gtest_links/TracerTest.region_entry_exit \
               test/gtest_links/TracerTest.update_samples \
@@ -286,6 +290,8 @@ GTEST_TESTS = test/gtest_links/AccumulatorTest.empty \
               test/gtest_links/TreeCommTest.geometry_nonroot \
               test/gtest_links/TreeCommTest.overhead_send \
               test/gtest_links/TreeCommTest.send_receive \
+              test/gtest_links/TRLFrequencyLimitDetectorTest.returns_single_core_limit_by_default \
+              test/gtest_links/TRLFrequencyLimitDetectorTest.returns_max_observed_frequency_after_update \
               test/gtest_links/ValidateRecordTest.valid_stream \
               test/gtest_links/ValidateRecordTest.process_change \
               test/gtest_links/ValidateRecordTest.entry_exit_paired \
@@ -413,9 +419,11 @@ test_geopm_test_SOURCES = test/AccumulatorTest.cpp \
                           test/ReporterTest.cpp \
                           test/SampleAggregatorTest.cpp \
                           test/SchedTest.cpp \
+                          test/SSTFrequencyLimitDetectorTest.cpp \
                           test/TracerTest.cpp \
                           test/TreeCommLevelTest.cpp \
                           test/TreeCommTest.cpp \
+                          test/TRLFrequencyLimitDetectorTest.cpp \
                           test/ValidateRecordTest.cpp \
                           test/geopm_test.cpp \
                           test/geopm_test_helper.cpp \
