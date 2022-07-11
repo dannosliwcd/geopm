@@ -366,6 +366,8 @@ libgeopmpolicy_la_SOURCES = src/Accumulator.cpp \
                             src/ApplicationSamplerImp.hpp \
                             src/ApplicationStatus.cpp \
                             src/ApplicationStatus.hpp \
+                            src/FrequencyBalancerAgent.cpp \
+                            src/FrequencyBalancerAgent.hpp \
                             src/Comm.cpp \
                             src/Comm.hpp \
                             src/ControlMessage.cpp \
