@@ -107,6 +107,7 @@ GEOPM comes packaged with several built-in power management algorithms (*agents*
 * :doc:`geopm_agent_frequency_map(7) <geopm_agent_frequency_map.7>`: An agent that applies user-selected frequencies at specific regions in the launched application.
 * :doc:`geopm_agent_power_balancer(7) <geopm_agent_power_balancer.7>`: An agent that optimizes performance under a power cap across multiple CPU packages.
 * :doc:`geopm_agent_power_governor(7) <geopm_agent_power_governor.7>`: An agent that enforces a power cap.
+* :doc:`geopm_agent_frequency_balancer(7) <geopm_agent_frequency_balancer.7>`: An agent that reduces imbalance through CPU core frequency controls.
 
 Use the :doc:`geopmagent(1) <geopmagent.1>` application or the
 :doc:`geopm_agent(3) <geopm_agent.3>` C interface to query agent
@@ -378,6 +379,7 @@ See Also
 :doc:`geopm_agent_monitor(7) <geopm_agent_monitor.7>`,
 :doc:`geopm_agent_power_balancer(7) <geopm_agent_power_balancer.7>`,
 :doc:`geopm_agent_power_governor(7) <geopm_agent_power_governor.7>`,
+:doc:`geopm_agent_frequency_balancer(7) <geopm_agent_frequency_balancer.7>`,
 :doc:`geopm_pio(7) <geopm_pio.7>`,
 :doc:`geopm_pio_cnl(7) <geopm_pio_cnl.7>`,
 :doc:`geopm_pio_cpuinfo(7) <geopm_pio_cpuinfo.7>`,
