@@ -3,6 +3,9 @@ From: Daniel Wilson <daniel1.wilson@intel.com>
 Date: Mon, 10 Jan 2022 20:57:06 -0500
 Subject: [PATCH] Add geopm markup to build intsort
 
+#  Copyright (c) 2015 - 2022, Intel Corporation
+#  SPDX-License-Identifier: BSD-3-Clause
+#
 ---
  NPB3.4-MPI/IS/is.c          |   3 +
  NPB3.4-MPI/config/make.def  | 163 ++++++++++++++++++++++++++++++++++++
