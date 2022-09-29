@@ -1,0 +1,437 @@
+From 7a9821c1fbe07986429a2bf8f211ea8279bb21f1 Mon Sep 17 00:00:00 2001
+From: Daniel Wilson <daniel1.wilson@intel.com>
+Date: Mon, 30 Aug 2021 08:58:51 -0700
+Subject: [PATCH] add GEOPM
+
+#  Copyright (c) 2015 - 2022, Intel Corporation
+#  SPDX-License-Identifier: BSD-3-Clause
+#
+
+---
+ src/MAKE/OPTIONS/Makefile.intel_cpu_intelmpi  |  6 ++--
+ .../pair_lj_charmm_coul_long_intel.cpp        |  9 ++++++
+ .../pair_lj_charmm_coul_long_intel.h          |  1 +
+ src/USER-INTEL/verlet_lrt_intel.cpp           |  3 ++
+ src/neighbor.cpp                              | 32 ++++++++++++++++++-
+ src/neighbor.h                                |  7 ++++
+ src/npair_half_bin_newton.cpp                 |  3 ++
+ src/pair_lj_cut_coul_dsf.cpp                  |  9 ++++++
+ src/pair_lj_cut_coul_dsf.h                    |  1 +
+ src/verlet.cpp                                | 18 +++++++++++
+ 10 files changed, 85 insertions(+), 4 deletions(-)
+
+diff --git a/src/MAKE/OPTIONS/Makefile.intel_cpu_intelmpi b/src/MAKE/OPTIONS/Makefile.intel_cpu_intelmpi
+index 4adc427..19448e1 100644
+--- a/src/MAKE/OPTIONS/Makefile.intel_cpu_intelmpi
++++ b/src/MAKE/OPTIONS/Makefile.intel_cpu_intelmpi
+@@ -10,14 +10,14 @@ CC =		mpiicpc -std=c++11
+ OPTFLAGS =      -xHost -O2 -fp-model fast=2 -no-prec-div -qoverride-limits \
+                 -qopt-zmm-usage=high
+ CCFLAGS =	-qopenmp -qno-offload -ansi-alias -restrict \
+-                -DLMP_INTEL_USELRT -DLMP_USE_MKL_RNG $(OPTFLAGS) \
++                -DLMP_INTEL_USELRT -DLMP_USE_MKL_RNG $(OPTFLAGS) $(GEOPM_CFLAGS) \
+                 -I$(MKLROOT)/include
+ SHFLAGS =	-fPIC
+ DEPFLAGS =	-M
+ 
+ LINK =		mpiicpc -std=c++11
+-LINKFLAGS =	-qopenmp $(OPTFLAGS) -L$(MKLROOT)/lib/intel64/
+-LIB =           -ltbbmalloc -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core	
++LINKFLAGS =	-qopenmp $(OPTFLAGS) -L$(MKLROOT)/lib/intel64/ $(GEOPM_LDFLAGS)
++LIB =           -ltbbmalloc -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core $(GEOPM_LDLIBS)
+ SIZE =		size
+ 
+ ARCHIVE =	ar
+diff --git a/src/USER-INTEL/pair_lj_charmm_coul_long_intel.cpp b/src/USER-INTEL/pair_lj_charmm_coul_long_intel.cpp
+index 2f375fd..25ac955 100644
+--- a/src/USER-INTEL/pair_lj_charmm_coul_long_intel.cpp
++++ b/src/USER-INTEL/pair_lj_charmm_coul_long_intel.cpp
+@@ -26,6 +26,8 @@
+ #include "neigh_request.h"
+ #include "memory.h"
+ #include "suffix.h"
++#include "geopm_prof.h"
++#include "geopm_hint.h"
+ using namespace LAMMPS_NS;
+ 
+ #define LJ_T typename IntelBuffers<flt_t,flt_t>::vec2_t
+@@ -39,6 +41,8 @@ PairLJCharmmCoulLongIntel::PairLJCharmmCoulLongIntel(LAMMPS *lmp) :
+   suffix_flag |= Suffix::INTEL;
+   respa_enable = 0;
+   cut_respa = nullptr;
++  geopm_prof_region("PairLJCharmmCoulLongIntel::eval",
++                    GEOPM_REGION_HINT_UNKNOWN, &geopm_region_eval);
+ }
+ 
+ /* ---------------------------------------------------------------------- */
+@@ -131,6 +135,8 @@ void PairLJCharmmCoulLongIntel::eval(const int offload, const int vflag,
+ {
+   const int inum = aend - astart;
+   if (inum == 0) return;
++
++  geopm_prof_enter(geopm_region_eval);
+   int nlocal, nall, minlocal;
+   fix->get_buffern(offload, nlocal, nall, minlocal);
+ 
+@@ -260,6 +266,7 @@ void PairLJCharmmCoulLongIntel::eval(const int offload, const int vflag,
+       int * _noalias const tj = ccachei + toffs;
+       int * _noalias const tjtype = ccachej + toffs;
+ 
++      geopm_tprof_init((iito - iifrom) / iip);
+       for (int ii = iifrom; ii < iito; ii += iip) {
+         const int i = ilist[ii];
+         const int itype = x[i].w;
+@@ -458,6 +465,7 @@ void PairLJCharmmCoulLongIntel::eval(const int offload, const int vflag,
+           f[i].z = fztmp;
+         }
+         IP_PRE_ev_tally_atomq(NEWTON_PAIR, EFLAG, vflag, f, fwtmp);
++        geopm_tprof_post();
+       } // for ii
+ 
+       IP_PRE_fdotr_reduce_omp(NEWTON_PAIR, nall, minlocal, nthreads, f_start,
+@@ -502,6 +510,7 @@ void PairLJCharmmCoulLongIntel::eval(const int offload, const int vflag,
+     fix->add_result_array(f_start, ev_global, offload, eatom, 0, vflag);
+   else
+     fix->add_result_array(f_start, 0, offload);
++  geopm_prof_exit(geopm_region_eval);
+ }
+ 
+ /* ---------------------------------------------------------------------- */
+diff --git a/src/USER-INTEL/pair_lj_charmm_coul_long_intel.h b/src/USER-INTEL/pair_lj_charmm_coul_long_intel.h
+index f5b46ea..4bab98f 100644
+--- a/src/USER-INTEL/pair_lj_charmm_coul_long_intel.h
++++ b/src/USER-INTEL/pair_lj_charmm_coul_long_intel.h
+@@ -43,6 +43,7 @@ class PairLJCharmmCoulLongIntel : public PairLJCharmmCoulLong {
+  private:
+   FixIntel *fix;
+   int _cop, _lrt, _ccache_stride;
++  uint64_t geopm_region_eval;
+ 
+   template <class flt_t> class ForceConst;
+   template <class flt_t, class acc_t>
+diff --git a/src/USER-INTEL/verlet_lrt_intel.cpp b/src/USER-INTEL/verlet_lrt_intel.cpp
+index aef5ad5..4b681e4 100644
+--- a/src/USER-INTEL/verlet_lrt_intel.cpp
++++ b/src/USER-INTEL/verlet_lrt_intel.cpp
+@@ -33,6 +33,7 @@
+ #include "timer.h"
+ #include "memory.h"
+ #include "error.h"
++#include "geopm_prof.h"
+ 
+ #if defined(_OPENMP)
+ #include <omp.h>
+@@ -366,6 +367,8 @@ void VerletLRTIntel::run(int n)
+       output->write(ntimestep);
+       timer->stamp(Timer::OUTPUT);
+     }
++
++    geopm_prof_epoch();
+   }
+ 
+   #if defined(_LMP_INTEL_LRT_PTHREAD)
+diff --git a/src/neighbor.cpp b/src/neighbor.cpp
+index 949e038..6dd4ebb 100644
+--- a/src/neighbor.cpp
++++ b/src/neighbor.cpp
+@@ -44,6 +44,8 @@
+ #include "style_nstencil.h"
+ #include "style_ntopo.h"
+ #include "update.h"
++#include "geopm_prof.h"
++#include "geopm_hint.h"
+ 
+ #include <cmath>
+ #include <cstring>
+@@ -171,6 +173,19 @@ pairclass(nullptr), pairnames(nullptr), pairmasks(nullptr)
+   // Kokkos setting
+ 
+   copymode = 0;
++
++  geopm_prof_region("Neighbor::check_distance",
++                    GEOPM_REGION_HINT_UNKNOWN, &geopm_region_check_distance);
++  geopm_prof_region("Neighbor::setup_bins",
++                    GEOPM_REGION_HINT_UNKNOWN, &geopm_region_setup_bins);
++  geopm_prof_region("Neighbor::build::dist_check",
++                    GEOPM_REGION_HINT_UNKNOWN, &geopm_region_build_dist_check);
++  geopm_prof_region("Neighbor::build::bin_atoms",
++                    GEOPM_REGION_HINT_UNKNOWN, &geopm_region_build_bin_atoms);
++  geopm_prof_region("Neighbor::build::pairwise_lists",
++                    GEOPM_REGION_HINT_UNKNOWN, &geopm_region_build_pairwise_lists);
++  geopm_prof_region("Neighbor::build::topology",
++                    GEOPM_REGION_HINT_UNKNOWN, &geopm_region_build_topology);
+ }
+ 
+ /* ---------------------------------------------------------------------- */
+@@ -1911,6 +1926,7 @@ NPair *Neighbor::pair_creator(LAMMPS *lmp)
+ 
+ void Neighbor::setup_bins()
+ {
++  geopm_prof_enter(geopm_region_setup_bins);
+   // invoke setup_bins() for all NBin
+   // actual binning is performed in build()
+ 
+@@ -1926,6 +1942,7 @@ void Neighbor::setup_bins()
+   }
+ 
+   last_setup_bins = update->ntimestep;
++  geopm_prof_exit(geopm_region_setup_bins);
+ }
+ 
+ /* ---------------------------------------------------------------------- */
+@@ -1964,6 +1981,8 @@ int Neighbor::check_distance()
+   double delx,dely,delz,rsq;
+   double delta,deltasq,delta1,delta2;
+ 
++  geopm_prof_enter(geopm_region_check_distance);
++
+   if (boxcheck) {
+     if (triclinic == 0) {
+       delx = bboxlo[0] - boxlo_hold[0];
+@@ -2010,6 +2029,7 @@ int Neighbor::check_distance()
+   int flagall;
+   MPI_Allreduce(&flag,&flagall,1,MPI_INT,MPI_MAX,world);
+   if (flagall && ago == MAX(every,delay)) ndanger++;
++  geopm_prof_exit(geopm_region_check_distance);
+   return flagall;
+ }
+ 
+@@ -2038,6 +2058,7 @@ void Neighbor::build(int topoflag)
+   // store current atom positions and box size if needed
+ 
+   if (dist_check) {
++    geopm_prof_enter(geopm_region_build_dist_check);
+     double **x = atom->x;
+     if (includegroup) nlocal = atom->nfirst;
+     if (atom->nmax > maxhold) {
+@@ -2068,6 +2089,7 @@ void Neighbor::build(int topoflag)
+         }
+       }
+     }
++    geopm_prof_exit(geopm_region_build_dist_check);
+   }
+ 
+   // bin atoms for all NBin instances
+@@ -2077,16 +2099,19 @@ void Neighbor::build(int topoflag)
+   //   leading to errors or even a crash
+ 
+   if (style != Neighbor::NSQ) {
++    geopm_prof_enter(geopm_region_build_bin_atoms);
+     if (last_setup_bins < 0) setup_bins();
+     for (int i = 0; i < nbin; i++) {
+       neigh_bin[i]->bin_atoms_setup(nall);
+       neigh_bin[i]->bin_atoms();
+     }
++    geopm_prof_exit(geopm_region_build_bin_atoms);
+   }
+ 
+   // build pairwise lists for all perpetual NPair/NeighList
+   // grow() with nlocal/nall args so that only realloc if have to
+ 
++  geopm_prof_enter(geopm_region_build_pairwise_lists);
+   for (i = 0; i < npair_perpetual; i++) {
+     m = plist[i];
+     if (!lists[i]->copy || lists[i]->kk2cpu)
+@@ -2094,10 +2119,15 @@ void Neighbor::build(int topoflag)
+     neigh_pair[m]->build_setup();
+     neigh_pair[m]->build(lists[m]);
+   }
++  geopm_prof_exit(geopm_region_build_pairwise_lists);
+ 
+   // build topology lists for bonds/angles/etc
+ 
+-  if ((atom->molecular != Atom::ATOMIC) && topoflag) build_topology();
++  if ((atom->molecular != Atom::ATOMIC) && topoflag) {
++      geopm_prof_enter(geopm_region_build_topology);
++      build_topology();
++      geopm_prof_exit(geopm_region_build_topology);
++  }
+ }
+ 
+ /* ----------------------------------------------------------------------
+diff --git a/src/neighbor.h b/src/neighbor.h
+index 9ee2af9..6fea6ae 100644
+--- a/src/neighbor.h
++++ b/src/neighbor.h
+@@ -225,6 +225,13 @@ class Neighbor : protected Pointers {
+ 
+   int copymode;
+ 
++  uint64_t geopm_region_check_distance;
++  uint64_t geopm_region_setup_bins;
++  uint64_t geopm_region_build_dist_check;
++  uint64_t geopm_region_build_bin_atoms;
++  uint64_t geopm_region_build_pairwise_lists;
++  uint64_t geopm_region_build_topology;
++
+   virtual void init_cutneighsq_kokkos(int) {}
+   virtual void create_kokkos_list(int) {}
+   virtual void init_ex_type_kokkos(int) {}
+diff --git a/src/npair_half_bin_newton.cpp b/src/npair_half_bin_newton.cpp
+index a59068f..570c337 100644
+--- a/src/npair_half_bin_newton.cpp
++++ b/src/npair_half_bin_newton.cpp
+@@ -19,6 +19,7 @@
+ #include "domain.h"
+ #include "my_page.h"
+ #include "error.h"
++#include "geopm_prof.h"
+ 
+ using namespace LAMMPS_NS;
+ 
+@@ -63,6 +64,7 @@ void NPairHalfBinNewton::build(NeighList *list)
+   int inum = 0;
+   ipage->reset();
+ 
++  geopm_tprof_init(nlocal);
+   for (i = 0; i < nlocal; i++) {
+     n = 0;
+     neighptr = ipage->vget();
+@@ -154,6 +156,7 @@ void NPairHalfBinNewton::build(NeighList *list)
+     ipage->vgot(n);
+     if (ipage->status())
+       error->one(FLERR,"Neighbor list overflow, boost neigh_modify one");
++    geopm_tprof_post();
+   }
+ 
+   list->inum = inum;
+diff --git a/src/pair_lj_cut_coul_dsf.cpp b/src/pair_lj_cut_coul_dsf.cpp
+index d1989ba..b6d9a57 100644
+--- a/src/pair_lj_cut_coul_dsf.cpp
++++ b/src/pair_lj_cut_coul_dsf.cpp
+@@ -28,6 +28,8 @@
+ #include "memory.h"
+ #include "math_const.h"
+ #include "error.h"
++#include "geopm_prof.h"
++#include "geopm_hint.h"
+ 
+ 
+ using namespace LAMMPS_NS;
+@@ -47,6 +49,8 @@ PairLJCutCoulDSF::PairLJCutCoulDSF(LAMMPS *lmp) : Pair(lmp)
+ {
+   single_enable = 0;
+   centroidstressflag = 1;
++  geopm_prof_region("PairLJCutCoulDSF::compute",
++                    GEOPM_REGION_HINT_UNKNOWN, &geopm_region_compute);
+ }
+ 
+ /* ---------------------------------------------------------------------- */
+@@ -81,6 +85,8 @@ void PairLJCutCoulDSF::compute(int eflag, int vflag)
+   double prefactor,erfcc,erfcd,t;
+   int *ilist,*jlist,*numneigh,**firstneigh;
+ 
++  geopm_prof_enter(geopm_region_compute);
++
+   evdwl = ecoul = 0.0;
+   ev_init(eflag,vflag);
+ 
+@@ -101,6 +107,7 @@ void PairLJCutCoulDSF::compute(int eflag, int vflag)
+ 
+   // loop over neighbors of my atoms
+ 
++  geopm_tprof_init(inum);
+   for (ii = 0; ii < inum; ii++) {
+     i = ilist[ii];
+     qtmp = q[i];
+@@ -174,9 +181,11 @@ void PairLJCutCoulDSF::compute(int eflag, int vflag)
+                              evdwl,ecoul,fpair,delx,dely,delz);
+       }
+     }
++    geopm_tprof_post();
+   }
+ 
+   if (vflag_fdotr) virial_fdotr_compute();
++  geopm_prof_exit(geopm_region_compute);
+ }
+ 
+ /* ----------------------------------------------------------------------
+diff --git a/src/pair_lj_cut_coul_dsf.h b/src/pair_lj_cut_coul_dsf.h
+index 3dfe272..aa43e05 100644
+--- a/src/pair_lj_cut_coul_dsf.h
++++ b/src/pair_lj_cut_coul_dsf.h
+@@ -41,6 +41,7 @@ class PairLJCutCoulDSF : public Pair {
+   void *extract(const char *, int &);
+ 
+  protected:
++  uint64_t geopm_region_compute;
+   double cut_lj_global;
+   double **cut_lj,**cut_ljsq;
+   double **epsilon,**sigma;
+diff --git a/src/verlet.cpp b/src/verlet.cpp
+index 3d20a77..9712adc 100644
+--- a/src/verlet.cpp
++++ b/src/verlet.cpp
+@@ -30,6 +30,8 @@
+ #include "pair.h"
+ #include "timer.h"
+ #include "update.h"
++#include "geopm_prof.h"
++#include "geopm_hint.h"
+ 
+ #include <cstring>
+ 
+@@ -86,6 +88,10 @@ void Verlet::init()
+ 
+ void Verlet::setup(int flag)
+ {
++  uint64_t geopm_region_setup;
++  geopm_prof_region("Verlet::setup",
++          GEOPM_REGION_HINT_UNKNOWN, &geopm_region_setup);
++  geopm_prof_enter(geopm_region_setup);
+   if (comm->me == 0 && screen) {
+     fputs("Setting up Verlet run ...\n",screen);
+     if (flag) {
+@@ -153,6 +159,7 @@ void Verlet::setup(int flag)
+   modify->setup(vflag);
+   output->setup(flag);
+   update->setupflag = 0;
++  geopm_prof_exit(geopm_region_setup);
+ }
+ 
+ /* ----------------------------------------------------------------------
+@@ -163,6 +170,10 @@ void Verlet::setup(int flag)
+ 
+ void Verlet::setup_minimal(int flag)
+ {
++  uint64_t geopm_region_setup_minimal;
++  geopm_prof_region("Verlet::setup_minimal",
++          GEOPM_REGION_HINT_UNKNOWN, &geopm_region_setup_minimal);
++  geopm_prof_enter(geopm_region_setup_minimal);
+   update->setupflag = 1;
+ 
+   // setup domain, communication and neighboring
+@@ -214,6 +225,7 @@ void Verlet::setup_minimal(int flag)
+ 
+   modify->setup(vflag);
+   update->setupflag = 0;
++  geopm_prof_exit(geopm_region_setup_minimal);
+ }
+ 
+ /* ----------------------------------------------------------------------
+@@ -350,6 +362,7 @@ void Verlet::run(int n)
+       output->write(ntimestep);
+       timer->stamp(Timer::OUTPUT);
+     }
++    geopm_prof_epoch();
+   }
+ }
+ 
+@@ -357,9 +370,14 @@ void Verlet::run(int n)
+ 
+ void Verlet::cleanup()
+ {
++  uint64_t geopm_region_cleanup;
++  geopm_prof_region("Verlet::cleanup",
++          GEOPM_REGION_HINT_UNKNOWN, &geopm_region_cleanup);
++  geopm_prof_enter(geopm_region_cleanup);
+   modify->post_run();
+   domain->box_too_small_check();
+   update->update_time();
++  geopm_prof_exit(geopm_region_cleanup);
+ }
+ 
+ /* ----------------------------------------------------------------------
+-- 
+2.31.0
+

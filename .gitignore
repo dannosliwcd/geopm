@@ -62,6 +62,12 @@ compile_commands.json
 /integration/apps/hpcg/hpcg/
 /integration/apps/hpl_netlib/hpl-2.3/
 /integration/apps/nasbt/NPB3.4.1-MZ
+/integration/apps/lammps/lammps-stable_29Oct2020/
+/integration/apps/lammps/stable_29Oct2020.tar.gz
+/integration/apps/minife/miniFE_openmp-2.0-rc3/
+/integration/apps/nas*/NPB3.4.2/
+/integration/apps/nas*/NPB3.4.1-MZ
+/integration/apps/nas*/NPB*.tar.gz
 /integration/apps/nasft/nasft/nas_ft
 /integration/apps/nasft/nasft/*.o
 /integration/apps/nekbone/nekbone/
