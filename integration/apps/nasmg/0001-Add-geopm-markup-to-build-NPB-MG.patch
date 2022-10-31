@@ -1,4 +1,4 @@
-From 5d2492030fd48758a7b91a6f3b38c70cb1d1c54b Mon Sep 17 00:00:00 2001
+From a1b669c87abe559c954d89a5c9065c8a85d1e600 Mon Sep 17 00:00:00 2001
 From: Daniel Wilson <daniel1.wilson@intel.com>
 Date: Mon, 10 Jan 2022 20:57:06 -0500
 Subject: [PATCH] Add geopm markup to build NPB MG
@@ -9,8 +9,8 @@ Subject: [PATCH] Add geopm markup to build NPB MG
 ---
  NPB3.4-MPI/MG/mg.f90        |   4 +
  NPB3.4-MPI/config/make.def  | 163 ++++++++++++++++++++++++++++++++++++
- NPB3.4-MPI/config/suite.def |  22 +++++
- 3 files changed, 189 insertions(+)
+ NPB3.4-MPI/config/suite.def |  23 +++++
+ 3 files changed, 190 insertions(+)
  create mode 100644 NPB3.4-MPI/config/make.def
  create mode 100644 NPB3.4-MPI/config/suite.def
 
@@ -207,10 +207,10 @@ index 0000000..9265d07
 +
 diff --git a/NPB3.4-MPI/config/suite.def b/NPB3.4-MPI/config/suite.def
 new file mode 100644
-index 0000000..d7b3025
+index 0000000..43dc827
 --- /dev/null
 +++ b/NPB3.4-MPI/config/suite.def
-@@ -0,0 +1,22 @@
+@@ -0,0 +1,23 @@
 +# config/suite.def
 +# This file is used to build several benchmarks with a single command. 
 +# Typing "make suite" in the main directory will build all the benchmarks
@@ -233,6 +233,7 @@ index 0000000..d7b3025
 +mg	C
 +mg	D
 +mg	E
++mg	F
 -- 
 2.31.0
 
