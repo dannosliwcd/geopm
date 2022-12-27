@@ -392,6 +392,7 @@ EXTRA_DIST += test/legacy_allowlist.out \
 test_geopm_test_SOURCES = test/GPUTopoNullTest.cpp \
                           test/AggTest.cpp \
                           test/BatchClientTest.cpp \
+                          test/BatchIOTest.cpp \
                           test/BatchServerTest.cpp \
                           test/BatchStatusTest.cpp \
                           test/CircularBufferTest.cpp \
