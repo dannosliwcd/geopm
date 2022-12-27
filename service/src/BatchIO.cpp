@@ -7,6 +7,9 @@
 
 #include "BatchIO.hpp"
 
+#include "geopm/Exception.hpp"
+#include "geopm_error.h"
+
 #include <vector>
 
 namespace geopm
@@ -19,6 +22,7 @@ namespace geopm
             size_t size(void) const override;
             const void *data(void) const override;
             std::string str(void) const override;
+
         private:
             const void *m_buffer;
             const size_t m_size;
@@ -27,12 +31,13 @@ namespace geopm
     class BatchBufferWriteImp : public BatchBufferWrite
     {
         public:
-            BatchBufferWriteImp(void *buffer, size_t);
+            BatchBufferWriteImp(void *buffer, size_t size);
             virtual ~BatchBufferWriteImp() = default;
             size_t size(void) const override;
             void *data(void) override;
             void str(const std::string &input) override;
             bool is_dirty;
+
         private:
             void *m_buffer;
             size_t m_size;
@@ -48,8 +53,94 @@ namespace geopm
             void read_batch(void) override;
             void write_batch(void) override;
             void reset(void) override;
+
         private:
             std::vector<std::shared_ptr<BatchBufferReadImp> > m_read_map;
             std::vector<std::shared_ptr<BatchBufferWriteImp> > m_write_map;
     };
+
+    BatchBufferReadImp::BatchBufferReadImp(const void *buffer, size_t size)
+        : m_buffer(buffer)
+        , m_size(size)
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    size_t BatchBufferReadImp::size(void) const
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    const void *BatchBufferReadImp::data(void) const
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    std::string BatchBufferReadImp::str(void) const
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    BatchBufferWriteImp::BatchBufferWriteImp(void *buffer, size_t size)
+        : m_buffer(buffer)
+        , m_size(size)
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    size_t BatchBufferWriteImp::size(void) const
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    void *BatchBufferWriteImp::data(void)
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    void BatchBufferWriteImp::str(const std::string & /* unused: input */)
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    std::shared_ptr<BatchBufferRead> BatchIOImp::push_pread(
+        std::string /* unused: file_path */, size_t /* unused: count */, off_t /* unused: offset */)
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    std::shared_ptr<BatchBufferWrite> BatchIOImp::push_pwrite(
+        std::string /* unused: file_path */, size_t /* unused: count */, off_t /* unused: offset */)
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    void BatchIOImp::read_batch(void)
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    void BatchIOImp::write_batch(void)
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
+    void BatchIOImp::reset(void)
+    {
+        throw Exception("Called an unimplemented function",
+                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+    }
+
 }
