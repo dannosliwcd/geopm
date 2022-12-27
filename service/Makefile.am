@@ -140,6 +140,8 @@ libgeopmd_la_SOURCES = $(include_HEADERS) \
                        src/Agg.cpp \
                        src/BatchClient.cpp \
                        src/BatchClient.hpp \
+                       src/BatchIO.cpp \
+                       src/BatchIO.hpp \
                        src/BatchServer.cpp \
                        src/BatchServer.hpp \
                        src/BatchStatus.cpp \

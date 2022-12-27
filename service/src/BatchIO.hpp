@@ -11,6 +11,26 @@
 
 namespace geopm
 {
+    class BatchBufferRead
+    {
+        public:
+            BatchBufferRead() = default;
+            virtual ~BatchBufferRead() = default;
+            virtual size_t size(void) const = 0;
+            virtual const void *data(void) const = 0;
+            virtual std::string str(void) const = 0;
+    };
+
+    class BatchBufferWrite
+    {
+        public:
+            BatchBufferWrite() = default;
+            virtual ~BatchBufferWrite() = default;
+            virtual size_t size(void) const = 0;
+            virtual void *data(void) = 0;
+            virtual void str(const std::string &input) = 0;
+    };
+
     class BatchIO
     {
         public:
@@ -23,26 +43,6 @@ namespace geopm
             virtual void write_batch(void) = 0;
             virtual void reset(void) = 0;
     };
-
-    class BatchBufferRead
-    {
-        public:
-            BatchBufferRead() = default;
-            virtual ~BatchBufferRead() = default;
-            virtual size_t size(void) const = 0;
-            virtual const void *data(void) const = 0;
-            virtual std::string str(void) const = 0;
-    }
-
-    class BatchBufferWrite
-    {
-        public:
-            BatchBufferWrite() = default;
-            virtual ~BatchBufferWrite() = default;
-            virtual size_t size(void) const = 0;
-            virtual void *data(void) = 0;
-            virtual void str(const std::string &input) = 0;
-    }
 }
 
 #endif
