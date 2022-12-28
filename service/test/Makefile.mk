@@ -425,6 +425,7 @@ test_geopm_test_SOURCES = test/GPUTopoNullTest.cpp \
                           test/MockControl.hpp \
                           test/MockDCGMDevicePool.hpp \
                           test/MockIOGroup.hpp \
+                          test/MockIOUring.hpp \
                           test/MockMSRIO.hpp \
                           test/MockNVMLDevicePool.hpp \
                           test/MockLevelZeroDevicePool.hpp \
