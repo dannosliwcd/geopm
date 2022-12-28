@@ -2,6 +2,7 @@
  * Copyright (c) 2015 - 2022, Intel Corporation
  * SPDX-License-Identifier: BSD-3-Clause
  */
+#include "IOUring.hpp"
 #include "config.h"
 
 #include "MSRIOImp.hpp"
@@ -36,15 +37,16 @@ namespace geopm
     }
 
     MSRIOImp::MSRIOImp()
-        : MSRIOImp(geopm_sched_num_cpu(), std::make_shared<MSRPath>())
+        : MSRIOImp(geopm_sched_num_cpu(), std::make_shared<MSRPath>(), make_io_uring)
     {
 
     }
 
-    MSRIOImp::MSRIOImp(int num_cpu, std::shared_ptr<MSRPath> path)
+    MSRIOImp::MSRIOImp(int num_cpu, std::shared_ptr<MSRPath> path,
+                       IOUringFactory batch_io_factory)
         : m_num_cpu(num_cpu)
         , m_file_desc(m_num_cpu + 1, -1) // Last file descriptor is for the batch file
-        , m_is_batch_enabled(true)
+        , m_is_batch_enabled(false) // for testing
         , m_read_batch({0, NULL})
         , m_write_batch({0, NULL})
         , m_read_batch_op(0)
@@ -54,6 +56,9 @@ namespace geopm
         , m_write_batch_idx_map(m_num_cpu)
         , m_is_open(false)
         , m_path(path)
+        , m_batch_io_factory(batch_io_factory)
+        , m_batch_reader(nullptr)
+        , m_batch_writer(nullptr)
     {
         open_all();
     }
@@ -299,6 +304,98 @@ namespace geopm
         }
     }
 
+    void MSRIOImp::msr_uring_read(void)
+    {
+        if (m_read_batch.numops == 0) {
+            return;
+        }
+        GEOPM_DEBUG_ASSERT(m_read_batch.numops == m_read_batch_op.size() &&
+                           m_read_batch.ops == m_read_batch_op.data(),
+                           "Batch operations not updated prior to calling MSRIOImp::msr_uring_read()");
+
+        std::vector<std::shared_ptr<int> > return_values;
+        return_values.reserve(m_read_batch.numops);
+        if (!m_batch_reader) {
+            m_batch_reader = m_batch_io_factory(m_read_batch.numops);
+        }
+        for (uint32_t batch_idx = 0;
+             batch_idx != m_read_batch.numops;
+             ++batch_idx) {
+            return_values.emplace_back(new int(0));
+            m_batch_reader->prep_read(
+                return_values.back(),
+                msr_desc(m_read_batch_op[batch_idx].cpu),
+                &m_read_batch.ops[batch_idx].msrdata,
+                sizeof(m_read_batch.ops[batch_idx].msrdata),
+                m_read_batch_op[batch_idx].msr);
+        }
+
+        m_batch_reader->submit();
+
+        for (uint32_t batch_idx = 0;
+             batch_idx != m_read_batch.numops;
+             ++batch_idx) {
+            ssize_t num_read = *return_values[batch_idx];
+            if (num_read != sizeof(m_read_batch.ops[batch_idx].msrdata)) {
+                std::ostringstream err_str;
+                err_str << "MSRIOImp::msr_uring_read(): pread() failed at offset 0x"
+                        << std::hex << m_read_batch_op[batch_idx].msr;
+                if (num_read < 0) {
+                    err_str << " system error: " << strerror(-num_read);
+                }
+                else {
+                    err_str << " : read " << std::dec << num_read
+                            << " of " << sizeof(m_read_batch.ops[batch_idx].msrdata)
+                            << " bytes";
+                }
+                throw Exception(err_str.str(), GEOPM_ERROR_MSR_READ, __FILE__, __LINE__);
+            }
+        }
+    }
+
+    void MSRIOImp::msr_uring_write(void)
+    {
+        if (m_write_batch.numops == 0) {
+            return;
+        }
+        GEOPM_DEBUG_ASSERT(m_write_batch.numops == m_write_batch_op.size() &&
+                           m_write_batch.ops == m_write_batch_op.data(),
+                           "Batch operations not updated prior to calling MSRIOImp::msr_uring_write()");
+
+        std::vector<std::shared_ptr<int> > return_values;
+        return_values.reserve(m_write_batch.numops);
+        if (!m_batch_writer) {
+            m_batch_writer = m_batch_io_factory(m_write_batch.numops);
+        }
+        for (uint32_t batch_idx = 0;
+             batch_idx != m_write_batch.numops;
+             ++batch_idx) {
+            return_values.emplace_back(new int(0));
+            m_batch_writer->prep_write(
+                return_values.back(),
+                msr_desc(m_write_batch_op[batch_idx].cpu),
+                &m_write_batch.ops[batch_idx].msrdata,
+                sizeof(m_write_batch.ops[batch_idx].msrdata),
+                m_write_batch_op[batch_idx].msr);
+        }
+
+        m_batch_writer->submit();
+
+        for (uint32_t batch_idx = 0;
+             batch_idx != m_write_batch.numops;
+             ++batch_idx) {
+            ssize_t num_written = *return_values[batch_idx];
+            if (num_written != sizeof(m_write_batch.ops[batch_idx].msrdata)) {
+                std::ostringstream err_str;
+                err_str << "MSRIOImp::msr_uring_write(): pwrite() failed at offset 0x"
+                        << std::hex << m_write_batch_op[batch_idx].msr
+                        << " system error: "
+                        << ((num_written < 0) ? strerror(-num_written) : "none");
+                throw Exception(err_str.str(), GEOPM_ERROR_MSR_WRITE, __FILE__, __LINE__);
+            }
+        }
+    }
+
     void MSRIOImp::read_batch(void)
     {
         m_read_batch.numops = m_read_batch_op.size();
@@ -308,13 +405,7 @@ namespace geopm
             msr_ioctl_read();
         }
         else {
-            for (uint32_t batch_idx = 0;
-                 batch_idx != m_read_batch.numops;
-                 ++batch_idx) {
-                m_read_batch.ops[batch_idx].msrdata =
-                    read_msr(m_read_batch_op[batch_idx].cpu,
-                             m_read_batch_op[batch_idx].msr);
-            }
+            msr_uring_read();
         }
         m_is_batch_read = true;
     }
@@ -328,14 +419,7 @@ namespace geopm
             msr_ioctl_write();
         }
         else {
-            for (uint32_t batch_idx = 0;
-                 batch_idx != m_write_batch.numops;
-                 ++batch_idx) {
-                write_msr(m_write_batch_op[batch_idx].cpu,
-                          m_write_batch_op[batch_idx].msr,
-                          m_write_val.at(batch_idx),
-                          m_write_mask.at(batch_idx));
-            }
+            msr_uring_write();
         }
         std::fill(m_write_val.begin(), m_write_val.end(), 0ULL);
         std::fill(m_write_mask.begin(), m_write_mask.end(), 0ULL);
