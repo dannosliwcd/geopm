@@ -338,7 +338,7 @@ namespace geopm
             ssize_t num_read = *return_values[batch_idx];
             if (num_read != sizeof(m_read_batch.ops[batch_idx].msrdata)) {
                 std::ostringstream err_str;
-                err_str << "MSRIOImp::msr_uring_read(): pread() failed at offset 0x"
+                err_str << "MSRIOImp::msr_uring_read(): failed at offset 0x"
                         << std::hex << m_read_batch_op[batch_idx].msr;
                 if (num_read < 0) {
                     err_str << " system error: " << strerror(-num_read);
@@ -387,7 +387,7 @@ namespace geopm
             ssize_t num_written = *return_values[batch_idx];
             if (num_written != sizeof(m_write_batch.ops[batch_idx].msrdata)) {
                 std::ostringstream err_str;
-                err_str << "MSRIOImp::msr_uring_write(): pwrite() failed at offset 0x"
+                err_str << "MSRIOImp::msr_uring_write(): failed at offset 0x"
                         << std::hex << m_write_batch_op[batch_idx].msr
                         << " system error: "
                         << ((num_written < 0) ? strerror(-num_written) : "none");
