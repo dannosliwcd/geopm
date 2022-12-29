@@ -61,8 +61,10 @@ namespace geopm
             void msr_ioctl(struct m_msr_batch_array_s &batch);
             void msr_ioctl_read(void);
             void msr_ioctl_write(void);
-            void msr_uring_read(void);
-            void msr_uring_write(void);
+            void msr_batch_io(IOUring &batcher,
+                              struct m_msr_batch_array_s &batch);
+            void msr_read_files(void);
+            void msr_rmw_files(void);
             uint64_t system_write_mask(uint64_t offset);
 
             const int m_num_cpu;
