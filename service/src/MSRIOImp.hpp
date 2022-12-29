@@ -83,8 +83,8 @@ namespace geopm
             bool m_is_open;
             std::shared_ptr<MSRPath> m_path;
             IOUringFactory m_batch_io_factory;
-            std::unique_ptr<IOUring> m_batch_reader;
-            std::unique_ptr<IOUring> m_batch_writer;
+            std::shared_ptr<IOUring> m_batch_reader;
+            std::shared_ptr<IOUring> m_batch_writer;
     };
 }
 

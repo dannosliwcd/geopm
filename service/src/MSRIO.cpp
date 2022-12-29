@@ -332,13 +332,13 @@ namespace geopm
             auto& batch_op = batch.ops[batch_idx];
             if (batch_op.isrdmsr) {
                 batcher.prep_read(return_values.back(), msr_desc(batch_op.cpu),
-                                   &batch_op.msrdata, sizeof(batch_op.msrdata),
-                                   batch_op.msr);
+                                  &batch_op.msrdata, sizeof(batch_op.msrdata),
+                                  batch_op.msr);
             }
             else {
                 batcher.prep_write(return_values.back(), msr_desc(batch_op.cpu),
-                                    &batch_op.msrdata, sizeof(batch_op.msrdata),
-                                    batch_op.msr);
+                                   &batch_op.msrdata, sizeof(batch_op.msrdata),
+                                   batch_op.msr);
             }
         }
 

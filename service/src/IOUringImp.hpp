@@ -41,6 +41,6 @@ namespace geopm
     /// @brief Create an IO uring with queues of a given size.
     /// @param entries  Maximum number of queue operations to contain
     ///                 within a single batch submission.
-    std::unique_ptr<IOUring> make_io_uring_imp(unsigned entries);
+    std::shared_ptr<IOUring> make_io_uring_imp(unsigned entries);
 }
 #endif // IOURINGIMP_HPP_INCLUDE

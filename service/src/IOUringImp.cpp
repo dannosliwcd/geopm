@@ -97,8 +97,8 @@ namespace geopm
         io_uring_prep_write(sqe, fd, buf, nbytes, offset);
     }
 
-    std::unique_ptr<IOUring> make_io_uring_imp(unsigned entries)
+    std::shared_ptr<IOUring> make_io_uring_imp(unsigned entries)
     {
-        return geopm::make_unique<IOUringImp>(entries);
+        return std::make_shared<IOUringImp>(entries);
     }
 }

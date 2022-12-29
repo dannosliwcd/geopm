@@ -8,6 +8,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <functional>
 
 namespace geopm
 {
@@ -39,7 +40,7 @@ namespace geopm
             ///                existing offset of @p fd, like in read().
             /// @throw if the queue is already full.
             virtual void prep_read(std::shared_ptr<int> ret, int fd,
-                           void *buf, unsigned nbytes, off_t offset) = 0;
+                                   void *buf, unsigned nbytes, off_t offset) = 0;
 
             /// @brief Perform a pwrite in the next batch submission.
             /// @param ret  Where to store the operation's return value,
@@ -52,11 +53,11 @@ namespace geopm
             ///                existing offset of @p fd, like in write().
             /// @throw if the queue is already full.
             virtual void prep_write(std::shared_ptr<int> ret, int fd,
-                            const void *buf, unsigned nbytes, off_t offset) = 0;
+                                    const void *buf, unsigned nbytes, off_t offset) = 0;
     };
 
-    std::unique_ptr<IOUring> make_io_uring(unsigned entries);
-    using IOUringFactory = decltype(&make_io_uring);
+    std::shared_ptr<IOUring> make_io_uring(unsigned entries);
+    using IOUringFactory = std::function<decltype(make_io_uring)>;
 }
 
 #endif /* IOURING_HPP_INCLUDE */

@@ -34,6 +34,6 @@ namespace geopm
 
     /// @brief Create a fallback implementation of IOUring that uses non-batched
     ///        IO operations, in case we cannot use IO uring or liburing.
-    std::unique_ptr<IOUring> make_io_uring_fallback(unsigned entries);
+    std::shared_ptr<IOUring> make_io_uring_fallback(unsigned entries);
 }
 #endif // IOURINGFALLBACK_HPP_INCLUDE

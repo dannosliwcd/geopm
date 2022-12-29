@@ -11,7 +11,7 @@
 
 namespace geopm
 {
-    std::unique_ptr<IOUring> make_io_uring(unsigned entries)
+    std::shared_ptr<IOUring> make_io_uring(unsigned entries)
     {
 #ifdef GEOPM_HAS_IO_URING
         return make_io_uring_imp(entries);

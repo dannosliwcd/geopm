@@ -54,8 +54,8 @@ namespace geopm
         m_operations.emplace_back(ret, std::bind(pwrite, fd, buf, nbytes, offset));
     }
 
-    std::unique_ptr<IOUring> make_io_uring_fallback(unsigned entries)
+    std::shared_ptr<IOUring> make_io_uring_fallback(unsigned entries)
     {
-        return geopm::make_unique<IOUringFallback>(entries);
+        return std::make_shared<IOUringFallback>(entries);
     }
 }

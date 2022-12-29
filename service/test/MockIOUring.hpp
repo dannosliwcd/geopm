@@ -12,6 +12,7 @@
 
 class MockIOUring : public geopm::IOUring
 {
+    public:
         MOCK_METHOD(void, submit, (), (override));
         MOCK_METHOD(void, prep_read,
                     (std::shared_ptr<int> ret, int fd,
