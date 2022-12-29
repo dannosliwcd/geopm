@@ -9,7 +9,6 @@
 #include "liburing.h"
 
 #include <memory>
-#include <iostream>
 
 namespace geopm
 {
@@ -57,7 +56,6 @@ namespace geopm
     void IOUringImp::submit()
     {
         int submitted_operations = io_uring_submit(&m_ring);
-        std::cerr << "DCW: submitted ops " << submitted_operations << std::endl;
         struct io_uring_cqe *cqe;
 
         for (int operation = 0; operation < submitted_operations; ++operation) {
@@ -84,22 +82,10 @@ namespace geopm
     void IOUringImp::prep_read(std::shared_ptr<int> ret, int fd, void *buf,
                                unsigned nbytes, off_t offset)
     {
-        // TODO: Looks like this doesn't work on SLES15.3 (kern 5.3), but does
-        // on a kern 5.10 testbed. According to docs, read_fixed and readv ops
-        // are supported in 5.1+. Not yet sure why this happens.
-        // WIP: committing in broken/debug state while I move to the 5.10 system.
         auto sqe = get_sqe_or_throw();
         set_sqe_return_destination(sqe, ret);
-        std::cerr << "DCW prep_read_fixed " << fd << ", " << buf << ", " << nbytes << ", " << offset << std::endl;
-        //io_uring_prep_read(sqe, fd, buf, nbytes, offset);
-        struct iovec iov;
-        iov.iov_base = buf;
-        iov.iov_len = nbytes;
-        int err = io_uring_register_buffers(&m_ring, &iov, 1);
-        if (err) {
-            throw Exception("Error registering buffers.", -err, __FILE__, __LINE__);
-        }
-        io_uring_prep_read_fixed(sqe, fd, iov.iov_base, iov.iov_len, offset, 0);
+        // Available since Linux 5.10
+        io_uring_prep_read(sqe, fd, buf, nbytes, offset);
     }
 
     void IOUringImp::prep_write(std::shared_ptr<int> ret, int fd, const void *buf,
@@ -107,6 +93,7 @@ namespace geopm
     {
         auto sqe = get_sqe_or_throw();
         set_sqe_return_destination(sqe, ret);
+        // Available since Linux 5.10
         io_uring_prep_write(sqe, fd, buf, nbytes, offset);
     }
 
