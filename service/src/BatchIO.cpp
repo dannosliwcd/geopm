@@ -69,14 +69,12 @@ namespace geopm
 
     size_t BatchBufferReadImp::size(void) const
     {
-        throw Exception("Called an unimplemented function",
-                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+        return m_size;
     }
 
     const void *BatchBufferReadImp::data(void) const
     {
-        throw Exception("Called an unimplemented function",
-                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+        return m_buffer;
     }
 
     std::string BatchBufferReadImp::str(void) const
@@ -95,14 +93,13 @@ namespace geopm
 
     size_t BatchBufferWriteImp::size(void) const
     {
-        throw Exception("Called an unimplemented function",
-                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+        return m_size;
     }
 
     void *BatchBufferWriteImp::data(void)
     {
-        throw Exception("Called an unimplemented function",
-                        GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+        // TOOD: mark dirty so we know to push in the next batch?
+        return m_buffer;
     }
 
     void BatchBufferWriteImp::str(const std::string & /* unused: input */)
