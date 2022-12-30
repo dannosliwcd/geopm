@@ -6,6 +6,7 @@
 
 #include "MSRIOImp.hpp"
 
+#include <algorithm>
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -317,6 +318,21 @@ namespace geopm
 
         if (!m_batch_reader) {
             m_batch_reader = m_batch_io_factory(m_read_batch.numops);
+            std::vector<iovec> iov;
+            for (uint32_t batch_idx = 0; batch_idx != m_read_batch.numops; ++batch_idx) {
+                auto& batch_op = m_read_batch.ops[batch_idx];
+                iov.push_back({.iov_base = &batch_op.msrdata,
+                               .iov_len = sizeof(batch_op.msrdata) });
+            }
+            // TODO: This results in one registered buffer per signal. Each
+            // registered buffer gets a page locked into memory. We don't need
+            // a whole page (we only need 8 bytes for each buffer), so this
+            // unnecessarily eats into our process's max locked memory size.
+            //
+            // Initial measurements don't show significant latency improvements
+            // from using registered buffers in this IOGroup (tested on a
+            // 386-signal batch-read loop).
+            m_batch_reader->register_buffers(iov);
         }
         msr_batch_io(*m_batch_reader, m_read_batch);
     }
@@ -331,14 +347,14 @@ namespace geopm
             return_values.emplace_back(new int(0));
             auto& batch_op = batch.ops[batch_idx];
             if (batch_op.isrdmsr) {
-                batcher.prep_read(return_values.back(), msr_desc(batch_op.cpu),
-                                  &batch_op.msrdata, sizeof(batch_op.msrdata),
-                                  batch_op.msr);
+                batcher.prep_read_fixed(return_values.back(), msr_desc(batch_op.cpu),
+                                        &batch_op.msrdata, sizeof(batch_op.msrdata),
+                                        batch_op.msr, batch_idx);
             }
             else {
-                batcher.prep_write(return_values.back(), msr_desc(batch_op.cpu),
-                                   &batch_op.msrdata, sizeof(batch_op.msrdata),
-                                   batch_op.msr);
+                batcher.prep_write_fixed(return_values.back(), msr_desc(batch_op.cpu),
+                                         &batch_op.msrdata, sizeof(batch_op.msrdata),
+                                         batch_op.msr, batch_idx);
             }
         }
 
@@ -372,6 +388,13 @@ namespace geopm
 
         if (!m_batch_writer) {
             m_batch_writer = m_batch_io_factory(m_write_batch.numops);
+            std::vector<iovec> iov;
+            for (uint32_t batch_idx = 0; batch_idx != m_write_batch.numops; ++batch_idx) {
+                auto& batch_op = m_write_batch.ops[batch_idx];
+                iov.push_back({.iov_base = &batch_op.msrdata,
+                               .iov_len = sizeof(batch_op.msrdata) });
+            }
+            m_batch_writer->register_buffers(iov);
         }
 
         // Read existing MSR values

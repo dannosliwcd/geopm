@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <memory>
 #include <functional>
+#include <vector>
+#include <sys/uio.h>
 
 namespace geopm
 {
@@ -28,6 +30,21 @@ namespace geopm
             ///        from the operation's respective prep_...  function call,
             ///        and do not cause this function to throw.
             virtual void submit() = 0;
+
+            /// @brief Register buffers for use with prep_read_fixed and
+            /// prep_write_fixed.
+            /// @param buffers_to_register iovecs indicating which buffers to
+            ///        register. Order matters, since the order specified here maps
+            ///        @p buf_index to buffers for prep_..._fixed functions.
+            virtual void register_buffers(const std::vector<iovec> &buffers_to_register) = 0;
+
+            virtual void prep_read_fixed(std::shared_ptr<int> ret, int fd,
+                                 void *buf, unsigned nbytes, off_t offset,
+                                 int buf_index) = 0;
+
+            virtual void prep_write_fixed(std::shared_ptr<int> ret, int fd,
+                                  const void *buf, unsigned nbytes, off_t offset,
+                                  int buf_index) = 0;
 
             /// @brief Perform a pread in the next batch submission.
             /// @param ret  Where to store the operation's return value,
@@ -59,6 +76,7 @@ namespace geopm
     /// @brief Create an object that supports an io_uring-like interface. The
     ///        created object uses io_uring if supported, otherwise uses
     ///        individual read/write operations.
+    /// @param entries Maximum expected batch size
     std::shared_ptr<IOUring> make_io_uring(unsigned entries);
     using IOUringFactory = std::function<decltype(make_io_uring)>;
 }

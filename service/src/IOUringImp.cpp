@@ -9,9 +9,11 @@
 #include "liburing.h"
 
 #include <memory>
+#include <iostream>
 
 namespace geopm
 {
+    // Optionally pre-register fds and bufs
     IOUringImp::IOUringImp(unsigned entries)
         : m_ring()
         , m_result_destinations()
@@ -77,6 +79,35 @@ namespace geopm
         // We're done writing batch operation results, so we don't need to
         // track the destination pointers any more.
         m_result_destinations.clear();
+    }
+
+    void IOUringImp::register_buffers(const std::vector<iovec> &buffers_to_register)
+    {
+        std::cerr<<"DCW register bufs " << buffers_to_register.size() << std::endl;
+        int ret = io_uring_register_buffers(
+                &m_ring, buffers_to_register.data(), buffers_to_register.size());
+        if (ret) {
+            throw Exception("Failed register buffers with IO uring",
+                            -ret, __FILE__, __LINE__);
+        }
+    }
+
+    void IOUringImp::prep_read_fixed(std::shared_ptr<int> ret, int fd, void *buf,
+                                     unsigned nbytes, off_t offset, int buf_index)
+    {
+        auto sqe = get_sqe_or_throw();
+        set_sqe_return_destination(sqe, ret);
+        // Available since Linux 5.1
+        io_uring_prep_read_fixed(sqe, fd, buf, nbytes, offset, buf_index);
+    }
+
+    void IOUringImp::prep_write_fixed(std::shared_ptr<int> ret, int fd, const void *buf,
+                                      unsigned nbytes, off_t offset, int buf_index)
+    {
+        auto sqe = get_sqe_or_throw();
+        set_sqe_return_destination(sqe, ret);
+        // Available since Linux 5.1
+        io_uring_prep_write_fixed(sqe, fd, buf, nbytes, offset, buf_index);
     }
 
     void IOUringImp::prep_read(std::shared_ptr<int> ret, int fd, void *buf,

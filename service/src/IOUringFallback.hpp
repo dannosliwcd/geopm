@@ -23,6 +23,16 @@ namespace geopm
 
             void submit() override;
 
+            void register_buffers(const std::vector<iovec> &buffers_to_register) override;
+
+            void prep_read_fixed(std::shared_ptr<int> ret, int fd,
+                                 void *buf, unsigned nbytes, off_t offset,
+                                 int buf_index) override;
+
+            void prep_write_fixed(std::shared_ptr<int> ret, int fd,
+                                  const void *buf, unsigned nbytes, off_t offset,
+                                  int buf_index) override;
+
             void prep_read(std::shared_ptr<int> ret, int fd,
                            void *buf, unsigned nbytes, off_t offset) override;
 
