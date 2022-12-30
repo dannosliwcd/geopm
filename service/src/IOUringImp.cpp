@@ -83,11 +83,20 @@ namespace geopm
 
     void IOUringImp::register_buffers(const std::vector<iovec> &buffers_to_register)
     {
-        std::cerr<<"DCW register bufs " << buffers_to_register.size() << std::endl;
         int ret = io_uring_register_buffers(
                 &m_ring, buffers_to_register.data(), buffers_to_register.size());
         if (ret) {
             throw Exception("Failed register buffers with IO uring",
+                            -ret, __FILE__, __LINE__);
+        }
+    }
+
+    void IOUringImp::register_files(const std::vector<int> &files_to_register)
+    {
+        int ret = io_uring_register_files(
+                &m_ring, files_to_register.data(), files_to_register.size());
+        if (ret) {
+            throw Exception("Failed register files with IO uring",
                             -ret, __FILE__, __LINE__);
         }
     }
@@ -98,7 +107,9 @@ namespace geopm
         auto sqe = get_sqe_or_throw();
         set_sqe_return_destination(sqe, ret);
         // Available since Linux 5.1
-        io_uring_prep_read_fixed(sqe, fd, buf, nbytes, offset, buf_index);
+        (void)fd;
+        io_uring_prep_read_fixed(sqe, buf_index/*hacked in for opportunity measurements*/, buf, nbytes, offset, buf_index);
+        sqe->flags |= IOSQE_FIXED_FILE;
     }
 
     void IOUringImp::prep_write_fixed(std::shared_ptr<int> ret, int fd, const void *buf,

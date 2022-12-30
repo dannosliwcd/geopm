@@ -47,6 +47,11 @@ namespace geopm
         static_cast<void>(buffers_to_register); // Has no effect in this implementation
     }
 
+    void IOUringFallback::register_files(const std::vector<int> &files_to_register)
+    {
+        static_cast<void>(files_to_register); // Has no effect in this implementation
+    }
+
     void IOUringFallback::prep_read_fixed(std::shared_ptr<int> ret, int fd, void *buf,
                                      unsigned nbytes, off_t offset, int buf_index)
     {

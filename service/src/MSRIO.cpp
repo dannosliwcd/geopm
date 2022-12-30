@@ -319,10 +319,12 @@ namespace geopm
         if (!m_batch_reader) {
             m_batch_reader = m_batch_io_factory(m_read_batch.numops);
             std::vector<iovec> iov;
+            std::vector<int> fds;
             for (uint32_t batch_idx = 0; batch_idx != m_read_batch.numops; ++batch_idx) {
                 auto& batch_op = m_read_batch.ops[batch_idx];
                 iov.push_back({.iov_base = &batch_op.msrdata,
                                .iov_len = sizeof(batch_op.msrdata) });
+                fds.push_back(msr_desc(batch_op.cpu));
             }
             // TODO: This results in one registered buffer per signal. Each
             // registered buffer gets a page locked into memory. We don't need
@@ -333,6 +335,7 @@ namespace geopm
             // from using registered buffers in this IOGroup (tested on a
             // 386-signal batch-read loop).
             m_batch_reader->register_buffers(iov);
+            m_batch_reader->register_files(fds);
         }
         msr_batch_io(*m_batch_reader, m_read_batch);
     }

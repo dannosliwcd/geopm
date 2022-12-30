@@ -38,6 +38,13 @@ namespace geopm
             ///        @p buf_index to buffers for prep_..._fixed functions.
             virtual void register_buffers(const std::vector<iovec> &buffers_to_register) = 0;
 
+            /// @brief Register files for use by vector offset instead of using
+            ///        file descriptors in read/write functions.
+            /// @param files_to_register File descriptors indicating which files to
+            ///        register. Order matters, since the order specified here maps
+            ///        @p fd as an index to files for prep_..._fixed functions.
+            virtual void register_files(const std::vector<int> &files_to_register) = 0;
+
             virtual void prep_read_fixed(std::shared_ptr<int> ret, int fd,
                                  void *buf, unsigned nbytes, off_t offset,
                                  int buf_index) = 0;
