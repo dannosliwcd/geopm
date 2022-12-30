@@ -56,6 +56,9 @@ namespace geopm
                                     const void *buf, unsigned nbytes, off_t offset) = 0;
     };
 
+    /// @brief Create an object that supports an io_uring-like interface. The
+    ///        created object uses io_uring if supported, otherwise uses
+    ///        individual read/write operations.
     std::shared_ptr<IOUring> make_io_uring(unsigned entries);
     using IOUringFactory = std::function<decltype(make_io_uring)>;
 }

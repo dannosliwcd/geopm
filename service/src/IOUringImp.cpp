@@ -97,6 +97,21 @@ namespace geopm
         io_uring_prep_write(sqe, fd, buf, nbytes, offset);
     }
 
+    bool IOUringImp::is_supported()
+    {
+        std::unique_ptr<io_uring_probe, decltype(&free)> probe(io_uring_get_probe(), free);
+        if (!probe) {
+            return false;
+        }
+        if (!io_uring_opcode_supported(probe.get(), IORING_OP_READ)) {
+            return false;
+        }
+        if (!io_uring_opcode_supported(probe.get(), IORING_OP_WRITE)) {
+            return false;
+        }
+        return true;
+    }
+
     std::shared_ptr<IOUring> make_io_uring_imp(unsigned entries)
     {
         return std::make_shared<IOUringImp>(entries);

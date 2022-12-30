@@ -12,6 +12,9 @@
 
 namespace geopm
 {
+    /// @brief Fallback implementation of the IOUring batch interface. This
+    /// implementation uses queues of individual read/write operations instead
+    /// of a single batched operation.
     class IOUringFallback final : public IOUring
     {
         public:
@@ -34,6 +37,7 @@ namespace geopm
 
     /// @brief Create a fallback implementation of IOUring that uses non-batched
     ///        IO operations, in case we cannot use IO uring or liburing.
+    /// @param entries The expected maximum number of batched operations.
     std::shared_ptr<IOUring> make_io_uring_fallback(unsigned entries);
 }
 #endif // IOURINGFALLBACK_HPP_INCLUDE

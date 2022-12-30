@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "gmock/gmock-actions.h"
 #include <cstring>
 #include <fcntl.h>
 #include <iterator>
@@ -13,6 +12,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include <sys/mman.h>
 #include <sys/stat.h>

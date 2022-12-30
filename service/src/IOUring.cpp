@@ -14,9 +14,10 @@ namespace geopm
     std::shared_ptr<IOUring> make_io_uring(unsigned entries)
     {
 #ifdef GEOPM_HAS_IO_URING
-        return make_io_uring_imp(entries);
-#else
-        return make_io_uring_fallback(entries);
+        if (IOUringImp::is_supported()) {
+            return make_io_uring_imp(entries);
+        }
 #endif
+        return make_io_uring_fallback(entries);
     }
 }

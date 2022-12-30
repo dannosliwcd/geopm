@@ -15,6 +15,8 @@
 
 namespace geopm
 {
+    /// @brief Implementation of the IOUring batch interface. This
+    /// implementation batches operations inside io_uring submission queues.
     class IOUringImp final : public IOUring
     {
         public:
@@ -28,6 +30,9 @@ namespace geopm
 
             void prep_write(std::shared_ptr<int> ret, int fd,
                             const void *buf, unsigned nbytes, off_t offset) override;
+
+            /// @brief Return whether this implementation of IOUring is supported.
+            static bool is_supported();
         protected:
             struct io_uring_sqe *get_sqe_or_throw();
             void set_sqe_return_destination(

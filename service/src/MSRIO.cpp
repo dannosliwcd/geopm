@@ -47,7 +47,7 @@ namespace geopm
                        IOUringFactory batch_io_factory)
         : m_num_cpu(num_cpu)
         , m_file_desc(m_num_cpu + 1, -1) // Last file descriptor is for the batch file
-        , m_is_batch_enabled(true) // TODO remove later. forcing read/write for testing
+        , m_is_batch_enabled(false) // TODO remove later. forcing read/write for testing
         , m_read_batch({0, NULL})
         , m_write_batch({0, NULL})
         , m_read_batch_op(0)
