@@ -2,12 +2,21 @@
 import asyncio
 import os
 import sys
+import time
 
 GEOPM_ENDPOINT_SOCKET = 63094  # should be configurable
 GEOPM_ENDPOINT_SERVER_HOST = os.getenv('GEOPM_ENDPOINT_SERVER_HOST')
 if GEOPM_ENDPOINT_SERVER_HOST is None:
     print('Error: Must set env var GEOPM_ENDPOINT_SERVER_HOST', file=sys.stderr)
     sys.exit(1)
+
+EXPERIMENT_TOTAL_NODES = os.getenv('EXPERIMENT_TOTAL_NODES')
+if EXPERIMENT_TOTAL_NODES is None:
+    print('Error: Must set env var EXPERIMENT_TOTAL_NODES', file=sys.stderr)
+    sys.exit(1)
+
+EXPERIMENT_TOTAL_NODES = int(EXPERIMENT_TOTAL_NODES)
+IDLE_WATTS_PER_NODE = 38
 
 endpoint_power_measurements = dict()
 endpoint_host_counts = dict()
@@ -17,10 +26,37 @@ barrier_entries = 0
 pre_balance_barrier = asyncio.Semaphore(0)
 barrier_entry_lock = asyncio.Lock()
 
+time_of_last_power_target = time.time()
+last_average_host_power_target = 280
+P = 240
+R = 40
+power_delta_sign = -1
+
+power_targets = None
+try:
+    with open('power_targets.csv') as f:
+        power_targets = list(reversed([float(line.strip()) for line in f if line]))
+except Exception as e:
+    print('Unable to load power trace:', e)
+    pass
 
 # TODO: needs to be time-varying
 def get_cluster_power_target():
-    return 160 * sum(endpoint_host_counts.values())
+    global last_average_host_power_target
+    global power_delta_sign
+    global time_of_last_power_target
+    now = time.time()
+    if now - time_of_last_power_target > 1.0:
+        time_of_last_power_target = now
+        if power_targets is None:
+            if last_average_host_power_target >= 280:
+                power_delta_sign = -1
+            if last_average_host_power_target < 180:
+                power_delta_sign = 1
+            last_average_host_power_target += 10 * power_delta_sign
+        else:
+            last_average_host_power_target = power_targets.pop() * R + P
+    return last_average_host_power_target * sum(endpoint_host_counts.values())
 
 
 def calculate_balance_targets():
@@ -31,7 +67,9 @@ def calculate_balance_targets():
     # TODO: Maybe make the balance_client transform to total-power-per-job
     #       so that the balance_server doesn't need to care about that?
     cluster_cap = get_cluster_power_target()
-    allocated_power = sum(endpoint_power_caps[endpoint] * endpoint_host_counts[endpoint] for endpoint in endpoint_host_counts)
+    idle_hosts = sum(endpoint_host_counts.values())
+    allocated_power = sum(endpoint_power_caps[endpoint] * endpoint_host_counts[endpoint]
+                          for endpoint in endpoint_host_counts) + idle_hosts * IDLE_WATTS_PER_NODE
     cluster_cap_increase = cluster_cap - allocated_power
 
     total_hosts = sum(endpoint_host_counts.values())
@@ -67,10 +105,10 @@ def calculate_balance_targets():
             total_slack_power / total_hosts_under_pressure)
         for endpoint in endpoints_under_pressure})
 
-    # Uniformly distribute the remainder across hosts (if we are not under enough pressure)
+    # Uniformly distribute the difference across hosts (over or under)
     unallocated_power = cluster_cap - sum(
         new_power_caps[endpoint] * endpoint_host_counts[endpoint]
-        for endpoint in endpoint_host_counts)
+        for endpoint in endpoint_host_counts) - idle_hosts * IDLE_WATTS_PER_NODE
     new_power_caps.update({
         endpoint: new_power_caps[endpoint] + (
             unallocated_power / total_hosts)

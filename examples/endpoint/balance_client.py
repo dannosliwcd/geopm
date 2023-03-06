@@ -75,6 +75,18 @@ async def tcp_policy_sample(argv):
         print('Error: Agent does not accept CPU_POWER_LIMIT in its policy. '
               'No power capping will be applied.', file=sys.stderr)
         do_limit_power = False
+    sample_names = geopmpy.agent.sample_names(agent_name)
+    if 'POWER' in sample_names:
+        SAMPLE_NAME = 'POWER'
+    elif 'SUM_POWER_SLACK' in sample_names:
+        SAMPLE_NAME = 'SUM_POWER_SLACK'
+
+    FORWARD_SAMPLES = []
+    if 'MAX_EPOCH_RUNTIME' in sample_names:
+        FORWARD_SAMPLES.append('MAX_EPOCH_RUNTIME')
+    if 'SAMPLE_COUNT' in sample_names:
+        FORWARD_SAMPLES.append('SAMPLE_COUNT')
+
     print(f'{agent_name} agent is running profile {endpoint.profile_name()}')
     nodes = endpoint.nodes()
     print('Nodes:', endpoint.nodes())
@@ -103,13 +115,20 @@ async def tcp_policy_sample(argv):
             try:
                 sample_age, sample_data = endpoint.read_sample()
                 print(f'{nodes} Read a sample (age={sample_age:.5f}):', sample_data)
-                endpoint.write_policy({'CPU_POWER_LIMIT': limit})
+                policy = {'CPU_POWER_LIMIT': limit}
+                for sample_name in FORWARD_SAMPLES:
+                    policy[sample_name] = sample_data[sample_name]
+                if 'STEP_COUNT' in policy:
+                    policy['STEP_COUNT'] += 1
+                if 'SUM_POWER_SLACK' in sample_data:
+                    policy['POWER_SLACK'] = sample_data['SUM_POWER_SLACK']
+                endpoint.write_policy(policy)
                 print(f'{nodes} Set limit: {limit}')
             except RuntimeError:
                 break
 
             # Forward our sample to the cluster-level balancer
-            power_message = f'{sample_data["POWER"]}\n'
+            power_message = f'{sample_data[SAMPLE_NAME]}\n'
             writer.write(power_message.encode())
             await writer.drain()
 
