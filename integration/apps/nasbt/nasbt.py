@@ -51,6 +51,9 @@ class NASBTAppConf(apps.AppConf):
         total_ranks = math.floor(sqrt(total_ranks)) ** 2
         self._ranks_per_node = math.ceil(total_ranks / node_count)
 
+    def get_total_ranks(self, num_nodes):
+        return math.floor(sqrt(num_nodes * self._ranks_per_node)) ** 2
+
     def get_rank_per_node(self):
         return self._ranks_per_node
 
