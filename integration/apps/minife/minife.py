@@ -9,6 +9,16 @@ import glob
 from apps import apps
 
 
+def setup_run_args(parser):
+    """ Add common arguments for all run scripts.
+    """
+    pass
+
+def create_appconf(mach, args):
+    ''' Create a MinifeAppConf object from an argparse and experiment.machine object.
+    '''
+    return MinifeAppConf(args.node_count)
+
 class MinifeAppConf(apps.AppConf):
     @staticmethod
     def name():
@@ -19,7 +29,9 @@ class MinifeAppConf(apps.AppConf):
         problem_sizes = {
             1: '-nx=396 -ny=384 -nz=384',  # '-nx=264 -ny=256 -nz=256',
             4: '-nx=528 -ny=512 -nz=512',  # '-nx=419 -ny=406 -nz=406',
+            6: '-nx=528 -ny=512 -nz=512',
             8: '-nx=792 -ny=768 -nz=768',
+            16: '-nx=792 -ny=1024 -nz=1024',
             64: '-nx=1056 -ny=1024 -nz=1024',
             128: '-nx=1584 -ny=1536 -nz=1536',   # '-nx=1330 -ny=1290 -nz=1290',
             256: '-nx=1676 -ny=1625 -nz=1625',

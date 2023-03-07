@@ -49,6 +49,9 @@ class NASISAppConf(apps.AppConf):
         # The count of NPB integer sort cores must be a power of two
         self._ranks_per_node = 2 ** math.floor(math.log2(max_cores))
 
+    def get_total_ranks(self, num_nodes):
+        return 2 ** math.floor(math.log2(num_nodes * self._ranks_per_node))
+
     def get_rank_per_node(self):
         return self._ranks_per_node
 

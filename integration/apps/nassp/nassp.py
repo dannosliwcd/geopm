@@ -49,6 +49,9 @@ class NASSPAppConf(apps.AppConf):
         # The count of NPB SP processes must be a square number
         self._ranks_per_node = math.floor(sqrt(max_cores)) ** 2
 
+    def get_total_ranks(self, num_nodes):
+        return math.floor(sqrt(num_nodes * self._ranks_per_node)) ** 2
+
     def get_rank_per_node(self):
         return self._ranks_per_node
 

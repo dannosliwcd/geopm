@@ -43,6 +43,9 @@ class NASCGAppConf(apps.AppConf):
                 raise RuntimeError('Number of requested cores must be a power of 2.')
             self._ranks_per_node = ranks_per_node
 
+    def get_total_ranks(self, num_nodes):
+        return 2 ** math.floor(math.log2(num_nodes * self._ranks_per_node))
+
     def get_rank_per_node(self):
         return self._ranks_per_node
 
