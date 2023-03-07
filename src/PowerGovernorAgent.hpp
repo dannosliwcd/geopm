@@ -29,6 +29,7 @@ namespace geopm
             };
             enum m_plat_signal_e {
                 M_PLAT_SIGNAL_PKG_POWER,
+                M_PLAT_SIGNAL_EPOCH_COUNT,
                 M_PLAT_NUM_SIGNAL,
             };
             enum m_trace_sample_e {
@@ -39,6 +40,7 @@ namespace geopm
                 M_SAMPLE_POWER,
                 M_SAMPLE_IS_CONVERGED,
                 M_SAMPLE_POWER_ENFORCED,
+                M_SAMPLE_EPOCH_COUNT,
                 M_NUM_SAMPLE,
             };
 

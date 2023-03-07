@@ -81,6 +81,7 @@ namespace geopm
         m_agg_func[M_SAMPLE_POWER] = Agg::average;
         m_agg_func[M_SAMPLE_IS_CONVERGED] = Agg::logical_and;
         m_agg_func[M_SAMPLE_POWER_ENFORCED] = Agg::average;
+        m_agg_func[M_SAMPLE_EPOCH_COUNT] = Agg::min;
     }
 
     void PowerGovernorAgent::init_platform_io(void)
@@ -88,6 +89,7 @@ namespace geopm
         m_power_gov->init_platform_io();
         // Setup signals
         m_pio_idx[M_PLAT_SIGNAL_PKG_POWER] = m_platform_io.push_signal("CPU_POWER", GEOPM_DOMAIN_BOARD, 0);
+        m_pio_idx[M_PLAT_SIGNAL_EPOCH_COUNT] = m_platform_io.push_signal("EPOCH_COUNT", GEOPM_DOMAIN_BOARD, 0);
 
         // Setup controls
         int pkg_pwr_domain_type = m_platform_io.control_domain_type("CPU_POWER_LIMIT_CONTROL");
@@ -246,6 +248,7 @@ namespace geopm
         if (!std::isnan(m_sample[M_PLAT_SIGNAL_PKG_POWER])) {
             m_epoch_power_buf->insert(m_sample[M_PLAT_SIGNAL_PKG_POWER]);
         }
+
         // If we have observed more than m_min_num_converged epoch
         // calls then send median filtered power values up the tree.
         if (m_epoch_power_buf->size() > m_min_num_converged) {
@@ -253,6 +256,7 @@ namespace geopm
             out_sample[M_SAMPLE_POWER] = median;
             out_sample[M_SAMPLE_IS_CONVERGED] = (median <= m_last_power_budget); // todo might want fudge factor
             out_sample[M_SAMPLE_POWER_ENFORCED] = m_adjusted_power;
+            out_sample[M_SAMPLE_EPOCH_COUNT] = m_sample[M_PLAT_SIGNAL_EPOCH_COUNT];
             m_do_send_sample = true;
         }
         else {
@@ -330,6 +334,6 @@ namespace geopm
 
     std::vector<std::string> PowerGovernorAgent::sample_names(void)
     {
-        return {"POWER", "IS_CONVERGED", "POWER_AVERAGE_ENFORCED"};
+        return {"POWER", "IS_CONVERGED", "POWER_AVERAGE_ENFORCED", "EPOCH_COUNT"};
     }
 }
