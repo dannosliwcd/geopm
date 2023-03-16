@@ -79,7 +79,9 @@ sns.lineplot(
     x='Time',
     y='value',
     hue='Host',
-    style='Signal')
+    style='Signal',
+    legend=False,
+)
 ax_parts.set_ylabel('Host Power')
 
 ax_nodes.step(x=active_nodes_df['Time'].values, y=active_nodes_df['Active Nodes'].values, where='post')
