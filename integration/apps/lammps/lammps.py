@@ -46,9 +46,9 @@ def create_appconf(mach, args):
 
 class LammpsAppConf(apps.AppConf):
     DEFAULT_PROBLEM_SIZES = {
-        'in.rhodo.scaled': ['-v', 'x', '7',
-                            '-v', 'y', '7',
-                            '-v', 'z', '7'],
+        'in.rhodo.scaled': ['-v', 'x', '12',
+                            '-v', 'y', '12',
+                            '-v', 'z', '12'],
         'water_collapse.lmp': [],
     }
 
@@ -75,6 +75,7 @@ class LammpsAppConf(apps.AppConf):
 
         exec_args.extend(['-log', 'none',
                           '-pk', 'intel', '0',
+                          'omp', '2',
                           '-sf', 'intel',
                           ])
 
