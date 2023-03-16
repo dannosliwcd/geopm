@@ -40,6 +40,12 @@ if JOBID is None:
     print('Error: Expected SLURM_JOBID to be set', file=sys.stderr)
     sys.exit(1)
 
+GEOPM_ENDPOINT_TRACE = os.getenv('GEOPM_ENDPOINT_TRACE')
+trace_file = None
+if GEOPM_ENDPOINT_TRACE is not None:
+    trace_file = open(f'{GEOPM_ENDPOINT_TRACE}-{JOBID}', 'w')
+
+
 HOME = os.environ['HOME']
 # TODO: must this reside on a shared file system? Or is local okay if we get the right host?
 ENDPOINT_PATH = os.path.join(HOME, 'testendpoint')
@@ -92,6 +98,13 @@ async def tcp_policy_sample(argv):
     print('Nodes:', endpoint.nodes())
     print('Policy names:', policy_names)
     print('Sample names:', geopmpy.agent.sample_names(agent_name))
+    if trace_file is not None:
+        print(f'# Nodes: {endpoint.nodes()}', file=trace_file)
+        print(f'# Agent: {agent_name}', file=trace_file)
+        print(f'# Profile: {endpoint.profile_name()}', file=trace_file)
+        print(f'# Start Time: {datetime.now().strftime("%a %b %d %H:%M:%S.%f %Y")}', file=trace_file)
+        trace_start = time.time()
+        print('Time,Cap', file=trace_file)
 
     endpoint.write_policy({'CPU_POWER_LIMIT': 150})
 
@@ -109,6 +122,8 @@ async def tcp_policy_sample(argv):
             policy = policy_bytes.decode()
             limit = float(policy)
             print(f'{nodes} Received power cap: {limit}')
+            if trace_file is not None:
+                print('{time.time() - trace_start},{limit}', file=trace_file)
 
             # Get a sample from running under our last limit and forward our
             # new limit to the agent
@@ -128,7 +143,7 @@ async def tcp_policy_sample(argv):
                 break
 
             # Forward our sample to the cluster-level balancer
-            power_message = f'{sample_data[SAMPLE_NAME]}\n'
+            power_message = f'{sample_data[SAMPLE_NAME]},{sample_data["EPOCH_COUNT"]}\n'
             writer.write(power_message.encode())
             await writer.drain()
 
@@ -150,5 +165,7 @@ else:
 loop = asyncio.get_event_loop()
 return_code = loop.run_until_complete(tcp_policy_sample(wrapped_argv))
 loop.close()
+if trace_file is not None:
+    trace_file.close()
 print('rc:', return_code)
 sys.exit(return_code)
