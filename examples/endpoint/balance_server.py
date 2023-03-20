@@ -42,6 +42,7 @@ class EndpointMetrics:
         self.last_recorded_epoch = float('nan')
         self.last_recorded_epoch_time = time.time()
         self.samples_in_last_model = 0
+        self.max_achieved = float('nan')
         self.model = None
 
     def get_total_power_cap(self):
@@ -60,13 +61,14 @@ class EndpointMetrics:
         return (-B - np.sqrt(B**2 - 4 * A * (C - time))) / (2 * A)
 
     def predict_power_at_slowdown(self, slowdown):
-        if slowdown < 1:
+        if self.model is None or slowdown < 1:
             return POWER_MAX
-        time_power_max = self.predict_time_at_power_cap(POWER_MAX)
-        predicted_power = self.predict_power_at_time(slowdown * time_power_max)
-        if predicted_power < POWER_MIN:
-            return POWER_MIN
-        return predicted_power
+        else:
+            time_power_max = self.predict_time_at_power_cap(POWER_MAX)
+            predicted_power = self.predict_power_at_time(slowdown * time_power_max)
+            if predicted_power < POWER_MIN:
+                return POWER_MIN
+            return predicted_power
 
 
 endpoints: Dict[str, EndpointMetrics] = dict()
@@ -77,8 +79,10 @@ barrier_entry_lock = asyncio.Lock()
 
 time_of_last_power_target = time.time()
 last_average_host_power_target = POWER_MAX
-P = 230
-R = 40
+
+# Test P&R that cover the entire design-power range
+P = 0.5 * (POWER_MIN + POWER_MAX)
+R = 0.5 * (POWER_MAX - POWER_MIN)
 power_delta_sign = -1
 
 power_targets = None
@@ -134,73 +138,44 @@ def calculate_balance_targets():
 
     active_hosts = sum(endpoint.host_count for endpoint in endpoints.values())
     idle_hosts = EXPERIMENT_TOTAL_NODES - active_hosts
-    allocated_power = sum(endpoint.get_total_power_cap()
-                          for endpoint in endpoints.values()) + idle_hosts * IDLE_WATTS_PER_NODE
-    cluster_cap_increase = cluster_cap - allocated_power
-
-    cap_increase_per_host = cluster_cap_increase / active_hosts
-
-    # Transform the per-job power caps to sum up to the cluster power cap
-    # Expected to have an effect when a new job launches/finishes
-    # and when the cluster cap changes.
-    for endpoint in endpoints.values():
-        endpoint.current_power_cap += cap_increase_per_host
-
-    # TODO: Calculate this before distributing power? Need to make sure we know who's under pressure from previous caps.
-    slack_power = dict()
-    for endpoint_addr, endpoint in endpoints.items():
-        preferred_power = endpoint.measured_power
-        if endpoint.model is not None:
-            preferred_power = min(preferred_power, endpoint.predict_power_at_slowdown(1.02))
-        slack_power[endpoint_addr] = max(
-            0,
-            ((0.95 * endpoint.current_power_cap) - preferred_power) * endpoint.host_count)
-    # slack_power = {endpoint_addr:
-    #                max(0, 0.95 * (endpoint.current_power_cap
-    #                               - endpoint.measured_power) * endpoint.host_count)
-    #                for endpoint_addr, endpoint in endpoints.items()}
-    total_slack_power = sum(slack_power.values())
-    endpoints_under_pressure = [endpoint_addr
-                                for endpoint_addr, slack in slack_power.items()
-                                if slack == 0]
-
-    total_hosts_under_pressure = sum(endpoints[endpoint_addr].host_count
-                                     for endpoint_addr in endpoints_under_pressure)
-
-    # Deallocate slack power from its current owning endpoints.
-    for endpoint_addr, endpoint in endpoints.items():
-        endpoint.current_power_cap -= slack_power[endpoint_addr] / endpoint.host_count
-
-    # Distribute slack power across endpoints that are under pressure.
-    for endpoint_addr in endpoints_under_pressure:
-        endpoints[endpoint_addr].current_power_cap += (
-            total_slack_power / total_hosts_under_pressure)
-
-    # Uniformly distribute the difference across hosts (over or under)
-    unallocated_power = cluster_cap - sum(
-        endpoint.get_total_power_cap()
-        for endpoint in endpoints.values()) - idle_hosts * IDLE_WATTS_PER_NODE
-    for endpoint_addr in endpoints_under_pressure:
-        endpoints[endpoint_addr].current_power_cap += unallocated_power / active_hosts
-
-    print('uniformly distribute', unallocated_power, 'then total is', sum(
-        endpoint.get_total_power_cap() for endpoint in endpoints.values()))
+    idle_power = idle_hosts * IDLE_WATTS_PER_NODE
+    min_active_power = active_hosts * POWER_MIN
+    unallocated_power = cluster_cap - idle_power - min_active_power
 
     for endpoint in endpoints.values():
-        # TODO: this leaves slack on the table but keeps a TDP ceiling on each
-        #       endpoint. Should consider that when distributing slack instead.
-        endpoint.current_power_cap = min(endpoint.current_power_cap, POWER_MAX)
-    unallocated_power = cluster_cap - sum(
-        endpoint.get_total_power_cap()
-        for endpoint in endpoints.values()) - idle_hosts * IDLE_WATTS_PER_NODE
-    for endpoint_addr in endpoints_under_pressure:
-        endpoints[endpoint_addr].current_power_cap += unallocated_power / active_hosts
-    print('uniformly distribute', unallocated_power, 'then total is', sum(
-        endpoint.get_total_power_cap() for endpoint in endpoints.values()))
-    for endpoint in endpoints.values():
-        # TODO: this leaves slack on the table but keeps a TDP ceiling on each
-        #       endpoint. Should consider that when distributing slack instead.
-        endpoint.current_power_cap = min(endpoint.current_power_cap, POWER_MAX)
+        # Everyone at least gets some power
+        endpoint.current_power_cap = POWER_MIN
+
+    additional_power_needed_for_perf = {
+        endpoint_addr: endpoint.host_count * (endpoint.predict_power_at_slowdown(1.02) - POWER_MIN)
+        for endpoint_addr, endpoint in endpoints.items()}
+    total_power_needed_for_perf = sum(power for power in additional_power_needed_for_perf.values())
+    unallocated_percent_of_needed = unallocated_power / total_power_needed_for_perf
+
+    if unallocated_percent_of_needed >= 1.0:
+        # In aggregate, there is a surplus of available power. Give each job
+        # what it needs first
+        for endpoint_addr, endpoint in endpoints.items():
+            power_to_alloc = additional_power_needed_for_perf[endpoint_addr]
+            unallocated_power -= power_to_alloc
+            endpoint.current_power_cap += power_to_alloc / endpoint.host_count
+
+        # Then distribute the remainder to where it can be achieved
+        remaining_achievable = sum(POWER_MAX - endpoint.current_power_cap for endpoint in endpoints.values())
+        unallocated_percent_of_achievable = unallocated_power / remaining_achievable
+        for endpoint_addr, endpoint in endpoints.items():
+            endpoint.current_power_cap += unallocated_percent_of_achievable * (
+                POWER_MAX - endpoint.current_power_cap)
+    else:
+        # There's not enough power to go around. Give what we can
+        for endpoint_addr, endpoint in endpoints.items():
+            power_to_alloc = unallocated_percent_of_needed * additional_power_needed_for_perf[endpoint_addr]
+            unallocated_power -= power_to_alloc
+            endpoint.current_power_cap += power_to_alloc / endpoint.host_count
+        # TODO: This is only fair if power/perf is linear for all apps
+        # (likely # not true). It's possible to calculate which perf% exactly
+        # results in total power if model coefficients for all jobs are made
+        # visible here.
 
 
 async def rebalance_jobs(reader, writer):
