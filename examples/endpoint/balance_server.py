@@ -65,7 +65,12 @@ class EndpointMetrics:
             return POWER_MAX
         else:
             time_power_max = self.predict_time_at_power_cap(POWER_MAX)
+            if not time_power_max > 0:
+                time_power_max = min(self.epoch_times)
             predicted_power = self.predict_power_at_time(slowdown * time_power_max)
+            if math.isnan(predicted_power):
+                print('Warning: predicted NaN power', file=sys.stderr)
+                return POWER_MAX
             if predicted_power < POWER_MIN:
                 return POWER_MIN
             return predicted_power
@@ -142,6 +147,13 @@ def calculate_balance_targets():
     min_active_power = active_hosts * POWER_MIN
     unallocated_power = cluster_cap - idle_power - min_active_power
 
+    # Strategy: Give POWER_MIN per node to everyone since we cannot cap lower
+    # than that. Increment up to POWER_MAX per node to everyone in stages:
+    #   Stage 1. Try to spend the least possible power budget on achieving all
+    #            performance goals. Maximize perf/qos under power constraints.
+    #   Stage 2. Try to maximize utilization of our power budget. Maximize
+    #            power caps under budget and achievable-power constraints
+
     for endpoint in endpoints.values():
         # Everyone at least gets some power
         endpoint.current_power_cap = POWER_MIN
@@ -161,11 +173,12 @@ def calculate_balance_targets():
             endpoint.current_power_cap += power_to_alloc / endpoint.host_count
 
         # Then distribute the remainder to where it can be achieved
-        remaining_achievable = sum(POWER_MAX - endpoint.current_power_cap for endpoint in endpoints.values())
-        unallocated_percent_of_achievable = unallocated_power / remaining_achievable
-        for endpoint_addr, endpoint in endpoints.items():
-            endpoint.current_power_cap += unallocated_percent_of_achievable * (
-                POWER_MAX - endpoint.current_power_cap)
+        remaining_achievable = sum((POWER_MAX - endpoint.current_power_cap) * endpoint.host_count for endpoint in endpoints.values())
+        if remaining_achievable > 0:
+            unallocated_percent_of_achievable = unallocated_power / remaining_achievable
+            for endpoint_addr, endpoint in endpoints.items():
+                endpoint.current_power_cap += unallocated_percent_of_achievable * (
+                    POWER_MAX - endpoint.current_power_cap)
     else:
         # There's not enough power to go around. Give what we can
         for endpoint_addr, endpoint in endpoints.items():
