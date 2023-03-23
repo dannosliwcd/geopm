@@ -58,7 +58,12 @@ class EndpointMetrics:
         A = self.model.estimator_.coef_[1]
         B = self.model.estimator_.coef_[0]
         C = self.model.estimator_.intercept_
-        return (-B - np.sqrt(B**2 - 4 * A * (C - time))) / (2 * A)
+        if A == 0 and B == 0:
+            # Time appears to be insensitive to power so far
+            return POWER_MIN
+        else:
+            # Quadratic
+            return (-B - np.sqrt(B**2 - 4 * A * (C - time))) / (2 * A)
 
     def predict_power_at_slowdown(self, slowdown):
         if self.model is None or slowdown < 1:
@@ -69,8 +74,14 @@ class EndpointMetrics:
                 time_power_max = min(self.epoch_times)
             predicted_power = self.predict_power_at_time(slowdown * time_power_max)
             if math.isnan(predicted_power):
-                print('Warning: predicted NaN power', file=sys.stderr)
+                A = self.model.estimator_.coef_[1]
+                B = self.model.estimator_.coef_[0]
+                C = self.model.estimator_.intercept_
+                print(f'Warning: predicted NaN power(time_power_max={time_power_max}, A={A}, B={B}, C={C})', file=sys.stderr)
                 return POWER_MAX
+            # TODO: still more special cases, like "near zero" etc, plus cases
+            # where only some runtimes have models so far. Maybe better to use
+            # a constrained optimizer over predict_time().
             if predicted_power < POWER_MIN:
                 return POWER_MIN
             return predicted_power
@@ -144,51 +155,50 @@ def calculate_balance_targets():
     active_hosts = sum(endpoint.host_count for endpoint in endpoints.values())
     idle_hosts = EXPERIMENT_TOTAL_NODES - active_hosts
     idle_power = idle_hosts * IDLE_WATTS_PER_NODE
-    min_active_power = active_hosts * POWER_MIN
-    unallocated_power = cluster_cap - idle_power - min_active_power
-
-    # Strategy: Give POWER_MIN per node to everyone since we cannot cap lower
-    # than that. Increment up to POWER_MAX per node to everyone in stages:
-    #   Stage 1. Try to spend the least possible power budget on achieving all
-    #            performance goals. Maximize perf/qos under power constraints.
-    #   Stage 2. Try to maximize utilization of our power budget. Maximize
-    #            power caps under budget and achievable-power constraints
+    unallocated_power = cluster_cap - idle_power
 
     for endpoint in endpoints.values():
         # Everyone at least gets some power
+        unallocated_power -= POWER_MIN * endpoint.host_count
         endpoint.current_power_cap = POWER_MIN
 
-    additional_power_needed_for_perf = {
-        endpoint_addr: endpoint.host_count * (endpoint.predict_power_at_slowdown(1.02) - POWER_MIN)
-        for endpoint_addr, endpoint in endpoints.items()}
-    total_power_needed_for_perf = sum(power for power in additional_power_needed_for_perf.values())
-    unallocated_percent_of_needed = unallocated_power / total_power_needed_for_perf
+    for i in range(10):
+        additional_power_needed_for_perf = {
+            endpoint_addr: endpoint.host_count * (endpoint.predict_power_at_slowdown(1.05)
+                                                  - endpoint.current_power_cap)
+            for endpoint_addr, endpoint in endpoints.items()}
+        total_power_needed_for_perf = sum(additional_power_needed_for_perf.values())
 
-    if unallocated_percent_of_needed >= 1.0:
-        # In aggregate, there is a surplus of available power. Give each job
-        # what it needs first
+        additional_achievable_power = {
+            endpoint_addr: endpoint.host_count * (POWER_MAX - endpoint.current_power_cap)
+            for endpoint_addr, endpoint in endpoints.items()}
+        total_achievable_power = sum(additional_achievable_power.values())
+
+        budget_this_iteration = unallocated_power
+        if (budget_this_iteration < 0.01 * cluster_cap) or not (total_achievable_power > 0):
+            # We have allocated most of our budget or have no way to utilize our
+            # budget. Stop trying to re-allocate.
+            break
         for endpoint_addr, endpoint in endpoints.items():
-            power_to_alloc = additional_power_needed_for_perf[endpoint_addr]
+            if total_power_needed_for_perf > 5*active_hosts:
+                # TODO: Needs to be > 0 to be a valid calculation. But needs to
+                #       be >> 0 so the "achievable" phase ever kicks in. What
+                #       is a realistic cutoff to use? For now, using 5W/host
+                # We haven't met our performance needs yet. Keep budgeting based on those.
+                power_to_alloc = (additional_power_needed_for_perf[endpoint_addr]
+                                  / total_power_needed_for_perf
+                                  * budget_this_iteration)
+            elif total_achievable_power > 0:
+                # Expected performance needs are met. Budget based on achievable power
+                power_to_alloc = (additional_achievable_power[endpoint_addr]
+                                  / total_achievable_power
+                                  * budget_this_iteration)
             unallocated_power -= power_to_alloc
             endpoint.current_power_cap += power_to_alloc / endpoint.host_count
-
-        # Then distribute the remainder to where it can be achieved
-        remaining_achievable = sum((POWER_MAX - endpoint.current_power_cap) * endpoint.host_count for endpoint in endpoints.values())
-        if remaining_achievable > 0:
-            unallocated_percent_of_achievable = unallocated_power / remaining_achievable
-            for endpoint_addr, endpoint in endpoints.items():
-                endpoint.current_power_cap += unallocated_percent_of_achievable * (
-                    POWER_MAX - endpoint.current_power_cap)
-    else:
-        # There's not enough power to go around. Give what we can
-        for endpoint_addr, endpoint in endpoints.items():
-            power_to_alloc = unallocated_percent_of_needed * additional_power_needed_for_perf[endpoint_addr]
-            unallocated_power -= power_to_alloc
-            endpoint.current_power_cap += power_to_alloc / endpoint.host_count
-        # TODO: This is only fair if power/perf is linear for all apps
-        # (likely # not true). It's possible to calculate which perf% exactly
-        # results in total power if model coefficients for all jobs are made
-        # visible here.
+            # Limit per-host power:
+            over_budgeted_host_power = max(0, endpoint.current_power_cap - POWER_MAX)
+            unallocated_power += over_budgeted_host_power * endpoint.host_count
+            endpoint.current_power_cap -= over_budgeted_host_power
 
 
 async def rebalance_jobs(reader, writer):
@@ -241,20 +251,32 @@ async def rebalance_jobs(reader, writer):
                 endpoint.last_recorded_epoch_time = new_epoch_time
 
                 # Wait some time before training a new model
-                if endpoint.samples_in_last_model + 25 < len(endpoint.epoch_times):
+                if endpoint.samples_in_last_model + 5 < len(endpoint.epoch_times):
                     # Generate [x, x^2] values from X (power caps)
                     # Not including a bias column since the RANSACRegressor internally creates
                     # Linear regressors that have a built-in bias column
                     poly = PolynomialFeatures(2, include_bias=False)
 
-                    def is_model_valid(model, X, y):
+                    def is_model_valid(model, *x_and_y):
                         # Check that time estimates are monotonically decreasing as we increase power
                         times = model.predict(poly.fit_transform(np.linspace(0, POWER_MAX, 8).reshape(-1, 1)))
                         return np.all(times[:-1] >= times[1:])
-                    endpoint.model = linear_model.RANSACRegressor(is_model_valid=is_model_valid)
-                    endpoint.model.fit(poly.fit_transform(
-                        np.reshape(endpoint.power_caps, (-1, 1))), endpoint.epoch_times)
-                    endpoint.samples_in_last_model = len(endpoint.epoch_times)
+                    try:
+                        endpoint.model = linear_model.RANSACRegressor(is_model_valid=is_model_valid)
+                        sample_weight = np.ones(len(endpoint.power_caps))
+                        # Give more importance to recent measurements
+                        sample_weight[-10:] *= 5
+                        endpoint.model.fit(poly.fit_transform(
+                            np.reshape(endpoint.power_caps, (-1, 1))), endpoint.epoch_times, sample_weight=sample_weight)
+                    except ValueError:
+                        # The regressor detected that it found no valid models.
+                        endpoint.model = None
+                    if endpoint.model is not None and not is_model_valid(endpoint.model):
+                        # The regressor found no valid models but didn't detect for some reason.
+                        endpoint.model = None
+
+                    if endpoint.model is not None:
+                        endpoint.samples_in_last_model = len(endpoint.epoch_times)
         print(f"Received {received_endpoint_message} from {endpoint_addr}")
 
         # Wait for all new samples to arrive before rebalancing the budget
