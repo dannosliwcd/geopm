@@ -21,14 +21,13 @@ def setup_run_args(parser):
                         help='Number of physical cores to reserve for the app.')
 
 def create_appconf(mach, args):
-    return NASCGAppConf(mach, args.npb_class, args.ranks_per_node)
+    return NASCGAppConf(mach, args.npb_class, args.ranks_per_node, args.node_count)
 
 class NASCGAppConf(apps.AppConf):
-    @staticmethod
-    def name():
-        return 'nas_cg'
+    def name(self):
+        return f'cg.{self._npb_class}.{self._total_ranks}'
 
-    def __init__(self, mach, npb_class, ranks_per_node):
+    def __init__(self, mach, npb_class, ranks_per_node, node_count):
         benchmark_dir = os.path.dirname(os.path.abspath(__file__))
         self._exec_path = os.path.join(benchmark_dir, "NPB3.4.2", "NPB3.4-MPI", "bin", "cg." + npb_class + ".x")
         self._exec_args = []
@@ -42,9 +41,11 @@ class NASCGAppConf(apps.AppConf):
             elif 2 ** math.floor(math.log2(ranks_per_node)) != ranks_per_node:
                 raise RuntimeError('Number of requested cores must be a power of 2.')
             self._ranks_per_node = ranks_per_node
+        self._npb_class = npb_class
+        self._total_ranks = 2 ** math.floor(math.log2(node_count * self._ranks_per_node))
 
     def get_total_ranks(self, num_nodes):
-        return 2 ** math.floor(math.log2(num_nodes * self._ranks_per_node))
+        return self._total_ranks
 
     def get_rank_per_node(self):
         return self._ranks_per_node
