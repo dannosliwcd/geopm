@@ -21,14 +21,13 @@ def setup_run_args(parser):
                         help='Number of physical cores to reserve for the app.')
 
 def create_appconf(mach, args):
-    return NASLUAppConf(mach, args.npb_class, args.ranks_per_node)
+    return NASLUAppConf(mach, args.npb_class, args.ranks_per_node, args.node_count)
 
 class NASLUAppConf(apps.AppConf):
-    @staticmethod
-    def name():
-        return 'nas_lu'
+    def name(self):
+        return f'lu.{self._npb_class}.{self._total_ranks}'
 
-    def __init__(self, mach, npb_class, ranks_per_node):
+    def __init__(self, mach, npb_class, ranks_per_node, node_count):
         benchmark_dir = os.path.dirname(os.path.abspath(__file__))
         self._exec_path = os.path.join(benchmark_dir, "NPB3.4.2", "NPB3.4-MPI", "bin", "lu." + npb_class + ".x")
         self._exec_args = []
@@ -47,6 +46,8 @@ class NASLUAppConf(apps.AppConf):
                 raise RuntimeError('Number of requested cores is more than the number of available ' +
                                    'cores: {} vs. {}'.format(ranks_per_node, mach.num_core()))
             self._ranks_per_node = ranks_per_node
+        self._npb_class = npb_class
+        self._total_ranks = self._ranks_per_node * node_count
 
     def get_rank_per_node(self):
         return self._ranks_per_node
