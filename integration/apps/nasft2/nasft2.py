@@ -30,10 +30,8 @@ def create_appconf(mach, args):
     return NasftAppConf(mach, args.npb_class, args.ranks_per_node, args.node_count)
 
 class NasftAppConf(apps.AppConf):
-
-    @staticmethod
-    def name():
-        return 'nasft'
+    def name(self):
+        return f'ft.{self._npb_class}.{self._total_ranks}'
 
     def __init__(self, mach, npb_class, ranks_per_node, node_count):
         benchmark_dir = os.path.dirname(os.path.abspath(__file__))
@@ -50,6 +48,8 @@ class NasftAppConf(apps.AppConf):
         # The count of NPB FT processes must be a power of two
         total_ranks = 2 ** math.floor(math.log2(total_ranks))
         self._ranks_per_node = math.ceil(total_ranks / node_count)
+        self._npb_class = npb_class
+        self._total_ranks = total_ranks
 
     def get_total_ranks(self, num_nodes):
         return 2 ** math.floor(math.log2(num_nodes * self._ranks_per_node))
