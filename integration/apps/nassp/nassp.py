@@ -28,29 +28,30 @@ def setup_run_args(parser):
 def create_appconf(mach, args):
     ''' Create a NASSPAppConf object from an ArgParse and experiment.machine object.
     '''
-    return NASSPAppConf(mach, args.npb_class, args.ranks_per_node)
+    return NASSPAppConf(mach, args.npb_class, args.ranks_per_node, args.node_count)
 
 class NASSPAppConf(apps.AppConf):
-    @staticmethod
-    def name():
-        return 'nas_sp'
+    def name(self):
+        return f'sp.{self._npb_class}.{self._total_ranks}'
 
-    def __init__(self, mach, npb_class, ranks_per_node):
+    def __init__(self, mach, npb_class, ranks_per_node, node_count):
         benchmark_dir = os.path.dirname(os.path.abspath(__file__))
         self._exec_path = os.path.join(benchmark_dir, "NPB3.4.2", "NPB3.4-MPI", "bin", "sp." + npb_class + ".x")
         self._exec_args = []
         if ranks_per_node is None:
             # Leave one core for non-app work (e.g., geopm)
-            max_cores = mach.num_core() - 1
+            total_ranks = (mach.num_core() - 1) * node_count
         else:
             if ranks_per_node > mach.num_core():
                 raise RuntimeError('The count of requested cores ({}) is more than the number of available cores ({})'.format(ranks_per_node, mach.num_core()))
-            max_cores = ranks_per_node
+            total_ranks = ranks_per_node * node_count
         # The count of NPB SP processes must be a square number
-        self._ranks_per_node = math.floor(sqrt(max_cores)) ** 2
+        self._total_ranks = math.floor(sqrt(total_ranks)) ** 2
+        self._ranks_per_node = math.ceil(self._total_ranks / node_count)
+        self._npb_class = npb_class
 
     def get_total_ranks(self, num_nodes):
-        return math.floor(sqrt(num_nodes * self._ranks_per_node)) ** 2
+        return self._total_ranks
 
     def get_rank_per_node(self):
         return self._ranks_per_node
