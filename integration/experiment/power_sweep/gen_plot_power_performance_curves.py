@@ -72,10 +72,12 @@ if __name__ == '__main__':
         lambda x: x.loc[x['Power Cap (W)'] == x['Power Cap (W)'].max(), 'Time (s)'].mean())
     df['Relative Time'] = df['Time (s)'] / df['Application'].map(ref_time_by_app)
 
+    plt.rcParams.update({'font.size': 8.0})
     fig, ax = plt.subplots(figsize=(3.35, 2.8))
-    markers = itertools.cycle((',', '+', '.', 'o', '*'))
+    markers = itertools.cycle((',', '+', '.', '*', '^', 'v', '>'))
     for app_name, app_data in df.groupby('Application'):
-        ax.plot(app_data['Power Cap (W)'], app_data['Relative Time'],
+        plot_data = app_data.sort_values('Power Cap (W)')
+        ax.plot(plot_data['Power Cap (W)'], plot_data['Relative Time'],
                 marker=next(markers),
                 label=app_name)
     fig.subplots_adjust(bottom=0.25)
