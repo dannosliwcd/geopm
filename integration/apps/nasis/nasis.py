@@ -27,14 +27,13 @@ def setup_run_args(parser):
 def create_appconf(mach, args):
     ''' Create a NASISAppConf object from an ArgParse and experiment.machine object.
     '''
-    return NASISAppConf(mach, args.npb_class, args.ranks_per_node)
+    return NASISAppConf(mach, args.npb_class, args.ranks_per_node, args.node_count)
 
 class NASISAppConf(apps.AppConf):
-    @staticmethod
-    def name():
-        return 'nas_is'
+    def name(self):
+        return f'is.{self._npb_class}.{self._total_ranks}'
 
-    def __init__(self, mach, npb_class, ranks_per_node):
+    def __init__(self, mach, npb_class, ranks_per_node, num_nodes):
         benchmark_dir = os.path.dirname(os.path.abspath(__file__))
         self._exec_path = os.path.join(benchmark_dir, "NPB3.4.2", "NPB3.4-MPI", "bin", "is." + npb_class + ".x")
         self._exec_args = []
@@ -48,9 +47,11 @@ class NASISAppConf(apps.AppConf):
             max_cores = ranks_per_node
         # The count of NPB integer sort cores must be a power of two
         self._ranks_per_node = 2 ** math.floor(math.log2(max_cores))
+        self._npb_class = npb_class
+        self._total_ranks = 2 ** math.floor(math.log2(num_nodes * self._ranks_per_node))
 
     def get_total_ranks(self, num_nodes):
-        return 2 ** math.floor(math.log2(num_nodes * self._ranks_per_node))
+        return self._total_ranks
 
     def get_rank_per_node(self):
         return self._ranks_per_node
