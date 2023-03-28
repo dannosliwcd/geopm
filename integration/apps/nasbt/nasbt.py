@@ -31,9 +31,8 @@ def create_appconf(mach, args):
     return NASBTAppConf(mach, args.npb_class, args.ranks_per_node, args.node_count)
 
 class NASBTAppConf(apps.AppConf):
-    @staticmethod
-    def name():
-        return 'nas_bt'
+    def name(self):
+        return f'bt.{self._npb_class}.{self._total_ranks}'
 
     def __init__(self, mach, npb_class, ranks_per_node, node_count):
         benchmark_dir = os.path.dirname(os.path.abspath(__file__))
@@ -50,6 +49,8 @@ class NASBTAppConf(apps.AppConf):
         # The count of NPB BT processes must be a square number
         total_ranks = math.floor(sqrt(total_ranks)) ** 2
         self._ranks_per_node = math.ceil(total_ranks / node_count)
+        self._npb_class = npb_class
+        self._total_ranks = total_ranks
 
     def get_total_ranks(self, num_nodes):
         return math.floor(sqrt(num_nodes * self._ranks_per_node)) ** 2
