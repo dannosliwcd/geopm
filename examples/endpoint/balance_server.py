@@ -26,8 +26,11 @@ parser.add_argument('--replay-job-trace',
 parser.add_argument('--job-paths', nargs='*',
                     help='Paths to jobs launcher scripts, ordered by jobTypeID '
                          'as used in --replay-job-trace')
+parser.add_argument('--job-weights', help='Weights to apply to queues of job types in the scheduler')
 parser.add_argument('--average-power-target', type=float,
                     help='Average power target to send to this cluster')
+parser.add_argument('--replay-start-time', action='store_true',
+                    help='Replay job start times instead of calculating at run time.')
 parser.add_argument('--reserve', type=float,
                     help='Maximum power reserve offered by this cluster, above '
                          'and below the average power target')
@@ -36,7 +39,7 @@ args = parser.parse_args()
 if args.replay_job_trace is not None and args.job_paths is None:
     parser.error('Must specify --job-paths if --replay-job-trace is used.')
 
-JOB_SIZES={
+JOB_SIZES_BY_NAME = {
     './launch_bt.d.sh': 2,
     './launch_cg.d.sh': 1,
     './launch_ep.d.sh': 1,
@@ -46,6 +49,8 @@ JOB_SIZES={
     './launch_mg.e.sh': 4,
     './launch_sp.d.sh': 1,
 }
+JOB_WEIGHTS = np.clip(args.job_weights, 0, None)
+JOB_SIZES = np.array([JOB_SIZES_BY_NAME[name] for name in args.job_paths])
 pending_new_hosts = 0
 
 GEOPM_ENDPOINT_SOCKET = 63094  # should be configurable
@@ -208,29 +213,57 @@ def get_ready_jobs(ready_hosts):
     time_now = int((datetime.now() - start_time).total_seconds())
     global pending_new_hosts
 
-    ready_jobs = []
+    launch_list = []
 
     if job_queue_trace is not None:
-        # Use startTime for AQA and queueTime for non-aqa schedule
-        is_ready = ((job_queue_trace['startTime'] <= time_now) & (job_queue_trace['startTime'] >= 0) & (~job_queue_trace['scheduled']))
+        if args.replay_start_time:
+            # Use startTime for AQA and queueTime for non-aqa schedule
+            is_ready = ((job_queue_trace['startTime'] <= time_now) & (job_queue_trace['startTime'] >= 0) & (~job_queue_trace['scheduled']))
 
-        # Queued jobs, already sorted by AQA start time
-        for idx, job in job_queue_trace.loc[is_ready].iterrows():
-            job_path = args.job_paths[job['jobTypeID']]
+            # Queued jobs, already sorted by AQA start time
+            for idx, job in job_queue_trace.loc[is_ready].iterrows():
+                job_path = args.job_paths[job['jobTypeID']]
 
-            # ready_jobs.append(job_path)
-            # job_queue_trace.loc[idx, 'scheduled'] = True
+                # launch_list.append(job_path)
+                # job_queue_trace.loc[idx, 'scheduled'] = True
 
-            job_size = JOB_SIZES[job_path]
-            if job_size <= ready_hosts - pending_new_hosts:
-                ready_jobs.append(job_path)
-                ready_hosts -= job_size
-                pending_new_hosts += job_size
-                job_queue_trace.loc[idx, 'scheduled'] = True
-            else:
-                break
+                job_size = JOB_SIZES_BY_NAME[job_path]
+                if job_size <= ready_hosts - pending_new_hosts:
+                    launch_list.append(job_path)
+                    ready_hosts -= job_size
+                    pending_new_hosts += job_size
+                    job_queue_trace.loc[idx, 'scheduled'] = True
+                else:
+                    break
+        else:
+            # One queue per path in args.job_paths
+            is_ready = ((job_queue_trace['queueTime'] <= time_now) & (job_queue_trace['startTime'] >= 0) & (~job_queue_trace['scheduled']))
+            ready_jobs = job_queue_trace.loc[is_ready]
+            ready_jobs_by_type = ready_jobs.groupby('jobTypeID').count()
+            waiting_job_types = ready_jobs_by_type.index[ready_jobs_by_type > 0]
 
-    return ready_jobs
+            # Ensure that sum(weights) == 1 for weights of jobs that are waiting to run
+            total_usable_weight = JOB_WEIGHTS[waiting_job_types].sum()
+            scheduler_weights = JOB_WEIGHTS / total_usable_weight
+
+            # Allocate hosts to job-type queues by their weights. We only do
+            # exclusive host allocations, so round to a whole number.
+            host_counts_by_queue = (ready_hosts * scheduler_weights).round()
+
+            # If any ready hosts aren't allocated to a queue, shuffle them around
+            # If too many are allocated in total, randomly steal the deficit
+            surplus_hosts = ready_hosts - host_counts_by_queue.sum()
+            surplus_host_distribution = np.random.randint(len(host_counts_by_queue), size=abs(surplus_hosts))
+            host_counts_by_queue += surplus_hosts / abs(surplus_hosts) * surplus_host_distribution
+
+            job_launches_by_queue = host_counts_by_queue / JOB_SIZES
+            for job_type, job_launch_count in enumerate(job_launches_by_queue):
+                launch_candidates = ready_jobs.loc[ready_jobs['jobTypeID'] == job_type]
+                # Launchable count: as many of the ready job of this type as our job weights allow
+                launchable_job_count = min(len(launch_candidates, job_launch_count))
+                launch_candidates.iloc[:launchable_job_count]['scheduled'] = True
+                launch_list.extend([args.job_paths[job_type]] * launchable_job_count)
+    return launch_list
 
 
 def calculate_balance_targets():
