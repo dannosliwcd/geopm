@@ -109,7 +109,7 @@ async def tcp_policy_sample(argv):
     endpoint.write_policy({'CPU_POWER_LIMIT': 150})
 
     average_host_power = 100.0
-    writer.write(f'{HOST_COUNT}\n{average_host_power}\n'.encode())
+    writer.write(f'{HOST_COUNT}\n{average_host_power}\n{endpoint.profile_name()}\n'.encode())
     await writer.drain()
     #time.sleep(1.0)
 

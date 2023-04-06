@@ -101,13 +101,13 @@ sns.scatterplot(
 #      legend=False,
 #  )
 
-sns.ecdfplot(
+sns.kdeplot(
     ax=ax_dist,
     data=df,
     x='CPU_POWER_LIMIT_CONTROL',
     hue='App',
-    #cut=0,
-    #common_norm=False,
+    cut=0,
+    common_norm=False,
 )
 ax_curve.axhline(1.05, linestyle='--')
 ax_curve.set_ylim((0.25, 3.75))
