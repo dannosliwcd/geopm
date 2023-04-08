@@ -1,4 +1,4 @@
-From 6e3a7e364e6de4ced6ac22c95c294b4cdff16d43 Mon Sep 17 00:00:00 2001
+From d6c40259363c1a9741875cb379397e59a384fee2 Mon Sep 17 00:00:00 2001
 From: Daniel Wilson <daniel1.wilson@intel.com>
 Date: Mon, 10 Jan 2022 20:57:06 -0500
 Subject: [PATCH] Add geopm markup to build intsort
@@ -7,27 +7,147 @@ Subject: [PATCH] Add geopm markup to build intsort
 #  SPDX-License-Identifier: BSD-3-Clause
 #
 ---
- NPB3.4-MPI/IS/is.c          |   3 +
+ NPB3.4-MPI/IS/is.c          |  74 ++++++++++++----
  NPB3.4-MPI/config/make.def  | 163 ++++++++++++++++++++++++++++++++++++
  NPB3.4-MPI/config/suite.def |  22 +++++
- 3 files changed, 188 insertions(+)
+ 3 files changed, 242 insertions(+), 17 deletions(-)
  create mode 100644 NPB3.4-MPI/config/make.def
  create mode 100644 NPB3.4-MPI/config/suite.def
 
 diff --git a/NPB3.4-MPI/IS/is.c b/NPB3.4-MPI/IS/is.c
-index e7227ae..658b842 100644
+index e7227ae..f155108 100644
 --- a/NPB3.4-MPI/IS/is.c
 +++ b/NPB3.4-MPI/IS/is.c
-@@ -45,6 +45,8 @@
+@@ -45,6 +45,9 @@
  #include <stdio.h>
  #include <string.h>
  
 +#include "geopm_prof.h"
++#include "geopm_hint.h"
 +
  /******************/
  /* default values */
  /******************/
-@@ -1096,6 +1098,7 @@ int main( int argc, char **argv )
+@@ -254,6 +257,9 @@ INT_TYPE *key_array,
+ int      *send_count, *recv_count,
+          *send_displ, *recv_displ;
+ 
++// Send profiling updates every 16 MiB of integers processed
++static const unsigned PROFILE_STEP_SIZE = (1<<24) / sizeof(key_array[0]);
++uint64_t count_keys_region_id, bucket_sort_region_id, create_seq_region_id;
+ 
+ /**********************/
+ /* Partial verif info */
+@@ -535,19 +541,29 @@ double   find_my_seed( int  kn,       /* my processor rank, 0<=kn<=num procs */
+ void	create_seq( double seed, double a )
+ {
+ 	double x;
+-	int    i, k;
++	int    ii, i, k;
+ 
+         k = MAX_KEY/4;
+ 
+-	for (i=0; i<num_keys; i++)
+-	{
+-	    x = randlc(&seed, &a);
+-	    x += randlc(&seed, &a);
+-    	    x += randlc(&seed, &a);
+-	    x += randlc(&seed, &a);  
++    geopm_prof_enter(create_seq_region_id);
++    geopm_tprof_init(num_keys / PROFILE_STEP_SIZE);
++    for ( ii=0; ii<num_keys; ii+=PROFILE_STEP_SIZE )
++    {
++        const size_t LIMIT = (ii + PROFILE_STEP_SIZE < num_keys)
++                                 ? ii + PROFILE_STEP_SIZE
++                                 : num_keys;
++        for (i=ii; i<LIMIT; i++)
++        {
++            x = randlc(&seed, &a);
++            x += randlc(&seed, &a);
++                x += randlc(&seed, &a);
++            x += randlc(&seed, &a);  
+ 
+-            key_array[i] = k*x;
+-	}
++                key_array[i] = k*x;
++        }
++        geopm_tprof_post();
++    }
++    geopm_prof_exit(create_seq_region_id);
+ }
+ 
+ 
+@@ -630,8 +646,7 @@ void full_verify( void )
+ 
+ void rank( int iteration )
+ {
+-
+-    INT_TYPE    i, k;
++    INT_TYPE    ii, i, k;
+ 
+     INT_TYPE    shift = MAX_KEY_LOG_2 - NUM_BUCKETS_LOG_2;
+     INT_TYPE    key;
+@@ -681,12 +696,22 @@ void rank( int iteration )
+         bucket_ptrs[i] = bucket_ptrs[i-1] + bucket_size[i-1];
+ 
+ 
++    geopm_prof_enter(bucket_sort_region_id);
+ /*  Sort into appropriate bucket */
+-    for( i=0; i<num_keys; i++ )  
++    geopm_tprof_init(num_keys / PROFILE_STEP_SIZE);
++    for ( ii=0; ii<num_keys; ii+=PROFILE_STEP_SIZE )
+     {
+-        key = key_array[i];
+-        key_buff1[bucket_ptrs[key >> shift]++] = key;
++        const size_t LIMIT = (ii + PROFILE_STEP_SIZE < num_keys)
++                                 ? ii + PROFILE_STEP_SIZE
++                                 : num_keys;
++        for( i=ii; i<LIMIT; i++ )  
++        {
++            key = key_array[i];
++            key_buff1[bucket_ptrs[key >> shift]++] = key;
++        }
++        geopm_tprof_post();
+     }
++    geopm_prof_exit(bucket_sort_region_id);
+ 
+     TIMER_STOP( T_RANK );
+     TIMER_START( T_RCOMM );
+@@ -818,9 +843,19 @@ void rank( int iteration )
+ /*  In this section, the keys themselves are used as their 
+     own indexes to determine how many of each there are: their
+     individual population                                       */
+-    for( i=0; i<j; i++ )
+-        key_buff_ptr[key_buff2[i]]++;  /* Now they have individual key   */
+-                                       /* population                     */
++    geopm_prof_enter(count_keys_region_id);
++    (void)geopm_tprof_init(j / PROFILE_STEP_SIZE);
++    for ( ii=0; ii<j; ii+=PROFILE_STEP_SIZE )
++    {
++        const size_t LIMIT = (ii + PROFILE_STEP_SIZE < j)
++                                 ? ii + PROFILE_STEP_SIZE
++                                 : j;
++        for( i=ii; i<LIMIT; i++ )
++            key_buff_ptr[key_buff2[i]]++;  /* Now they have individual key   */
++                                           /* population                     */
++        (void)geopm_tprof_post();
++    }
++    geopm_prof_exit(count_keys_region_id);
+ 
+ /*  To obtain ranks of each key, successively add the individual key
+     population, not forgetting the total of lesser keys, m.
+@@ -945,6 +980,10 @@ int main( int argc, char **argv )
+     MPI_Comm_rank( MPI_COMM_WORLD, &my_rank );
+     MPI_Comm_size( MPI_COMM_WORLD, &np_total );
+ 
++    geopm_prof_region("count_keys", GEOPM_REGION_HINT_UNKNOWN, &count_keys_region_id);
++    geopm_prof_region("bucket_sort", GEOPM_REGION_HINT_UNKNOWN, &bucket_sort_region_id);
++    geopm_prof_region("create_seq", GEOPM_REGION_HINT_UNKNOWN, &create_seq_region_id);
++
+ 
+ /*  Check to see whether total number of processes is within bounds.
+     This could in principle be checked in setparams.c, but it is more
+@@ -1096,6 +1135,7 @@ int main( int argc, char **argv )
      {
          if( my_rank == 0 && CLASS != 'S' ) printf( "        %d\n", iteration );
          rank( iteration );
