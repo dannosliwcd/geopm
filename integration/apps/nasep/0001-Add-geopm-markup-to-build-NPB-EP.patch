@@ -1,19 +1,48 @@
-From 938c3351a8ce7104511ed3d25e9381ba8da332c4 Mon Sep 17 00:00:00 2001
+From 596593e0794f65495d2281deee0daa3d0e4efe11 Mon Sep 17 00:00:00 2001
 From: Daniel Wilson <daniel1.wilson@intel.com>
 Date: Mon, 10 Jan 2022 20:57:06 -0500
 Subject: [PATCH] Add geopm markup to build NPB EP
 
 #  Copyright (c) 2015 - 2022, Intel Corporation
 #  SPDX-License-Identifier: BSD-3-Clause
-#
 
 ---
+ NPB3.4-MPI/EP/ep.f90        |   4 +
  NPB3.4-MPI/config/make.def  | 163 ++++++++++++++++++++++++++++++++++++
  NPB3.4-MPI/config/suite.def |  22 +++++
- 2 files changed, 185 insertions(+)
+ 3 files changed, 189 insertions(+)
  create mode 100644 NPB3.4-MPI/config/make.def
  create mode 100644 NPB3.4-MPI/config/suite.def
 
+diff --git a/NPB3.4-MPI/EP/ep.f90 b/NPB3.4-MPI/EP/ep.f90
+index 1bdaa9a..67bddab 100644
+--- a/NPB3.4-MPI/EP/ep.f90
++++ b/NPB3.4-MPI/EP/ep.f90
+@@ -51,6 +51,8 @@
+ 
+       use ep_data
+       use mpinpb
++      use geopm_prof
++      use, intrinsic :: ISO_C_BINDING
+ 
+       implicit none
+ 
+@@ -194,6 +196,7 @@
+          k_offset = no_large_nodes*(np+1) + (node-no_large_nodes)*np -1
+       endif
+ 
++      ierr = geopm_tprof_init(np)
+       do 150 k = 1, np
+          kk = k_offset + k 
+          t1 = s
+@@ -239,6 +242,7 @@
+ 
+          if (timers_enabled) call timer_stop(t_gpairs)
+ 
++         ierr = geopm_tprof_post()
+  150  continue
+ 
+       if (timers_enabled) call timer_start(t_rcomm)
 diff --git a/NPB3.4-MPI/config/make.def b/NPB3.4-MPI/config/make.def
 new file mode 100644
 index 0000000..9265d07
