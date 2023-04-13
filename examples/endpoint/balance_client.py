@@ -6,6 +6,8 @@ import geopmpy.endpoint
 import geopmpy.agent
 import subprocess
 import time
+import math
+from datetime import datetime
 import os
 import pandas as pd
 
@@ -22,6 +24,7 @@ if len(sys.argv) > 0 and sys.argv[1] in ['-h', '--help']:
           'CPU_POWER_LIMIT in its policy and sends POWER in its sample data.')
     sys.exit(0)
 
+INITIAL_POWER_LIMIT = 280
 GEOPM_ENDPOINT_SOCKET = 63094  # should be configurable
 #                     ("GEOPM")
 GEOPM_ENDPOINT_SERVER_HOST = os.getenv('GEOPM_ENDPOINT_SERVER_HOST')
@@ -104,14 +107,27 @@ async def tcp_policy_sample(argv):
         print(f'# Profile: {endpoint.profile_name()}', file=trace_file)
         print(f'# Start Time: {datetime.now().strftime("%a %b %d %H:%M:%S.%f %Y")}', file=trace_file)
         trace_start = time.time()
-        print('Time,Cap', file=trace_file)
+        print('time,cap,epoch,epoch duration,progress cap,progress,progress duration', file=trace_file)
+        print(f'0,{INITIAL_POWER_LIMIT},nan,nan,{INITIAL_POWER_LIMIT},nan,nan', file=trace_file)
 
-    endpoint.write_policy({'CPU_POWER_LIMIT': 150})
+    endpoint.write_policy({'CPU_POWER_LIMIT': INITIAL_POWER_LIMIT})
 
-    average_host_power = 100.0
-    writer.write(f'{HOST_COUNT}\n{average_host_power}\n{endpoint.profile_name()}\n'.encode())
+    # TODO: read power instead of sending INITIAL_POWER_LIMIT?
+    writer.write(f'{len(endpoint.nodes())}\n{INITIAL_POWER_LIMIT}\n{endpoint.profile_name()}\n'.encode())
     await writer.drain()
-    #time.sleep(1.0)
+    last_sample_time = time.time()
+
+    # Used to get the time-weighted mean of power limits over an epoch
+    epoch_energy_limit = 0
+    epoch_energy_duration = 0
+
+    progress_update_energy_limit = 0
+    progress_update_energy_duration = 0
+
+    last_epoch_time = float('nan')
+    last_progress_update_time = float('nan')
+    last_epoch_count = float('nan')
+    last_progress = float('nan')
 
     while proc.poll() is None:
         if do_limit_power:
@@ -120,17 +136,16 @@ async def tcp_policy_sample(argv):
             if not policy_bytes:
                 break
             policy = policy_bytes.decode()
-            limit = float(policy)
-            print(f'{nodes} Received power cap: {limit}')
-            if trace_file is not None:
-                print('{time.time() - trace_start},{limit}', file=trace_file)
+            power_limit = float(policy)
+            print(f'{nodes} Received power cap: {power_limit}')
 
             # Get a sample from running under our last limit and forward our
             # new limit to the agent
             try:
                 sample_age, sample_data = endpoint.read_sample()
+                sample_time = time.time() - sample_age
                 print(f'{nodes} Read a sample (age={sample_age:.5f}):', sample_data)
-                policy = {'CPU_POWER_LIMIT': limit}
+                policy = {'CPU_POWER_LIMIT': power_limit}
                 for sample_name in FORWARD_SAMPLES:
                     policy[sample_name] = sample_data[sample_name]
                 if 'STEP_COUNT' in policy:
@@ -138,14 +153,54 @@ async def tcp_policy_sample(argv):
                 if 'SUM_POWER_SLACK' in sample_data:
                     policy['POWER_SLACK'] = sample_data['SUM_POWER_SLACK']
                 endpoint.write_policy(policy)
-                print(f'{nodes} Set limit: {limit}')
+                print(f'{nodes} Set limit: {power_limit}')
             except RuntimeError:
                 break
 
+            time_since_last_sample = sample_time - last_sample_time
+
             # Forward our sample to the cluster-level balancer
-            power_message = f'{sample_data[SAMPLE_NAME]},{sample_data["EPOCH_COUNT"]}\n'
+            epoch = sample_data["EPOCH_COUNT"]
+            epoch_start_time = sample_data["EPOCH_START_TIME"]
+            epoch_energy_limit += power_limit * time_since_last_sample
+            epoch_energy_duration += time_since_last_sample
+            average_epoch_cap = float('nan')
+            epoch_duration = float('nan')
+            do_print_trace = False
+            if epoch != last_epoch_count and not math.isnan(epoch) and epoch_energy_duration > 0:
+                do_print_trace = True
+                epoch_duration = epoch_start_time - last_epoch_time
+                average_epoch_cap = epoch_energy_limit / epoch_energy_duration
+                epoch_energy_limit = 0
+                epoch_energy_duration = 0
+                last_epoch_time = epoch_start_time
+                last_epoch_count = epoch
+
+            progress = sample_data["PROGRESS"]
+            progress_update_time = sample_data["PROGRESS_UPDATE_TIME"]
+            progress_update_energy_limit += power_limit * time_since_last_sample
+            progress_update_energy_duration += time_since_last_sample
+            average_progress_update_cap = float('nan')
+            progress_duration = float('nan')
+            if progress != last_progress and not math.isnan(progress) and progress_update_energy_duration > 0:
+                do_print_trace = True
+                progress_duration = progress_update_time - last_progress_update_time
+                average_progress_update_cap = progress_update_energy_limit / progress_update_energy_duration
+                progress_update_energy_limit = 0
+                progress_update_energy_duration = 0
+                last_progress_update_time = progress_update_time
+                last_progress_update = progress
+
+            if do_print_trace:
+                # Either the epoch or progress samples have been updated
+                if trace_file is not None:
+                    print(f'{sample_time - trace_start},{average_epoch_cap},{epoch},{epoch_duration},{average_progress_update_cap},{progress},{progress_duration}', file=trace_file)
+
+            power_message = f'{sample_data[SAMPLE_NAME]},{epoch},{average_epoch_cap},{epoch_duration},{progress},{average_progress_update_cap},{progress_duration}\n'
             writer.write(power_message.encode())
             await writer.drain()
+
+            last_sample_time = sample_time
 
     print('All done!')
     writer.close()

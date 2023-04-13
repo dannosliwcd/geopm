@@ -63,6 +63,7 @@ df = pd.concat(dfs).reset_index()
 
 #reference_times_by_app = df.groupby('app')['time'].min().to_dict()
 reference_times_by_app = {
+    'bt.C.x': 34,
     'bt.D.x': 370,
     'cg.D.x': 300,
     'ep.D.x': 36,
@@ -149,5 +150,8 @@ fig.savefig(f'{path}-schedule.{ext}', bbox_inches='tight', pad_inches=0)
 #ax.set_xlabel('$90^{th}$ Percentile Slowdown')
 #ax.set_ylabel('App')
 
+print('===== time x hosts =====')
 print(df.groupby('Power Budgeter').apply(lambda x: (x['time'] * x['hosts']).mean()).to_string())
+print('===== reltime =====')
+print(df.groupby(['Power Budgeter', 'app'])['reltime'].mean().to_string())
 

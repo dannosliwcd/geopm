@@ -1,0 +1,57 @@
+applications:
+  bt.D.x:
+    model:
+      A: 5.47820496e-05
+      C: 1.4833673118803585
+    nodes: 2
+    min_time: 370
+    launcher: './launch_bt.d.sh'
+  is.D.x:
+    model:
+      A: 4.72515348e-06
+      C: 1.4478750455478702
+    nodes: 1
+    min_time: 28
+    launcher: './launch_is.d.sh'
+  ep.D.x:
+    model:
+      A: 0.00136868
+      C: 37.10776707718499
+    nodes: 1
+    min_time: 36
+    launcher: './launch_ep.d.sh'
+  cg.D.x:
+    model:
+      A: 7.06920267e-05
+      C: 2.9397263822928763
+    nodes: 1
+    min_time: 300
+    launcher: './launch_cg.d.sh'
+  ft.D.x:
+    model:
+      A: 7.06920267e-05
+      C: 2.9397263822928763
+    nodes: 2
+    min_time: 103
+    launcher: './launch_ft.d.sh'
+  mg.E.x:
+    model:
+      A: 3.8781616e-05
+      C: 2.687963954200252
+    nodes: 4
+    min_time: 143
+    launcher: './launch_mg.e.sh'
+  lu.D.x:
+    model:
+      A: 4.79733907e-05
+      C: 1.259308295959879
+    nodes: 1
+    min_time: 380
+    launcher: './launch_lu.d.sh'
+  sp.D.x:
+    model:
+      A: 1.96963115e-05
+      C: 2.153331623883713
+    nodes: 1
+    min_time: 1095
+    launcher: './launch_sp.d.sh'

@@ -7,12 +7,18 @@ import math
 import pandas as pd
 import subprocess
 from sklearn import linear_model
-from sklearn.preprocessing import PolynomialFeatures
+from sklearn.preprocessing import PolynomialFeatures, FunctionTransformer
 from scipy import optimize
 import numpy as np
 from typing import Dict
 from datetime import datetime, timedelta
 import argparse
+
+from yaml import load
+try:
+    from yaml import CSafeLoader as SafeLoader
+except ImportError:
+    from yaml import SafeLoader
 
 parser = argparse.ArgumentParser(
     description='Launch the cluster-management side of the GEOPM endpoint.')
@@ -20,13 +26,13 @@ parser.add_argument('--no-cross-job-sharing', action='store_true')
 parser.add_argument('--replay-job-trace',
                     help='Path to a csv of job submission times to replay. '
                          'Must have jobTypeID(int) and startTime(int) columns. '
-                         'jobTypeID is the index to a launcher script path in '
-                         '--job-paths. startTime is number of seconds since '
+                         'jobTypeID is the index to a job type in '
+                         '--job-names. startTime is number of seconds since '
                          'this script started running.')
-parser.add_argument('--job-paths', nargs='*',
-                    help='Paths to jobs launcher scripts, ordered by jobTypeID '
+parser.add_argument('--job-names', nargs='*',
+                    help='Names of jobs as defined in --app-info, ordered by jobTypeID '
                          'as used in --replay-job-trace')
-parser.add_argument('--job-weights', help='Weights to apply to queues of job types in the scheduler')
+parser.add_argument('--job-weights', default='', help='Weights to apply to queues of job types in the scheduler')
 parser.add_argument('--average-power-target', type=float,
                     help='Average power target to send to this cluster')
 parser.add_argument('--replay-start-time', action='store_true',
@@ -34,23 +40,39 @@ parser.add_argument('--replay-start-time', action='store_true',
 parser.add_argument('--reserve', type=float,
                     help='Maximum power reserve offered by this cluster, above '
                          'and below the average power target')
+parser.add_argument('--app-info',
+                    default='app_properties.yaml',
+                    help='Path to application characterization data')
 args = parser.parse_args()
 
-if args.replay_job_trace is not None and args.job_paths is None:
-    parser.error('Must specify --job-paths if --replay-job-trace is used.')
+if args.replay_job_trace is not None and args.job_names is None:
+    parser.error('Must specify --job-names if --replay-job-trace is used.')
+
+with open(args.app_info) as f:
+    app_info = load(f, Loader=SafeLoader)
+
+JOB_PATHS = [] if args.job_names is None else [app_info['applications'][name]['launcher']
+                                               for name in args.job_names]
 
 JOB_SIZES_BY_NAME = {
-    './launch_bt.d.sh': 2,
-    './launch_cg.d.sh': 1,
-    './launch_ep.d.sh': 1,
-    './launch_ft.d.sh': 2,
-    './launch_is.d.sh': 1,
-    './launch_lu.d.sh': 1,
-    './launch_mg.e.sh': 4,
-    './launch_sp.d.sh': 1,
+    name: data['nodes']
+    for name, data in app_info['applications'].items()
 }
-JOB_WEIGHTS = np.clip(args.job_weights, 0, None)
-JOB_SIZES = np.array([JOB_SIZES_BY_NAME[name] for name in args.job_paths])
+
+from collections import namedtuple
+Coef = namedtuple('coef', ['A','C'])
+USE_PRE_CHARACTERIZED = True
+MODEL_COEFFICIENTS_BY_PROFILE_TAIL = {
+    name: Coef(data['model']['A'], data['model']['C'])
+    for name, data in app_info['applications'].items()
+}
+
+# TODO for testing small case
+MODEL_COEFFICIENTS_BY_PROFILE_TAIL['bt.C.x'] = Coef(5.47820496e-05, 1.4833673118803585)
+MODEL_COEFFICIENTS_BY_PROFILE_TAIL['sp.C.x'] = Coef(1.96963115e-05, 2.153331623883713)
+
+JOB_WEIGHTS = np.clip([int(w) for w in args.job_weights.split(',') if len(w)>0], 0, None)
+JOB_SIZES = np.array([JOB_SIZES_BY_NAME[name] for name in args.job_names])
 pending_new_hosts = 0
 
 GEOPM_ENDPOINT_SOCKET = 63094  # should be configurable
@@ -81,8 +103,12 @@ class EndpointMetrics:
         self.profile = profile
         self.power_caps = list() # TODO: should probably be a size-bounded collection
         self.epoch_times = list() # TODO: should probably be a size-bounded collection
+        self.progress_caps = list() # TODO: should probably be a size-bounded collection
+        self.progress_times = list() # TODO: should probably be a size-bounded collection
         self.last_recorded_epoch = float('nan')
         self.last_recorded_epoch_time = time.time()
+        self.last_recorded_progress = float('nan')
+        self.last_recorded_progress_time = time.time()
         self.samples_in_last_model = 0
         self.max_achieved = float('nan')
         self.model = None
@@ -95,32 +121,41 @@ class EndpointMetrics:
 
     def predict_time_at_power_cap(self, power_cap):
         #return np.exp(self.model.estimator_.intercept_ + self.model.estimator_.coef_[0] * power_cap + self.model.estimator_.coef_[1] * power_cap**2)
-        return np.exp(self.model.intercept_ + self.model.coef_[0] * power_cap + self.model.coef_[1] * power_cap**2)
+
+        #return np.exp(self.model.intercept_ + self.model.coef_[0] * power_cap + self.model.coef_[1] * power_cap**2)
         #poly = PolynomialFeatures(2, include_bias=False)
-        #times = self.model.predict(poly.fit_transform([[power_cap]]))
-        #return np.exp(times[0])
+        if USE_PRE_CHARACTERIZED:
+            A, C = MODEL_COEFFICIENTS_BY_PROFILE_TAIL[self.profile.rsplit('/', 1)[-1].rsplit('"',1)[0]]
+            return A * (POWER_MAX - power_cap)**2 + C
+        poly = FunctionTransformer(lambda x: (POWER_MAX-x)**2)
+        times = self.model.predict(poly.fit_transform(np.reshape([[power_cap]], (-1, 1))))
+        return times[0]
         #return (self.model.intercept_ + self.model.coef_[0] * power_cap + self.model.coef_[1] * power_cap**2)
 
     def predict_power_at_time(self, time):
         #A = self.model.estimator_.coef_[1]
         #B = self.model.estimator_.coef_[0]
         #C = self.model.estimator_.intercept_
-        A = self.model.coef_[1]
-        B = self.model.coef_[0]
+        A = self.model.coef_[0]
+        #B = self.model.coef_[0]
+        B = 0
         C = self.model.intercept_
+        if USE_PRE_CHARACTERIZED:
+            A, C = MODEL_COEFFICIENTS_BY_PROFILE_TAIL[self.profile.rsplit('/', 1)[-1].rsplit('"',1)[0]]
+
         #if abs(A) <= 1e-5 and abs(B) < 0.001:
-        if A == 0 and B == 0:
-            # Time appears to be insensitive to power so far
+        if A == 0:
             return POWER_MIN
         else:
             # Quadratic
-            #return (-B - np.sqrt(B**2 - 4 * A * (C - np.log(time)))) / (2 * A)
-            return (-B - np.sqrt(B**2 - 4 * A * (C - np.log(time)))) / (2 * A)
+            #return (-B - np.sqrt(B**2 - 4 * A * (C - time))) / (2 * A)
+            return POWER_MAX-(-B + np.sqrt(B**2 - 4 * A * (C - time))) / (2 * A)
 
     def predict_power_at_slowdown(self, slowdown):
         if slowdown < 1:
             return POWER_MAX
         if self.model is None:
+            print('no model')
             return max(POWER_MIN, min(POWER_MAX, (POWER_MAX/slowdown + POWER_MIN) / 2)) # or take mean of the rest of the job types
         else:
             time_power_max = self.predict_time_at_power_cap(POWER_MAX)
@@ -128,19 +163,24 @@ class EndpointMetrics:
                 time_power_max = min(self.epoch_times)
             predicted_power = self.predict_power_at_time(slowdown * time_power_max)
             if math.isnan(predicted_power):
-                # A = self.model.estimator_.coef_[1]
-                # B = self.model.estimator_.coef_[0]
-                # C = self.model.estimator_.intercept_
+                # A = self.model.coef_[1]
+                # B = self.model.coef_[0]
+                # C = self.model.intercept_
                 # Fall back to linear
                 power = max(POWER_MIN, min(POWER_MAX, POWER_MAX / slowdown / 2))
-                #print(f'Warning: Fall back to {power} (time_power_max={time_power_max}, A={A}, B={B}, C={C})', file=sys.stderr)
+                # print(f'model predicted nan power, A={A}, B={B}, C={C}')
+                # print(f'Warning: Fall back to {power} (time_power_max={time_power_max}, A={A}, B={B}, C={C})', file=sys.stderr)
                 return power
             # TODO: still more special cases, like "near zero" etc, plus cases
             # where only some runtimes have models so far. Maybe better to use
             # a constrained optimizer over predict_time().
             if predicted_power < POWER_MIN:
                 return POWER_MIN
-            print(f'Predicted power(slowdown={slowdown}, time_power_max={time_power_max}) = {predicted_power} ({self.profile})', file=sys.stderr)
+            A = self.model.coef_[0]
+            #B = self.model.coef_[0]
+            B = 0
+            C = self.model.intercept_
+            #print(f'Predicted power(slowdown={slowdown}, time_power_max={time_power_max}) = {predicted_power}, A={A}, B={B}, C={C} ({self.profile})', file=sys.stderr)
             return predicted_power
 
 
@@ -165,12 +205,14 @@ print(f'Testing with P={P} and R={R}')
 power_delta_sign = -1
 
 power_targets = None
-try:
-    with open('power_targets.csv') as f:
-        power_targets = [float(line.strip()) for line in f if line]
-except Exception as e:
-    print('Unable to load power trace:', e)
-    pass
+print('WARNING: disabled power traces... should probably just make it an argparse option')
+time.sleep(0.25)
+#try:
+#    with open('power_targets.csv') as f:
+#        power_targets = [float(line.strip()) for line in f if line]
+#except Exception as e:
+#    print('Unable to load power trace:', e)
+#    pass
 
 job_queue_trace = None
 if args.replay_job_trace is not None:
@@ -199,7 +241,7 @@ def get_cluster_power_target():
         if power_targets is None:
             if last_average_host_power_target >= POWER_MAX:
                 power_delta_sign = -1
-            if last_average_host_power_target < 180:
+            if last_average_host_power_target <= POWER_MIN:
                 power_delta_sign = 1
             last_average_host_power_target += 10 * power_delta_sign
         else:
@@ -222,12 +264,12 @@ def get_ready_jobs(ready_hosts):
 
             # Queued jobs, already sorted by AQA start time
             for idx, job in job_queue_trace.loc[is_ready].iterrows():
-                job_path = args.job_paths[job['jobTypeID']]
+                job_path = JOB_PATHS[job['jobTypeID']]
 
                 # launch_list.append(job_path)
                 # job_queue_trace.loc[idx, 'scheduled'] = True
 
-                job_size = JOB_SIZES_BY_NAME[job_path]
+                job_size = JOB_SIZES[job['jobTypeID']]
                 if job_size <= ready_hosts - pending_new_hosts:
                     launch_list.append(job_path)
                     ready_hosts -= job_size
@@ -236,14 +278,14 @@ def get_ready_jobs(ready_hosts):
                 else:
                     break
         else:
-            # One queue per path in args.job_paths
+            # One queue per path in JOB_PATHS
             is_ready = ((job_queue_trace['queueTime'] <= time_now) & (job_queue_trace['startTime'] >= 0) & (~job_queue_trace['scheduled']))
             ready_jobs = job_queue_trace.loc[is_ready]
-            ready_jobs_by_type = ready_jobs.groupby('jobTypeID').count()
+            ready_jobs_by_type = ready_jobs.groupby('jobTypeID').size()
             waiting_job_types = ready_jobs_by_type.index[ready_jobs_by_type > 0]
 
             # Ensure that sum(weights) == 1 for weights of jobs that are waiting to run
-            total_usable_weight = JOB_WEIGHTS[waiting_job_types].sum()
+            total_usable_weight = JOB_WEIGHTS[waiting_job_types.values].sum()
             scheduler_weights = JOB_WEIGHTS / total_usable_weight
 
             # Allocate hosts to job-type queues by their weights. We only do
@@ -262,7 +304,7 @@ def get_ready_jobs(ready_hosts):
                 # Launchable count: as many of the ready job of this type as our job weights allow
                 launchable_job_count = min(len(launch_candidates, job_launch_count))
                 launch_candidates.iloc[:launchable_job_count]['scheduled'] = True
-                launch_list.extend([args.job_paths[job_type]] * launchable_job_count)
+                launch_list.extend([JOB_PATHS[job_type]] * launchable_job_count)
     return launch_list
 
 
@@ -319,6 +361,10 @@ def calculate_balance_targets():
                                                   - endpoint.current_power_cap)
             for endpoint_addr, endpoint in endpoints.items()}
         total_power_needed_for_perf = sum(additional_power_needed_for_perf.values())
+        # for endpoint_addr, endpoint in endpoints.items():
+        #     print(endpoint_addr, 'power at 1x:', endpoint.predict_power_at_slowdown(1), '... at 1.5x:', endpoint.predict_power_at_slowdown(1.5))
+
+
 
         additional_achievable_power = {
             endpoint_addr: endpoint.host_count * (POWER_MAX - endpoint.current_power_cap)
@@ -387,56 +433,77 @@ async def rebalance_jobs(reader, writer):
         if not received_endpoint_message:
             break
         received_endpoint_message = received_endpoint_message.decode()
-        power_str, epoch_str = received_endpoint_message.split(',', 1)
+        (power_str,
+         epoch_str, epoch_cap_str, epoch_duration_str,
+         progress_str, progress_cap_str, progress_duration_str) = received_endpoint_message.split(',', 6)
         power_sample = float(power_str)
         epoch_sample = float(epoch_str)
+        epoch_cap = float(epoch_cap_str)
+        epoch_duration = float(epoch_duration_str)
+        progress_sample = float(progress_str)
+        progress_cap = float(progress_cap_str)
+        progress_duration = float(progress_duration_str)
         endpoint = endpoints[endpoint_addr]
         endpoint.measured_power = power_sample
-        if not math.isnan(epoch_sample):
-            if len(endpoint.epoch_times) == 0 or epoch_sample > endpoint.last_recorded_epoch:
-                # TODO: This epoch&time stuff probably belongs on the balance client. Then just send coefficient updates here.
-                new_epoch_time = time.time() # TODO: apply age of sample, include in message? Or maybe not important at this time scale?
-                if epoch_sample > endpoint.last_recorded_epoch:
-                    time_per_epoch  = ((new_epoch_time - endpoint.last_recorded_epoch_time)
-                                       / (epoch_sample - endpoint.last_recorded_epoch))
-                    if not np.isnan(time_per_epoch):
-                        endpoint.epoch_times.append(time_per_epoch)
-                        endpoint.power_caps.append(endpoint.current_power_cap) # TODO: running mean of power caps applied in that window
-                endpoint.last_recorded_epoch = epoch_sample
-                endpoint.last_recorded_epoch_time = new_epoch_time
 
-                # Wait some time before training a new model
-                if endpoint.samples_in_last_model + 5 < len(endpoint.epoch_times):
-                    # Generate [x, x^2] values from X (power caps)
-                    # Not including a bias column since the RANSACRegressor internally creates
-                    # Linear regressors that have a built-in bias column
-                    poly = PolynomialFeatures(2, include_bias=False)
+        new_time = time.time()
+        if progress_sample > endpoint.last_recorded_progress and progress_duration > 0 and not math.isnan(progress_cap):
+            endpoint.progress_times.append(progress_duration)
+            endpoint.progress_caps.append(progress_cap)
+        endpoint.last_recorded_progress = progress_sample
+        endpoint.last_recorded_progress_time = new_time
 
-                    def is_model_valid(model, *x_and_y):
-                        # Check that time estimates are monotonically decreasing as we increase power
-                        #times = np.exp(model.predict(poly.fit_transform(np.linspace(0, POWER_MAX, 8).reshape(-1, 1))))
-                        times = np.exp(model.predict(poly.fit_transform(np.linspace(0, POWER_MAX, 8).reshape(-1, 1))))
-                        return np.all(times[:-1] >= times[1:])
-                    try:
-                        #endpoint.model = linear_model.RANSACRegressor(is_model_valid=is_model_valid)
-                        class Model:
-                            pass
-                        endpoint.model = linear_model.LinearRegression()
-                        sample_weight = np.ones(len(endpoint.power_caps))
-                        # Give more importance to recent measurements
-                        sample_weight[-10:] *= 5
-                        endpoint.model.fit(poly.fit_transform(
-                            #np.reshape(endpoint.power_caps, (-1, 1))), np.log(endpoint.epoch_times), sample_weight=sample_weight)
-                            np.reshape(endpoint.power_caps, (-1, 1))), np.log(endpoint.epoch_times), sample_weight=sample_weight)
-                    except ValueError:
-                        # The regressor detected that it found no valid models.
-                        endpoint.model = None
-                    if endpoint.model is not None and not is_model_valid(endpoint.model):
-                        # The regressor found no valid models but didn't detect for some reason.
-                        endpoint.model = None
+        if epoch_sample > endpoint.last_recorded_epoch and epoch_duration > 0 and not math.isnan(epoch_cap):
+            endpoint.epoch_times.append(epoch_duration)
+            endpoint.power_caps.append(epoch_cap)
+        endpoint.last_recorded_epoch = epoch_sample
+        endpoint.last_recorded_epoch_time = new_time
 
-                    if endpoint.model is not None:
-                        endpoint.samples_in_last_model = len(endpoint.epoch_times)
+        # Use epoch data if it is available. Otherwise, use region progress
+        # TODO: This works better if those metrics are exclusive. Should model
+        # them together instead.
+        if len(endpoint.epoch_times) > 5:
+            times = endpoint.epoch_times
+            caps = endpoint.power_caps
+        else:
+            times = endpoint.progress_times
+            caps = endpoint.progress_caps
+
+        # Wait some time before training a new model
+        if endpoint.samples_in_last_model + 5 < len(times) and np.ptp(caps) > 10:
+            # Generate [x, x^2] values from X (power caps)
+            # Not including a bias column since the RANSACRegressor internally creates
+            # Linear regressors that have a built-in bias column
+            #poly = PolynomialFeatures(2, include_bias=False)
+            poly = FunctionTransformer(lambda x: (POWER_MAX-x)**2)
+
+            def is_model_valid(model, *x_and_y):
+                # Check that time estimates are monotonically decreasing as we increase power
+                #times = np.exp(model.predict(poly.fit_transform(np.linspace(0, POWER_MAX, 8).reshape(-1, 1))))
+                times = model.predict(poly.fit_transform(np.linspace(0, POWER_MAX, 8).reshape(-1, 1)))
+                return np.all(times[:-1] >= times[1:])
+            try:
+                #endpoint.model = linear_model.RANSACRegressor(is_model_valid=is_model_valid)
+                class Model:
+                    pass
+                endpoint.model = linear_model.LinearRegression(positive=True)
+                # sample_weight = np.ones(len(caps))
+                # Give more importance to recent measurements
+                # sample_weight[-10:] *= 5
+                endpoint.model.fit(poly.fit_transform(
+                    np.reshape(caps, (-1, 1))), times)#, sample_weight=sample_weight)
+            except ValueError as e:
+                print('Warning: model error.', e)
+                print('Model inputs:', list(zip(caps, times)))
+                # The regressor detected that it found no valid models.
+                endpoint.model = None
+            if endpoint.model is not None and not is_model_valid(endpoint.model):
+                print('Warning: invalid model.')
+                # The regressor found no valid models but didn't detect for some reason.
+                endpoint.model = None
+
+            if endpoint.model is not None:
+                endpoint.samples_in_last_model = len(times)
         #print(f"Received {received_endpoint_message} from {endpoint_addr}")
 
         # Wait for all new samples to arrive before rebalancing the budget
