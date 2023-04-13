@@ -74,12 +74,16 @@ if __name__ == '__main__':
 
     plt.rcParams.update({'font.size': 8.0})
     fig, ax = plt.subplots(figsize=(3.35, 2.8))
-    markers = itertools.cycle((',', '+', '.', '*', '^', 'v', '>'))
+    markers = itertools.cycle((',', '.', '*', '^', 'v', '>'))
     for app_name, app_data in df.groupby('Application'):
-        plot_data = app_data.sort_values('Power Cap (W)')
-        ax.plot(plot_data['Power Cap (W)'], plot_data['Relative Time'],
-                marker=next(markers),
-                label=app_name)
+        plot_data = app_data.groupby('Power Cap (W)')['Relative Time'].agg(['mean', 'std'])
+        print(app_name)
+        print(plot_data.to_string())
+        print('--------')
+        ax.errorbar(plot_data.index, plot_data['mean'],
+                    yerr=plot_data['std'],
+                    marker=next(markers),
+                    label=app_name)
     fig.subplots_adjust(bottom=0.25)
     fig.legend(title='Application', ncol=3,
                loc='upper center',
