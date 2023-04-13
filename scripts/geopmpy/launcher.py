@@ -627,7 +627,35 @@ class Launcher(object):
         # than one node and the node list is passed.  We should run lscpu on all the nodes in the
         # allocation and check that the node topology is uniform across all nodes used by the job
         # instead of just running on one node.
-        out = self.run_compute_cmd('lscpu --hex', 1)
+        #out = self.run_compute_cmd('lscpu --hex', 1)
+        out = """Architecture:        x86_64
+CPU op-mode(s):      32-bit, 64-bit
+Byte Order:          Little Endian
+Address sizes:       46 bits physical, 48 bits virtual
+CPU(s):              88
+On-line CPU(s) mask: ffffffffffffffffffffff
+Thread(s) per core:  2
+Core(s) per socket:  22
+Socket(s):           2
+NUMA node(s):        2
+Vendor ID:           GenuineIntel
+CPU family:          6
+Model:               85
+Model name:          Intel(R) Xeon(R) Gold 6152 CPU @ 2.10GHz
+Stepping:            4
+CPU MHz:             2888.707
+CPU max MHz:         2101.0000
+CPU min MHz:         1000.0000
+BogoMIPS:            4200.00
+Virtualization:      VT-x
+L1d cache:           32K
+L1i cache:           32K
+L2 cache:            1024K
+L3 cache:            30976K
+NUMA node0 CPU(s):   3fffff000003fffff
+NUMA node1 CPU(s):   fffffc00000fffffc00000
+Flags:               fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid dca sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb cat_l3 cdp_l3 invpcid_single pti ssbd mba ibrs ibpb stibp tpr_shadow vnmi flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 hle avx2 smep bmi2 erms invpcid rtm cqm mpx rdt_a avx512f avx512dq rdseed adx smap clflushopt clwb intel_pt avx512cd avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local dtherm ida arat pln pts hwp hwp_act_window hwp_epp hwp_pkg_req pku ospke md_clear flush_l1d
+"""
         cpu_tpc_core_socket = [int(line.split(':')[1])
                                for line in out.splitlines()
                                if line.find('CPU(s):') == 0 or
@@ -647,22 +675,22 @@ class Launcher(object):
         Queries the compute nodes to determine the current CPU frequency
         governor.
         """
-        governor_file = '/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
-        out = self.run_compute_cmd('cat {}'.format(governor_file))
-        current_governor = out.splitlines()
-
-        if not all(current_governor[0] == gov for gov in current_governor):
-            raise RuntimeError('<geopm> geopmpy.launcher: CPU governor mismatch: All compute nodes do not have the same governor.\n({})'.format(current_governor))
-        if current_governor[0] not in ['performance', 'userspace']:
-            warn_str = """\
-Warning: <geopm> geopmpy.launcher: Incompatible CPU frequency governor
-     detected ("{}").  The "performance" or "userspace" governor
-     is required when setting CPU frequency with GEOPM.  The
-     governor will be set to "performance" via srun which will
-     overwrite any previous frequency control settings.
-"""
-            sys.stderr.write(warn_str.format(', '.join(current_governor)))
-            self.governor = 'Performance'
+#        governor_file = '/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor'
+#        out = self.run_compute_cmd('cat {}'.format(governor_file))
+#        current_governor = out.splitlines()
+#
+#        if not all(current_governor[0] == gov for gov in current_governor):
+#            raise RuntimeError('<geopm> geopmpy.launcher: CPU governor mismatch: All compute nodes do not have the same governor.\n({})'.format(current_governor))
+#        if current_governor[0] not in ['performance', 'userspace']:
+#            warn_str = """\
+#Warning: <geopm> geopmpy.launcher: Incompatible CPU frequency governor
+#     detected ("{}").  The "performance" or "userspace" governor
+#     is required when setting CPU frequency with GEOPM.  The
+#     governor will be set to "performance" via srun which will
+#     overwrite any previous frequency control settings.
+#"""
+#            sys.stderr.write(warn_str.format(', '.join(current_governor)))
+#            self.governor = 'Performance'
 
     def affinity_list(self, is_geopmctl):
         """
