@@ -50,6 +50,11 @@ namespace geopm
         , m_adjusted_power(0.0)
         , m_last_wait(time_zero())
         , M_WAIT_SEC(0.005)
+        , m_last_sent_epoch_start_time(0)
+        , m_last_sent_epoch(0)
+        , m_last_sent_progress_time(0)
+        , m_last_sent_progress(0)
+        , m_tprof_reset_count(0)
     {
         geopm_time(&m_last_wait);
     }
@@ -81,7 +86,10 @@ namespace geopm
         m_agg_func[M_SAMPLE_POWER] = Agg::average;
         m_agg_func[M_SAMPLE_IS_CONVERGED] = Agg::logical_and;
         m_agg_func[M_SAMPLE_POWER_ENFORCED] = Agg::average;
+        m_agg_func[M_SAMPLE_EPOCH_START_TIME] = Agg::min;
         m_agg_func[M_SAMPLE_EPOCH_COUNT] = Agg::min;
+        m_agg_func[M_SAMPLE_PROGRESS_UPDATE_TIME] = Agg::min;
+        m_agg_func[M_SAMPLE_PROGRESS] = Agg::min;
     }
 
     void PowerGovernorAgent::init_platform_io(void)
@@ -89,7 +97,9 @@ namespace geopm
         m_power_gov->init_platform_io();
         // Setup signals
         m_pio_idx[M_PLAT_SIGNAL_PKG_POWER] = m_platform_io.push_signal("CPU_POWER", GEOPM_DOMAIN_BOARD, 0);
+        m_pio_idx[M_PLAT_SIGNAL_TIME] = m_platform_io.push_signal("TIME", GEOPM_DOMAIN_BOARD, 0);
         m_pio_idx[M_PLAT_SIGNAL_EPOCH_COUNT] = m_platform_io.push_signal("EPOCH_COUNT", GEOPM_DOMAIN_BOARD, 0);
+        m_pio_idx[M_PLAT_SIGNAL_REGION_PROGRESS] = m_platform_io.push_signal("REGION_PROGRESS", GEOPM_DOMAIN_BOARD, 0);
 
         // Setup controls
         int pkg_pwr_domain_type = m_platform_io.control_domain_type("CPU_POWER_LIMIT_CONTROL");
@@ -239,10 +249,19 @@ namespace geopm
         }
 #endif
         m_power_gov->sample_platform();
+
+        if (m_sample[M_PLAT_SIGNAL_REGION_PROGRESS] > m_platform_io.sample(m_pio_idx[M_PLAT_SIGNAL_REGION_PROGRESS])) {
+            // New value is decreased. Assume a single rollover.
+            // TODO: Query the current region hash, and use the region entry count instead?
+            m_tprof_reset_count += 1;
+        }
+
         // Populate sample vector by reading from PlatformIO
         for (int sample_idx = 0; sample_idx < M_PLAT_NUM_SIGNAL; ++sample_idx) {
             m_sample[sample_idx] = m_platform_io.sample(m_pio_idx[sample_idx]);
         }
+
+        double now = m_sample[M_PLAT_SIGNAL_TIME];
 
         /// @todo should use EPOCH_ENERGY signal which doesn't currently exist
         if (!std::isnan(m_sample[M_PLAT_SIGNAL_PKG_POWER])) {
@@ -253,10 +272,24 @@ namespace geopm
         // calls then send median filtered power values up the tree.
         if (m_epoch_power_buf->size() > m_min_num_converged) {
             double median = Agg::median(m_epoch_power_buf->make_vector());
+            double current_region_progress = m_tprof_reset_count + m_sample[M_PLAT_SIGNAL_REGION_PROGRESS];
+
             out_sample[M_SAMPLE_POWER] = median;
             out_sample[M_SAMPLE_IS_CONVERGED] = (median <= m_last_power_budget); // todo might want fudge factor
             out_sample[M_SAMPLE_POWER_ENFORCED] = m_adjusted_power;
-            out_sample[M_SAMPLE_EPOCH_COUNT] = m_sample[M_PLAT_SIGNAL_EPOCH_COUNT];
+            if (m_sample[M_PLAT_SIGNAL_EPOCH_COUNT] != m_last_sent_epoch) {
+                m_last_sent_epoch = m_sample[M_PLAT_SIGNAL_EPOCH_COUNT];
+                m_last_sent_epoch_start_time = now;
+            }
+            out_sample[M_SAMPLE_EPOCH_COUNT] = m_last_sent_epoch;
+            out_sample[M_SAMPLE_EPOCH_START_TIME] = m_last_sent_epoch_start_time;
+            if (!std::isnan(current_region_progress) && (current_region_progress != m_last_sent_progress)) {
+                m_last_sent_progress = current_region_progress;
+                m_last_sent_progress_time = now;
+            }
+            out_sample[M_SAMPLE_PROGRESS] = m_last_sent_progress;
+            out_sample[M_SAMPLE_PROGRESS_UPDATE_TIME] = m_last_sent_progress_time;
+
             m_do_send_sample = true;
         }
         else {
@@ -334,6 +367,6 @@ namespace geopm
 
     std::vector<std::string> PowerGovernorAgent::sample_names(void)
     {
-        return {"POWER", "IS_CONVERGED", "POWER_AVERAGE_ENFORCED", "EPOCH_COUNT"};
+        return {"POWER", "IS_CONVERGED", "POWER_AVERAGE_ENFORCED", "EPOCH_START_TIME", "EPOCH_COUNT", "PROGRESS_UPDATE_TIME", "PROGRESS"};
     }
 }

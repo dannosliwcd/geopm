@@ -29,7 +29,9 @@ namespace geopm
             };
             enum m_plat_signal_e {
                 M_PLAT_SIGNAL_PKG_POWER,
+                M_PLAT_SIGNAL_TIME,
                 M_PLAT_SIGNAL_EPOCH_COUNT,
+                M_PLAT_SIGNAL_REGION_PROGRESS,
                 M_PLAT_NUM_SIGNAL,
             };
             enum m_trace_sample_e {
@@ -40,7 +42,10 @@ namespace geopm
                 M_SAMPLE_POWER,
                 M_SAMPLE_IS_CONVERGED,
                 M_SAMPLE_POWER_ENFORCED,
+                M_SAMPLE_EPOCH_START_TIME,
                 M_SAMPLE_EPOCH_COUNT,
+                M_SAMPLE_PROGRESS_UPDATE_TIME,
+                M_SAMPLE_PROGRESS,
                 M_NUM_SAMPLE,
             };
 
@@ -96,6 +101,11 @@ namespace geopm
             double m_adjusted_power;
             geopm_time_s m_last_wait;
             const double M_WAIT_SEC;
+            double m_last_sent_epoch_start_time;
+            double m_last_sent_epoch;
+            double m_last_sent_progress_time;
+            double m_last_sent_progress;
+            double m_tprof_reset_count;
     };
 }
 
