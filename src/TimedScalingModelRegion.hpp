@@ -16,13 +16,11 @@ namespace geopm
     class TimedScalingModelRegion : public SpinModelRegion
     {
         public:
-            TimedScalingModelRegion(double big_o_in,
-                                    int verbosity,
-                                    bool do_imbalance,
-                                    bool do_progress,
+            TimedScalingModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress,
                                     bool do_unmarked);
             virtual ~TimedScalingModelRegion() = default;
             void run_atom(void);
+
         protected:
             std::shared_ptr<ScalingModelRegion> m_scaling_model;
     };

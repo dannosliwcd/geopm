@@ -13,14 +13,11 @@ namespace geopm
     class SleepModelRegion : public ModelRegion
     {
         public:
-            SleepModelRegion(double big_o_in,
-                             int verbosity,
-                             bool do_imbalance,
-                             bool do_progress,
-                             bool do_unmarked);
+            SleepModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress, bool do_unmarked);
             virtual ~SleepModelRegion();
             void big_o(double big_o);
             void run(void);
+
         protected:
             struct timespec m_delay;
     };

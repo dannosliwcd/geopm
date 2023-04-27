@@ -23,9 +23,9 @@ namespace geopm
     }
 
     DCGMDevicePoolImp::DCGMDevicePoolImp()
-        : m_update_freq(100000)    // 100 millisecond
-        , m_max_keep_age(1.0)      // 1 second
-        , m_max_keep_sample(100)   // 100 samples
+        : m_update_freq(100000)  // 100 millisecond
+        , m_max_keep_age(1.0)    // 1 second
+        , m_max_keep_sample(100) // 100 samples
         , m_dcgm_polling(false)
     {
         m_dcgm_field_ids[M_FIELD_ID_SM_ACTIVE] = DCGM_FI_PROF_SM_ACTIVE;
@@ -34,16 +34,16 @@ namespace geopm
 
         dcgmReturn_t result;
 
-        //Initialize DCGM
+        // Initialize DCGM
         result = dcgmInit();
         check_result(result, "Error Initializing DCGM.", __LINE__);
 
         // We are assuming a local version of DCGM.  This could transition to a
         // dcgmStartEmbedded at a later date.
-        result = dcgmConnect((char*)"127.0.0.1", &m_dcgm_handle);
+        result = dcgmConnect((char *)"127.0.0.1", &m_dcgm_handle);
         check_result(result, "Error connecting to standalone DCGM instance", __LINE__);
 
-        //Check all devices are DCGM enabled
+        // Check all devices are DCGM enabled
         unsigned int dcgm_dev_id_list[DCGM_MAX_NUM_DEVICES];
         result = dcgmGetAllSupportedDevices(m_dcgm_handle, dcgm_dev_id_list, &m_dcgm_dev_count);
         check_result(result, "Error fetching DCGM supported devices.", __LINE__);
@@ -54,22 +54,21 @@ namespace geopm
         std::vector<dcgmFieldValue_v1> field_values(M_NUM_FIELD_ID, init_val);
         m_dcgm_field_values.resize(m_dcgm_dev_count, field_values);
 
-        //Setup Field Group
+        // Setup Field Group
 
         char geopm_group[] = "geopm_field_group";
-        result = dcgmFieldGroupCreate(m_dcgm_handle, M_NUM_FIELD_ID, m_dcgm_field_ids,
-                                      geopm_group, &m_field_group_id);
+        result = dcgmFieldGroupCreate(m_dcgm_handle, M_NUM_FIELD_ID, m_dcgm_field_ids, geopm_group, &m_field_group_id);
 
-        //Retry case
+        // Retry case
         if (result == DCGM_ST_DUPLICATE_KEY) {
 #ifdef GEOPM_DEBUG
-            std::cerr << "DCGMDevicePool::" << std::string(__func__)  <<
-                         ": Duplicate field group found. " << std::endl;
+            std::cerr << "DCGMDevicePool::" << std::string(__func__) << ": Duplicate field group found. "
+                      << std::endl;
 #endif
             result = dcgmFieldGroupDestroy(m_dcgm_handle, m_field_group_id);
             check_result(result, "Error destroying DCGM geopm_fields group.", __LINE__);
-            result = dcgmFieldGroupCreate(m_dcgm_handle, M_NUM_FIELD_ID, m_dcgm_field_ids,
-                                          geopm_group, &m_field_group_id);
+            result = dcgmFieldGroupCreate(m_dcgm_handle, M_NUM_FIELD_ID, m_dcgm_field_ids, geopm_group,
+                                          &m_field_group_id);
             check_result(result, "Error re-creating DCGM geopm_fields group.", __LINE__);
         }
         else {
@@ -79,7 +78,7 @@ namespace geopm
 
     DCGMDevicePoolImp::~DCGMDevicePoolImp()
     {
-        //Shutdown DCGM
+        // Shutdown DCGM
         dcgmFieldGroupDestroy(m_dcgm_handle, m_field_group_id);
         dcgmGroupDestroy(m_dcgm_handle, DCGM_GROUP_ALL_GPUS);
     }
@@ -87,8 +86,7 @@ namespace geopm
     void DCGMDevicePoolImp::check_result(const dcgmReturn_t result, const std::string error, const int line)
     {
         if (result != DCGM_ST_OK) {
-            throw Exception("DCGMDevicePool::" + std::string(__func__) + ": "
-                            + error + ": " + errorString(result),
+            throw Exception("DCGMDevicePool::" + std::string(__func__) + ": " + error + ": " + errorString(result),
                             GEOPM_ERROR_INVALID, __FILE__, line);
         }
     }
@@ -110,14 +108,13 @@ namespace geopm
 
     void DCGMDevicePoolImp::update(int gpu_idx)
     {
-        if(!m_dcgm_polling) {
-            //Lazy init, only enable polling on the first read.
+        if (!m_dcgm_polling) {
+            // Lazy init, only enable polling on the first read.
             polling_enable();
         }
         dcgmReturn_t result;
-        result = dcgmGetLatestValuesForFields(m_dcgm_handle, gpu_idx,
-                        &m_dcgm_field_ids[0], M_NUM_FIELD_ID,
-                        &(m_dcgm_field_values.at(gpu_idx))[0]);
+        result = dcgmGetLatestValuesForFields(m_dcgm_handle, gpu_idx, &m_dcgm_field_ids[0], M_NUM_FIELD_ID,
+                                              &(m_dcgm_field_values.at(gpu_idx))[0]);
         check_result(result, "Error getting latest values for fields in read_batch", __LINE__);
     }
 
@@ -151,9 +148,10 @@ namespace geopm
         for (auto dcgm_field_id : m_dcgm_field_ids) {
             DcgmFieldGetById(dcgm_field_id);
             if (DcgmFieldGetById(dcgm_field_id)->fieldType != DCGM_FT_DOUBLE) {
-                throw Exception("DCGMDevicePool::" + std::string(__func__) + ": "
-                                "DCGM Field ID " + std::to_string(dcgm_field_id) +
-                                " field type is not double",
+                throw Exception("DCGMDevicePool::" + std::string(__func__)
+                                    + ": "
+                                      "DCGM Field ID "
+                                    + std::to_string(dcgm_field_id) + " field type is not double",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }

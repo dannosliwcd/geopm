@@ -45,7 +45,7 @@ namespace geopm
             unsigned short m_dcgm_field_ids[M_NUM_FIELD_ID];
 
             // GPU indexed vector of vector of field values
-            std::vector<std::vector<dcgmFieldValue_v1>> m_dcgm_field_values;
+            std::vector<std::vector<dcgmFieldValue_v1> > m_dcgm_field_values;
     };
 }
 #endif

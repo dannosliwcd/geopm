@@ -25,8 +25,7 @@ namespace geopm
     static const std::string FRESHNESS_FILE_NAME("freshness");
     static const std::string RAW_SCAN_HZ_FILE_NAME("raw_scan_hz");
 
-    static std::function<double()> get_formatted_file_reader(const std::string &path,
-                                                             const std::string &units)
+    static std::function<double()> get_formatted_file_reader(const std::string &path, const std::string &units)
     {
         return std::bind(read_double_from_file, path, units);
     }
@@ -37,90 +36,47 @@ namespace geopm
     }
 
     CNLIOGroup::CNLIOGroup(const std::string &cpu_info_path)
-        : m_signal_available({{"CNL::BOARD_POWER", {
-                                   "Point in time power",
-                                   Agg::sum,
-                                   string_format_integer,
-                                   get_formatted_file_reader(cpu_info_path + "/power", "W"),
-                                   false,
-                                   NAN,
-                                   M_UNITS_WATTS,
-                                   IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE}},
-                              {"CNL::BOARD_ENERGY", {
-                                   "Accumulated energy",
-                                   Agg::sum,
-                                   string_format_integer,
-                                   get_formatted_file_reader(cpu_info_path + "/energy", "J"),
-                                   false,
-                                   NAN,
-                                   M_UNITS_JOULES,
-                                   IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE}},
-                              {"CNL::MEMORY_POWER", {
-                                   "Point in time memory power",
-                                   Agg::sum,
-                                   string_format_integer,
-                                   get_formatted_file_reader(cpu_info_path + "/memory_power", "W"),
-                                   false,
-                                   NAN,
-                                   M_UNITS_WATTS,
-                                   IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE}},
-                              {"CNL::MEMORY_ENERGY", {
-                                   "Accumulated memory energy",
-                                   Agg::sum,
-                                   string_format_integer,
-                                   get_formatted_file_reader(cpu_info_path + "/memory_energy", "J"),
-                                   false,
-                                   NAN,
-                                   M_UNITS_JOULES,
-                                   IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE}},
-                              {"CNL::BOARD_POWER_CPU", {
-                                   "Point in time CPU power",
-                                   Agg::sum,
-                                   string_format_integer,
-                                   get_formatted_file_reader(cpu_info_path + "/cpu_power", "W"),
-                                   false,
-                                   NAN,
-                                   M_UNITS_WATTS,
-                                   IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE}},
-                              {"CNL::BOARD_ENERGY_CPU", {
-                                   "Accumulated CPU energy",
-                                   Agg::sum,
-                                   string_format_integer,
-                                   get_formatted_file_reader(cpu_info_path + "/cpu_energy", "J"),
-                                   false,
-                                   NAN,
-                                   M_UNITS_JOULES,
-                                   IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE}},
-                              {"CNL::SAMPLE_RATE", {
-                                   "Sample frequency",
-                                   Agg::expect_same,
-                                   string_format_integer,
-                                   std::bind(&CNLIOGroup::m_sample_rate, this),
-                                   false,
-                                   NAN,
-                                   M_UNITS_HERTZ,
-                                   IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT}},
-                              {"CNL::SAMPLE_ELAPSED_TIME", {
-                                   "Time that the sample was reported, in seconds since this agent initialized",
-                                   Agg::max,
-                                   string_format_double,
-                                   std::bind(&CNLIOGroup::read_time, this, cpu_info_path + "/" + FRESHNESS_FILE_NAME),
-                                   false,
-                                   NAN,
-                                   M_UNITS_SECONDS,
-                                   IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE}},
-                             })
+        : m_signal_available({
+            {"CNL::BOARD_POWER",
+             {"Point in time power", Agg::sum, string_format_integer,
+              get_formatted_file_reader(cpu_info_path + "/power", "W"), false, NAN, M_UNITS_WATTS,
+              IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE}},
+            {"CNL::BOARD_ENERGY",
+             {"Accumulated energy", Agg::sum, string_format_integer,
+              get_formatted_file_reader(cpu_info_path + "/energy", "J"), false, NAN, M_UNITS_JOULES,
+              IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE}},
+            {"CNL::MEMORY_POWER",
+             {"Point in time memory power", Agg::sum, string_format_integer,
+              get_formatted_file_reader(cpu_info_path + "/memory_power", "W"), false, NAN, M_UNITS_WATTS,
+              IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE}},
+            {"CNL::MEMORY_ENERGY",
+             {"Accumulated memory energy", Agg::sum, string_format_integer,
+              get_formatted_file_reader(cpu_info_path + "/memory_energy", "J"), false, NAN, M_UNITS_JOULES,
+              IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE}},
+            {"CNL::BOARD_POWER_CPU",
+             {"Point in time CPU power", Agg::sum, string_format_integer,
+              get_formatted_file_reader(cpu_info_path + "/cpu_power", "W"), false, NAN, M_UNITS_WATTS,
+              IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE}},
+            {"CNL::BOARD_ENERGY_CPU",
+             {"Accumulated CPU energy", Agg::sum, string_format_integer,
+              get_formatted_file_reader(cpu_info_path + "/cpu_energy", "J"), false, NAN, M_UNITS_JOULES,
+              IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE}},
+            {"CNL::SAMPLE_RATE",
+             {"Sample frequency", Agg::expect_same, string_format_integer, std::bind(&CNLIOGroup::m_sample_rate, this),
+              false, NAN, M_UNITS_HERTZ, IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT}},
+            {"CNL::SAMPLE_ELAPSED_TIME",
+             {"Time that the sample was reported, in seconds since this agent initialized", Agg::max,
+              string_format_double, std::bind(&CNLIOGroup::read_time, this, cpu_info_path + "/" + FRESHNESS_FILE_NAME),
+              false, NAN, M_UNITS_SECONDS, IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE}},
+        })
         , m_time_zero(geopm::time_zero())
     {
-        m_sample_rate = read_double_from_file(
-            cpu_info_path + "/" + RAW_SCAN_HZ_FILE_NAME, "");
+        m_sample_rate = read_double_from_file(cpu_info_path + "/" + RAW_SCAN_HZ_FILE_NAME, "");
         if (m_sample_rate <= 0) {
-            throw Exception("CNLIOGroup::CNLIOGroup(): Unexpected sample frequency " +
-                                std::to_string(m_sample_rate),
+            throw Exception("CNLIOGroup::CNLIOGroup(): Unexpected sample frequency " + std::to_string(m_sample_rate),
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
-        m_initial_freshness =
-            read_double_from_file(cpu_info_path + "/" + FRESHNESS_FILE_NAME, "");
+        m_initial_freshness = read_double_from_file(cpu_info_path + "/" + FRESHNESS_FILE_NAME, "");
 
         for (const auto &signal : m_signal_available) {
             // Attempt to call each of the read functions so we can fail
@@ -166,17 +122,15 @@ namespace geopm
         return GEOPM_DOMAIN_INVALID;
     }
 
-    int CNLIOGroup::push_signal(const std::string &signal_name, int domain_type,
-                                int domain_idx)
+    int CNLIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("CNLIOGroup::push_signal(): " + signal_name +
-                            "not valid for CNLIOGroup",
+            throw Exception("CNLIOGroup::push_signal(): " + signal_name + "not valid for CNLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         else if (domain_type != GEOPM_DOMAIN_BOARD) {
-            throw Exception("CNLIOGroup::push_signal(): domain_type " + std::to_string(domain_type) +
-                            "not valid for CNLIOGroup",
+            throw Exception("CNLIOGroup::push_signal(): domain_type " + std::to_string(domain_type)
+                                + "not valid for CNLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -184,8 +138,7 @@ namespace geopm
         return std::distance(m_signal_available.begin(), m_signal_available.find(signal_name));
     }
 
-    int CNLIOGroup::push_control(const std::string &control_name,
-                                 int domain_type, int domain_idx)
+    int CNLIOGroup::push_control(const std::string &control_name, int domain_type, int domain_idx)
     {
         throw Exception("CNLIOGroup::push_control(): there are no controls supported by the CNLIOGroup",
                         GEOPM_ERROR_INVALID, __FILE__, __LINE__);
@@ -208,18 +161,16 @@ namespace geopm
         auto res_it = m_signal_available.begin();
         if (batch_idx >= 0 && batch_idx < static_cast<int>(m_signal_available.size())) {
             std::advance(res_it, batch_idx);
-            if(res_it->second.m_do_read) {
+            if (res_it->second.m_do_read) {
                 result = res_it->second.m_value;
             }
             else if (!res_it->second.m_do_read) {
-                throw Exception("CNLIOGroup::sample(): batch_idx " +
-                                std::to_string(batch_idx) + " has not been pushed",
+                throw Exception("CNLIOGroup::sample(): batch_idx " + std::to_string(batch_idx) + " has not been pushed",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
         else {
-            throw Exception("CNLIOGroup::sample(): batch_idx " + std::to_string(batch_idx) +
-                            "not valid for CNLIOGroup",
+            throw Exception("CNLIOGroup::sample(): batch_idx " + std::to_string(batch_idx) + "not valid for CNLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return result;
@@ -231,54 +182,46 @@ namespace geopm
                         GEOPM_ERROR_INVALID, __FILE__, __LINE__);
     }
 
-    double CNLIOGroup::read_signal(const std::string &signal_name,
-                                   int domain_type, int domain_idx)
+    double CNLIOGroup::read_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("CNLIOGroup::read_signal(): " + signal_name +
-                            "not valid for CNLIOGroup",
+            throw Exception("CNLIOGroup::read_signal(): " + signal_name + "not valid for CNLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         else if (domain_type != GEOPM_DOMAIN_BOARD) {
-            throw Exception("CNLIOGroup:read_signal(): domain_type " + std::to_string(domain_type) +
-                            "not valid for CNLIOGroup",
+            throw Exception("CNLIOGroup:read_signal(): domain_type " + std::to_string(domain_type)
+                                + "not valid for CNLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return m_signal_available.find(signal_name)->second.m_read_function();
     }
 
-    void CNLIOGroup::write_control(const std::string &control_name,
-                                   int domain_type, int domain_idx, double setting)
+    void CNLIOGroup::write_control(const std::string &control_name, int domain_type, int domain_idx, double setting)
     {
-        throw Exception(
-            "CNLIOGroup::write_control(): there are no controls "
-            "supported by the CNLIOGroup",
-            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        throw Exception("CNLIOGroup::write_control(): there are no controls "
+                        "supported by the CNLIOGroup",
+                        GEOPM_ERROR_INVALID, __FILE__, __LINE__);
     }
 
     void CNLIOGroup::save_control(void) {}
 
     void CNLIOGroup::restore_control(void) {}
 
-    std::function<double(const std::vector<double> &)>
-    CNLIOGroup::agg_function(const std::string &signal_name) const
+    std::function<double(const std::vector<double> &)> CNLIOGroup::agg_function(const std::string &signal_name) const
     {
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
-            throw Exception("CNLIOGroup::agg_function(): unknown how to aggregate \"" +
-                            signal_name + "\"",
+            throw Exception("CNLIOGroup::agg_function(): unknown how to aggregate \"" + signal_name + "\"",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.m_agg_function;
     }
 
-    std::function<std::string(double)>
-    CNLIOGroup::format_function(const std::string &signal_name) const
+    std::function<std::string(double)> CNLIOGroup::format_function(const std::string &signal_name) const
     {
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
-            throw Exception("CNLIOGroup::format_function(): unknown how to format \"" +
-                            signal_name + "\"",
+            throw Exception("CNLIOGroup::format_function(): unknown how to format \"" + signal_name + "\"",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.m_format_function;
@@ -287,15 +230,14 @@ namespace geopm
     std::string CNLIOGroup::signal_description(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("CNLIOGroup::signal_description(): " + signal_name +
-                            "not valid for CNLIOGroup",
+            throw Exception("CNLIOGroup::signal_description(): " + signal_name + "not valid for CNLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         std::string result = "Invalid signal description: no description found.";
         auto it = m_signal_available.find(signal_name);
         if (it != m_signal_available.end()) {
-            result =  "    description: " + it->second.m_description + '\n'; // Includes alias_for if applicable
+            result = "    description: " + it->second.m_description + '\n'; // Includes alias_for if applicable
             result += "    units: " + IOGroup::units_to_string(it->second.m_units) + '\n';
             result += "    aggregation: " + Agg::function_to_name(it->second.m_agg_function) + '\n';
             result += "    domain: " + PlatformTopo::domain_type_to_name(GEOPM_DOMAIN_BOARD) + '\n';
@@ -312,17 +254,15 @@ namespace geopm
 
     std::string CNLIOGroup::control_description(const std::string &control_name) const
     {
-        throw Exception(
-            "CNLIOGroup::control_description(): there are no controls "
-            "supported by the CNLIOGroup",
-            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        throw Exception("CNLIOGroup::control_description(): there are no controls "
+                        "supported by the CNLIOGroup",
+                        GEOPM_ERROR_INVALID, __FILE__, __LINE__);
     }
 
     int CNLIOGroup::signal_behavior(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("CNLIOGroup::signal_behavior(): " + signal_name +
-                            "not valid for CNLIOGroup",
+            throw Exception("CNLIOGroup::signal_behavior(): " + signal_name + "not valid for CNLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         int result = -1;
@@ -360,12 +300,10 @@ namespace geopm
         return (freshness - m_initial_freshness) / m_sample_rate;
     }
 
-    void CNLIOGroup::register_signal_alias(const std::string &alias_name,
-                                           const std::string &signal_name)
+    void CNLIOGroup::register_signal_alias(const std::string &alias_name, const std::string &signal_name)
     {
         if (m_signal_available.find(alias_name) != m_signal_available.end()) {
-            throw Exception("CNLIOGroup::register_signal_alias(): signal_name " + alias_name +
-                            " was previously registered.",
+            throw Exception("CNLIOGroup::register_signal_alias(): signal_name " + alias_name + " was previously registered.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto it = m_signal_available.find(signal_name);
@@ -375,17 +313,11 @@ namespace geopm
         }
         // copy signal info but append to description
         m_signal_available[alias_name] = it->second;
-        m_signal_available[alias_name].m_description =
-            m_signal_available[signal_name].m_description + '\n' + "    alias_for: " + signal_name;
+        m_signal_available[alias_name].m_description = m_signal_available[signal_name].m_description + '\n'
+                                                       + "    alias_for: " + signal_name;
     }
 
-    void CNLIOGroup::save_control(const std::string &save_path)
-    {
+    void CNLIOGroup::save_control(const std::string &save_path) {}
 
-    }
-
-    void CNLIOGroup::restore_control(const std::string &save_path)
-    {
-
-    }
+    void CNLIOGroup::restore_control(const std::string &save_path) {}
 }

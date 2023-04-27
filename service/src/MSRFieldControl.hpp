@@ -23,13 +23,8 @@ namespace geopm
     class MSRFieldControl : public Control
     {
         public:
-            MSRFieldControl(std::shared_ptr<MSRIO> msrio,
-                            int cpu,
-                            uint64_t offset,
-                            int begin_bit,
-                            int end_bit,
-                            int function,
-                            double scalar);
+            MSRFieldControl(std::shared_ptr<MSRIO> msrio, int cpu, uint64_t offset, int begin_bit,
+                            int end_bit, int function, double scalar);
             MSRFieldControl(const MSRFieldControl &other) = delete;
             MSRFieldControl &operator=(const MSRFieldControl &other) = delete;
             virtual ~MSRFieldControl() = default;
@@ -38,6 +33,7 @@ namespace geopm
             void write(double value) override;
             void save(void) override;
             void restore(void) override;
+
         private:
             uint64_t encode(double value) const;
 

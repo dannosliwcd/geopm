@@ -29,11 +29,9 @@ namespace geopm
     CPUActivityAgent::CPUActivityAgent()
         : CPUActivityAgent(platform_io(), platform_topo(), FrequencyGovernor::make_shared())
     {
-
     }
 
-    CPUActivityAgent::CPUActivityAgent(PlatformIO &plat_io,
-                                       const PlatformTopo &topo,
+    CPUActivityAgent::CPUActivityAgent(PlatformIO &plat_io, const PlatformTopo &topo,
                                        std::shared_ptr<FrequencyGovernor> gov)
         : m_platform_io(plat_io)
         , m_platform_topo(topo)
@@ -79,15 +77,13 @@ namespace geopm
         // If the frequency control domain does not contain the scalabilty domain
         // (i.e. the scalability domain is coarser than the freq domain) use the
         // scalability domain for frequency control.
-        if (!m_platform_topo.is_nested_domain(scalability_signal_domain,
-                                              m_freq_ctl_domain_type)) {
+        if (!m_platform_topo.is_nested_domain(scalability_signal_domain, m_freq_ctl_domain_type)) {
 
 #ifdef GEOPM_DEBUG
-            std::cerr << "CPUActivityAgent::" + std::string(__func__) +
-                          "():MSR::CPU_SCALABILITY_RATIO domain (" +
-                          std::to_string(scalability_signal_domain) +
-                          ") is a coarser granularity than the CPU frequency control domain (" +
-                          std::to_string(m_freq_ctl_domain_type) + ").";
+            std::cerr << "CPUActivityAgent::" + std::string(__func__) + "():MSR::CPU_SCALABILITY_RATIO domain ("
+                             + std::to_string(scalability_signal_domain)
+                             + ") is a coarser granularity than the CPU frequency control domain ("
+                             + std::to_string(m_freq_ctl_domain_type) + ").";
 #endif
 
             // Set Freq gov domain.
@@ -104,26 +100,23 @@ namespace geopm
         m_freq_core_max = m_freq_governor->get_frequency_max();
 
         for (int domain_idx = 0; domain_idx < m_num_freq_ctl_domain; ++domain_idx) {
-            m_core_scal.push_back({m_platform_io.push_signal("MSR::CPU_SCALABILITY_RATIO",
-                                                             m_freq_ctl_domain_type,
-                                                             domain_idx), NAN});
+            m_core_scal.push_back(
+                {m_platform_io.push_signal("MSR::CPU_SCALABILITY_RATIO", m_freq_ctl_domain_type, domain_idx), NAN});
         }
 
         for (int domain_idx = 0; domain_idx < M_NUM_PACKAGE; ++domain_idx) {
-            m_qm_rate.push_back({m_platform_io.push_signal("MSR::QM_CTR_SCALED_RATE",
-                                                           GEOPM_DOMAIN_PACKAGE,
-                                                           domain_idx), NAN});
+            m_qm_rate.push_back(
+                {m_platform_io.push_signal("MSR::QM_CTR_SCALED_RATE", GEOPM_DOMAIN_PACKAGE, domain_idx), NAN});
 
-            m_uncore_freq_status.push_back({m_platform_io.push_signal("CPU_UNCORE_FREQUENCY_STATUS",
-                                                                      GEOPM_DOMAIN_PACKAGE,
-                                                                      domain_idx), NAN});
+            m_uncore_freq_status.push_back(
+                {m_platform_io.push_signal("CPU_UNCORE_FREQUENCY_STATUS", GEOPM_DOMAIN_PACKAGE, domain_idx), NAN});
 
-            m_uncore_freq_min_control.push_back({m_platform_io.push_control("CPU_UNCORE_FREQUENCY_MIN_CONTROL",
-                                                                            GEOPM_DOMAIN_PACKAGE,
-                                                                            domain_idx), -1});
-            m_uncore_freq_max_control.push_back({m_platform_io.push_control("CPU_UNCORE_FREQUENCY_MAX_CONTROL",
-                                                                            GEOPM_DOMAIN_PACKAGE,
-                                                                            domain_idx), -1});
+            m_uncore_freq_min_control.push_back(
+                {m_platform_io.push_control("CPU_UNCORE_FREQUENCY_MIN_CONTROL", GEOPM_DOMAIN_PACKAGE, domain_idx),
+                 -1});
+            m_uncore_freq_max_control.push_back(
+                {m_platform_io.push_control("CPU_UNCORE_FREQUENCY_MAX_CONTROL", GEOPM_DOMAIN_PACKAGE, domain_idx),
+                 -1});
         }
 
         // Configuration of QM_CTR must match QM_CTR config used for tuning/training data.
@@ -160,43 +153,34 @@ namespace geopm
             m_freq_uncore_efficient = m_freq_uncore_min;
         }
 
-        if (m_freq_core_efficient > m_freq_core_max ||
-            m_freq_core_efficient < m_freq_core_min ) {
-            throw Exception("CPUActivityAgent::" + std::string(__func__) +
-                            "(): Core efficient frequency out of range: " +
-                            std::to_string(m_freq_core_efficient) +
-                            ".", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        if (m_freq_core_efficient > m_freq_core_max || m_freq_core_efficient < m_freq_core_min) {
+            throw Exception("CPUActivityAgent::" + std::string(__func__) + "(): Core efficient frequency out of range: "
+                                + std::to_string(m_freq_core_efficient) + ".",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
-        if (m_freq_uncore_efficient > m_freq_uncore_max ||
-            m_freq_uncore_efficient < m_freq_uncore_min ) {
-            throw Exception("CPUActivityAgent::" + std::string(__func__) +
-                            "(): Uncore efficient frequency out of range: " +
-                            std::to_string(m_freq_uncore_efficient) +
-                            ".", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        if (m_freq_uncore_efficient > m_freq_uncore_max || m_freq_uncore_efficient < m_freq_uncore_min) {
+            throw Exception("CPUActivityAgent::" + std::string(__func__) + "(): Uncore efficient frequency out of range: "
+                                + std::to_string(m_freq_uncore_efficient) + ".",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         // Grab all (uncore frequency, max memory bandwidth) pairs
         for (unsigned int entry_idx = 0; entry_idx < ALL_NAMES.size(); ++entry_idx) {
-            const std::string KEY_NAME = "CONST_CONFIG::CPU_UNCORE_FREQUENCY_" +
-                                          std::to_string(entry_idx);
-            const std::string VAL_NAME = "CONST_CONFIG::CPU_UNCORE_MAX_MEMORY_BANDWIDTH_" +
-                                          std::to_string(entry_idx);
-            if (ALL_NAMES.count(KEY_NAME) != 0 &&
-                ALL_NAMES.count(VAL_NAME) != 0) {
+            const std::string KEY_NAME = "CONST_CONFIG::CPU_UNCORE_FREQUENCY_" + std::to_string(entry_idx);
+            const std::string VAL_NAME = "CONST_CONFIG::CPU_UNCORE_MAX_MEMORY_BANDWIDTH_" + std::to_string(entry_idx);
+            if (ALL_NAMES.count(KEY_NAME) != 0 && ALL_NAMES.count(VAL_NAME) != 0) {
                 double uncore_freq = m_platform_io.read_signal(KEY_NAME, GEOPM_DOMAIN_BOARD, 0);
                 double max_mem_bw = m_platform_io.read_signal(VAL_NAME, GEOPM_DOMAIN_BOARD, 0);
-                if (!std::isnan(uncore_freq) && !std::isnan(max_mem_bw) &&
-                    uncore_freq != 0 && max_mem_bw != 0) {
+                if (!std::isnan(uncore_freq) && !std::isnan(max_mem_bw) && uncore_freq != 0 && max_mem_bw != 0) {
                     m_qm_max_rate[uncore_freq] = max_mem_bw;
                 }
             }
         }
 
         if (m_qm_max_rate.empty()) {
-            throw Exception("CPUActivityAgent::" + std::string(__func__) +
-                            "(): ConstConfigIOGroup configuration file does not contain" +
-                            " memory bandwidth information.",
+            throw Exception("CPUActivityAgent::" + std::string(__func__) + "(): ConstConfigIOGroup configuration file does not contain"
+                                + " memory bandwidth information.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
     }
@@ -205,29 +189,24 @@ namespace geopm
     void CPUActivityAgent::validate_policy(std::vector<double> &in_policy) const
     {
         GEOPM_DEBUG_ASSERT(in_policy.size() == M_NUM_POLICY,
-                           "CPUActivityAgent::" + std::string(__func__) +
-                           "(): policy vector not correctly sized.  Expected  " +
-                           std::to_string(M_NUM_POLICY) + ", actual: " +
-                           std::to_string(in_policy.size()));
+                           "CPUActivityAgent::" + std::string(__func__) + "(): policy vector not correctly sized.  Expected  "
+                               + std::to_string(M_NUM_POLICY) + ", actual: " + std::to_string(in_policy.size()));
 
         // If no phi value is provided assume the default behavior.
         if (std::isnan(in_policy[M_POLICY_CPU_PHI])) {
             in_policy[M_POLICY_CPU_PHI] = M_POLICY_PHI_DEFAULT;
         }
 
-        if (in_policy[M_POLICY_CPU_PHI] < 0.0 ||
-            in_policy[M_POLICY_CPU_PHI] > 1.0) {
-            throw Exception("CPUActivityAgent::" + std::string(__func__) +
-                            "(): POLICY_CPU_PHI value out of range: " +
-                            std::to_string(in_policy[M_POLICY_CPU_PHI]) + ".",
+        if (in_policy[M_POLICY_CPU_PHI] < 0.0 || in_policy[M_POLICY_CPU_PHI] > 1.0) {
+            throw Exception("CPUActivityAgent::" + std::string(__func__) + "(): POLICY_CPU_PHI value out of range: "
+                                + std::to_string(in_policy[M_POLICY_CPU_PHI]) + ".",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
-
     }
 
     // Distribute incoming policy to children
-    void CPUActivityAgent::split_policy(const std::vector<double>& in_policy,
-                                        std::vector<std::vector<double> >& out_policy)
+    void CPUActivityAgent::split_policy(const std::vector<double> &in_policy,
+                                        std::vector<std::vector<double> > &out_policy)
     {
         for (auto &child_pol : out_policy) {
             child_pol = in_policy;
@@ -241,9 +220,8 @@ namespace geopm
     }
 
     void CPUActivityAgent::aggregate_sample(const std::vector<std::vector<double> > &in_sample,
-                                            std::vector<double>& out_sample)
+                                            std::vector<double> &out_sample)
     {
-
     }
 
     // Indicate whether to send samples up to the parent
@@ -252,7 +230,7 @@ namespace geopm
         return false;
     }
 
-    void CPUActivityAgent::adjust_platform(const std::vector<double>& in_policy)
+    void CPUActivityAgent::adjust_platform(const std::vector<double> &in_policy)
     {
         m_do_send_policy = false;
         m_do_write_batch = false;
@@ -275,31 +253,25 @@ namespace geopm
         if (phi > 0.5) {
             // Energy Biased.  Scale F_max down to F_efficient based upon phi value
             // Active region phi usage
-            m_resolved_f_core_max = std::max(m_freq_core_efficient, m_freq_core_max -
-                                                                    f_core_range *
-                                                                    (phi-0.5) / 0.5);
+            m_resolved_f_core_max = std::max(m_freq_core_efficient,
+                                             m_freq_core_max - f_core_range * (phi - 0.5) / 0.5);
 
-            m_resolved_f_uncore_max = std::max(m_freq_uncore_efficient, m_freq_uncore_max -
-                                                                        f_uncore_range *
-                                                                        (phi-0.5) / 0.5);
+            m_resolved_f_uncore_max = std::max(m_freq_uncore_efficient,
+                                               m_freq_uncore_max - f_uncore_range * (phi - 0.5) / 0.5);
         }
         else if (phi < 0.5) {
             // Perf Biased.  Scale F_efficient up to F_max based upon phi value
             // Active region phi usage
-            m_resolved_f_core_efficient = std::min(m_freq_core_max, m_freq_core_efficient +
-                                                                    f_core_range *
-                                                                    (0.5-phi) / 0.5);
+            m_resolved_f_core_efficient = std::min(m_freq_core_max,
+                                                   m_freq_core_efficient + f_core_range * (0.5 - phi) / 0.5);
 
-            m_resolved_f_uncore_efficient = std::min(m_freq_uncore_max, m_freq_uncore_efficient +
-                                                                        f_uncore_range *
-                                                                        (0.5-phi) / 0.5);
+            m_resolved_f_uncore_efficient = std::min(
+                m_freq_uncore_max, m_freq_uncore_efficient + f_uncore_range * (0.5 - phi) / 0.5);
         }
 
-        //Update Policy
-        m_freq_governor->validate_policy(m_resolved_f_core_efficient,
-                                         m_resolved_f_core_max);
-        m_freq_governor->set_frequency_bounds(m_resolved_f_core_efficient,
-                                              m_resolved_f_core_max);
+        // Update Policy
+        m_freq_governor->validate_policy(m_resolved_f_core_efficient, m_resolved_f_core_max);
+        m_freq_governor->set_frequency_bounds(m_resolved_f_core_efficient, m_resolved_f_core_max);
 
         f_core_range = m_resolved_f_core_max - m_resolved_f_core_efficient;
         f_uncore_range = m_resolved_f_uncore_max - m_resolved_f_uncore_efficient;
@@ -308,7 +280,7 @@ namespace geopm
         std::vector<double> uncore_freq_request;
 
         for (int domain_idx = 0; domain_idx < M_NUM_PACKAGE; ++domain_idx) {
-            double uncore_freq = (double) m_uncore_freq_status.at(domain_idx).value;
+            double uncore_freq = (double)m_uncore_freq_status.at(domain_idx).value;
 
             /////////////////////////////////////////////
             // L3 Total External Bandwidth Measurement //
@@ -326,11 +298,9 @@ namespace geopm
 
             // Handle divided by zero, either numerator or
             // denominator being NAN
-            if (!std::isnan(m_qm_rate.at(domain_idx).value) &&
-                !std::isnan(qm_max_itr->second) &&
-                qm_max_itr->second != 0) {
-                scalability_uncore = (double) m_qm_rate.at(domain_idx).value /
-                                         qm_max_itr->second;
+            if (!std::isnan(m_qm_rate.at(domain_idx).value) && !std::isnan(qm_max_itr->second)
+                && qm_max_itr->second != 0) {
+                scalability_uncore = (double)m_qm_rate.at(domain_idx).value / qm_max_itr->second;
             }
 
             // L3 usage, Network Traffic, HBM, and PCIE (GPUs) all use the uncore.
@@ -357,7 +327,7 @@ namespace geopm
             //////////////////////////////////
             // Core Scalability Measurement //
             //////////////////////////////////
-            double scalability = (double) m_core_scal.at(domain_idx).value;
+            double scalability = (double)m_core_scal.at(domain_idx).value;
             if (std::isnan(scalability)) {
                 scalability = 1.0;
             }
@@ -378,16 +348,14 @@ namespace geopm
                 uncore_freq_request.at(domain_idx) = m_freq_uncore_max;
             }
 
-            if (uncore_freq_request.at(domain_idx) !=
-                m_uncore_freq_min_control.at(domain_idx).last_setting ||
-                uncore_freq_request.at(domain_idx) !=
-                m_uncore_freq_max_control.at(domain_idx).last_setting) {
+            if (uncore_freq_request.at(domain_idx) != m_uncore_freq_min_control.at(domain_idx).last_setting
+                || uncore_freq_request.at(domain_idx) != m_uncore_freq_max_control.at(domain_idx).last_setting) {
                 // Adjust
                 m_platform_io.adjust(m_uncore_freq_min_control.at(domain_idx).batch_idx,
-                                    uncore_freq_request.at(domain_idx));
+                                     uncore_freq_request.at(domain_idx));
 
                 m_platform_io.adjust(m_uncore_freq_max_control.at(domain_idx).batch_idx,
-                                    uncore_freq_request.at(domain_idx));
+                                     uncore_freq_request.at(domain_idx));
 
                 // Save the value for future comparison
                 m_uncore_freq_min_control.at(domain_idx).last_setting = uncore_freq_request.at(domain_idx);
@@ -409,15 +377,14 @@ namespace geopm
     void CPUActivityAgent::sample_platform(std::vector<double> &out_sample)
     {
         GEOPM_DEBUG_ASSERT(out_sample.size() == M_NUM_SAMPLE,
-                           "CPUActivityAgent::" + std::string(__func__) +
-                           "(): sample vector not correctly sized.  Expected  " +
-                           std::to_string(M_NUM_SAMPLE) + ", actual: " +
-                           std::to_string(out_sample.size()));
+                           "CPUActivityAgent::" + std::string(__func__) + "(): sample vector not correctly sized.  Expected  "
+                               + std::to_string(M_NUM_SAMPLE) + ", actual: " + std::to_string(out_sample.size()));
 
         // Collect latest signal values
         for (int domain_idx = 0; domain_idx < M_NUM_PACKAGE; ++domain_idx) {
             // Frequency signals
-            m_uncore_freq_status.at(domain_idx).value = m_platform_io.sample(m_uncore_freq_status.at(domain_idx).batch_idx);
+            m_uncore_freq_status.at(domain_idx).value
+                = m_platform_io.sample(m_uncore_freq_status.at(domain_idx).batch_idx);
 
             // Uncore steering signals
             m_qm_rate.at(domain_idx).value = m_platform_io.sample(m_qm_rate.at(domain_idx).batch_idx);
@@ -436,7 +403,7 @@ namespace geopm
         do {
             geopm_time(&current_time);
         }
-        while(geopm_time_diff(&m_last_wait, &current_time) < M_WAIT_SEC);
+        while (geopm_time_diff(&m_last_wait, &current_time) < M_WAIT_SEC);
         geopm_time(&m_last_wait);
     }
 
@@ -451,24 +418,16 @@ namespace geopm
     {
         std::vector<std::pair<std::string, std::string> > result;
 
-        result.push_back({"Core Batch Writes",
-                          std::to_string(m_core_batch_writes)});
-        result.push_back({"Core Frequency Requests Clamped",
-                          std::to_string(m_freq_governor->get_clamp_count())});
-        result.push_back({"Uncore Frequency Requests",
-                          std::to_string(m_uncore_frequency_requests)});
-        result.push_back({"Uncore Frequency Requests Clamped",
-                          std::to_string(m_uncore_frequency_clamped)});
-        result.push_back({"Resolved Maximum Core Frequency",
-                          std::to_string(m_resolved_f_core_max)});
-        result.push_back({"Resolved Efficient Core Frequency",
-                          std::to_string(m_resolved_f_core_efficient)});
+        result.push_back({"Core Batch Writes", std::to_string(m_core_batch_writes)});
+        result.push_back({"Core Frequency Requests Clamped", std::to_string(m_freq_governor->get_clamp_count())});
+        result.push_back({"Uncore Frequency Requests", std::to_string(m_uncore_frequency_requests)});
+        result.push_back({"Uncore Frequency Requests Clamped", std::to_string(m_uncore_frequency_clamped)});
+        result.push_back({"Resolved Maximum Core Frequency", std::to_string(m_resolved_f_core_max)});
+        result.push_back({"Resolved Efficient Core Frequency", std::to_string(m_resolved_f_core_efficient)});
         result.push_back({"Resolved Core Frequency Range",
                           std::to_string(m_resolved_f_core_max - m_resolved_f_core_efficient)});
-        result.push_back({"Resolved Maximum Uncore Frequency",
-                          std::to_string(m_resolved_f_uncore_max)});
-        result.push_back({"Resolved Efficient Uncore Frequency",
-                          std::to_string(m_resolved_f_uncore_efficient)});
+        result.push_back({"Resolved Maximum Uncore Frequency", std::to_string(m_resolved_f_uncore_max)});
+        result.push_back({"Resolved Efficient Uncore Frequency", std::to_string(m_resolved_f_uncore_efficient)});
         result.push_back({"Resolved Uncore Frequency Range",
                           std::to_string(m_resolved_f_uncore_max - m_resolved_f_uncore_efficient)});
         return result;
@@ -487,14 +446,9 @@ namespace geopm
     }
 
     // Updates the trace with values for signals from this Agent
-    void CPUActivityAgent::trace_values(std::vector<double> &values)
-    {
-    }
+    void CPUActivityAgent::trace_values(std::vector<double> &values) {}
 
-    void CPUActivityAgent::enforce_policy(const std::vector<double> &policy) const
-    {
-
-    }
+    void CPUActivityAgent::enforce_policy(const std::vector<double> &policy) const {}
 
     std::vector<std::function<std::string(double)> > CPUActivityAgent::trace_formats(void) const
     {

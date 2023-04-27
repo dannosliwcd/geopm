@@ -13,8 +13,7 @@ namespace geopm
         : m_mutex(mutex)
     {
         if (m_mutex == nullptr) {
-            throw Exception("SharedMemoryScopedLock(): mutex cannot be NULL",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("SharedMemoryScopedLock(): mutex cannot be NULL", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         int err = pthread_mutex_lock(m_mutex); // Default mutex will block until this completes.
         if (err) {
@@ -27,8 +26,8 @@ namespace geopm
         int err = pthread_mutex_unlock(m_mutex);
         if (err != 0) {
 #ifdef GEOPM_DEBUG
-            std::cerr << "Warning: <geopm> pthread_mutex_unlock() failed with error: "
-                      << geopm::error_message(err) << std::endl;
+            std::cerr << "Warning: <geopm> pthread_mutex_unlock() failed with error: " << geopm::error_message(err)
+                      << std::endl;
 #endif
         }
     }

@@ -17,13 +17,9 @@ namespace geopm
     class SSTFrequencyLimitDetector : public FrequencyLimitDetector
     {
         public:
-            SSTFrequencyLimitDetector(
-                PlatformIO &platform_io,
-                const PlatformTopo &platform_topo);
-            void update_max_frequency_estimates(
-                const std::vector<double> &observed_core_frequencies) override;
-            std::vector<std::pair<unsigned int, double> > get_core_frequency_limits(
-                unsigned int core_idx) const override;
+            SSTFrequencyLimitDetector(PlatformIO &platform_io, const PlatformTopo &platform_topo);
+            void update_max_frequency_estimates(const std::vector<double> &observed_core_frequencies) override;
+            std::vector<std::pair<unsigned int, double> > get_core_frequency_limits(unsigned int core_idx) const override;
             double get_core_low_priority_frequency(unsigned int core_idx) const override;
 
         private:

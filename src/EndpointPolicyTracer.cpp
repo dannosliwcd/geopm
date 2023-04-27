@@ -29,19 +29,14 @@ namespace geopm
     }
 
     EndpointPolicyTracerImp::EndpointPolicyTracerImp()
-        : EndpointPolicyTracerImp(1024 * 1024 * sizeof(char),
-                                  environment().do_trace_endpoint_policy(),
-                                  environment().trace_endpoint_policy(),
-                                  PlatformIOProf::platform_io(),
+        : EndpointPolicyTracerImp(1024 * 1024 * sizeof(char), environment().do_trace_endpoint_policy(),
+                                  environment().trace_endpoint_policy(), PlatformIOProf::platform_io(),
                                   Agent::policy_names(environment().agent()))
     {
-
     }
 
-    EndpointPolicyTracerImp::EndpointPolicyTracerImp(size_t buffer_size,
-                                                     bool is_trace_enabled,
-                                                     const std::string &file_name,
-                                                     PlatformIO &platform_io,
+    EndpointPolicyTracerImp::EndpointPolicyTracerImp(size_t buffer_size, bool is_trace_enabled,
+                                                     const std::string &file_name, PlatformIO &platform_io,
                                                      const std::vector<std::string> &policy_names)
         : m_is_trace_enabled(is_trace_enabled && policy_names.size() > 0)
         , m_platform_io(platform_io)
@@ -53,8 +48,7 @@ namespace geopm
             geopm_time_s time_0 = time_zero();
             int err = geopm_time_to_string(&time_0, NAME_MAX, time_cstr);
             if (err) {
-                throw Exception("geopm_time_to_string() failed",
-                                err, __FILE__, __LINE__);
+                throw Exception("geopm_time_to_string() failed", err, __FILE__, __LINE__);
             }
             m_csv = geopm::make_unique<CSVImp>(file_name, "", time_cstr, buffer_size);
 
@@ -70,17 +64,14 @@ namespace geopm
         }
     }
 
-    EndpointPolicyTracerImp::~EndpointPolicyTracerImp()
-    {
-
-    }
+    EndpointPolicyTracerImp::~EndpointPolicyTracerImp() {}
 
     void EndpointPolicyTracerImp::update(const std::vector<double> &policy)
     {
 #ifdef GEOPM_DEBUG
         if (policy.size() != (size_t)m_num_policy) {
-            throw Exception("EndpointPolicyTracerImp::update(): invalid policy size.",
-                            GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+            throw Exception("EndpointPolicyTracerImp::update(): invalid policy size.", GEOPM_ERROR_LOGIC,
+                            __FILE__, __LINE__);
         }
 #endif
         if (m_is_trace_enabled) {

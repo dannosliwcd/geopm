@@ -39,6 +39,7 @@ namespace geopm
             /// @brief Return the number of records that this object has
             ///        received so far via update().
             int num_records(void) const;
+
         private:
             void calc_period();
             size_t Didx(int ii, int jj, int mm) const;

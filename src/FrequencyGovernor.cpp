@@ -32,7 +32,6 @@ namespace geopm
     FrequencyGovernorImp::FrequencyGovernorImp()
         : FrequencyGovernorImp(PlatformIOProf::platform_io(), platform_topo())
     {
-
     }
 
     FrequencyGovernorImp::FrequencyGovernorImp(PlatformIO &platform_io, const PlatformTopo &platform_topo)
@@ -48,13 +47,9 @@ namespace geopm
         , m_freq_ctl_domain_type(m_platform_io.control_domain_type("CPU_FREQUENCY_MAX_CONTROL"))
         , m_is_platform_io_initialized(false)
     {
-
     }
 
-    FrequencyGovernorImp::~FrequencyGovernorImp()
-    {
-
-    }
+    FrequencyGovernorImp::~FrequencyGovernorImp() {}
 
     double FrequencyGovernorImp::get_limit(const std::string &sig_name) const
     {
@@ -86,9 +81,8 @@ namespace geopm
         const int num_freq_ctl_domain = m_platform_topo.num_domain(m_freq_ctl_domain_type);
         m_last_freq = std::vector<double>(num_freq_ctl_domain, NAN);
         for (int ctl_dom_idx = 0; ctl_dom_idx != num_freq_ctl_domain; ++ctl_dom_idx) {
-            m_control_idx.push_back(m_platform_io.push_control("CPU_FREQUENCY_MAX_CONTROL",
-                                                               m_freq_ctl_domain_type,
-                                                               ctl_dom_idx));
+            m_control_idx.push_back(
+                m_platform_io.push_control("CPU_FREQUENCY_MAX_CONTROL", m_freq_ctl_domain_type, ctl_dom_idx));
         }
         m_is_platform_io_initialized = true;
     }
@@ -101,18 +95,17 @@ namespace geopm
     void FrequencyGovernorImp::set_domain_type(int domain_type)
     {
         if (m_is_platform_io_initialized) {
-            throw Exception("FrequencyGovernorImp::" + std::string(__func__) +
-                            "(): Attempted to set a new frequency control domain after "
-                            "calling FrequencyGovernorImp::init_platform_io().",
+            throw Exception("FrequencyGovernorImp::" + std::string(__func__)
+                                + "(): Attempted to set a new frequency control domain after "
+                                  "calling FrequencyGovernorImp::init_platform_io().",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
-        if (!m_platform_topo.is_nested_domain(
-                    m_platform_io.control_domain_type("CPU_FREQUENCY_MAX_CONTROL"),
-                    domain_type)) {
-            throw Exception("FrequencyGovernorImp::" + std::string(__func__) +
-                            "(): Attempted to set a frequency control domain that does "
-                            "not contain the native domain for CPU_FREQUENCY_MAX_CONTROL.",
+        if (!m_platform_topo.is_nested_domain(m_platform_io.control_domain_type("CPU_FREQUENCY_MAX_CONTROL"),
+                                              domain_type)) {
+            throw Exception("FrequencyGovernorImp::" + std::string(__func__)
+                                + "(): Attempted to set a frequency control domain that does "
+                                  "not contain the native domain for CPU_FREQUENCY_MAX_CONTROL.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -122,8 +115,8 @@ namespace geopm
     void FrequencyGovernorImp::adjust_platform(const std::vector<double> &frequency_request)
     {
         if (frequency_request.size() != m_control_idx.size()) {
-            throw Exception("FrequencyGovernorImp::" + std::string(__func__) +
-                            "(): size of request vector does not match size of control domain.",
+            throw Exception("FrequencyGovernorImp::" + std::string(__func__)
+                                + "(): size of request vector does not match size of control domain.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -155,15 +148,12 @@ namespace geopm
 
     bool FrequencyGovernorImp::set_frequency_bounds(double freq_min, double freq_max)
     {
-        if (freq_min < M_PLAT_FREQ_MIN || freq_max > M_PLAT_FREQ_MAX ||
-            freq_min > freq_max) {
+        if (freq_min < M_PLAT_FREQ_MIN || freq_max > M_PLAT_FREQ_MAX || freq_min > freq_max) {
             throw Exception("FrequencyGovernorImp::" + std::string(__func__) + "(): invalid frequency bounds.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
-
         }
         bool result = false;
-        if (m_freq_min != freq_min ||
-            m_freq_max != freq_max) {
+        if (m_freq_min != freq_min || m_freq_max != freq_max) {
             m_freq_min = freq_min;
             m_freq_max = freq_max;
             result = true;
@@ -171,22 +161,22 @@ namespace geopm
         return result;
     }
 
-    double FrequencyGovernorImp::get_frequency_min()  const
+    double FrequencyGovernorImp::get_frequency_min() const
     {
         return m_freq_min;
     }
 
-    double FrequencyGovernorImp::get_frequency_max()  const
+    double FrequencyGovernorImp::get_frequency_max() const
     {
         return m_freq_max;
     }
 
-    double FrequencyGovernorImp::get_frequency_step()  const
+    double FrequencyGovernorImp::get_frequency_step() const
     {
         return M_FREQ_STEP;
     }
 
-    int FrequencyGovernorImp::get_clamp_count()  const
+    int FrequencyGovernorImp::get_clamp_count() const
     {
         return m_clamp_count;
     }
@@ -199,8 +189,8 @@ namespace geopm
         freq_max = target_freq_max;
 
         if (freq_min > freq_max) {
-            throw Exception("FrequencyGovernorImp::" + std::string(__func__) +
-                                "(): freq_min must not be greater than freq_max.",
+            throw Exception("FrequencyGovernorImp::" + std::string(__func__)
+                                + "(): freq_min must not be greater than freq_max.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 

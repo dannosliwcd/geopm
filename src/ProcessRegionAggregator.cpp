@@ -20,7 +20,6 @@ namespace geopm
     ProcessRegionAggregatorImp::ProcessRegionAggregatorImp()
         : ProcessRegionAggregatorImp(ApplicationSampler::application_sampler())
     {
-
     }
 
     ProcessRegionAggregatorImp::ProcessRegionAggregatorImp(ApplicationSampler &sampler)
@@ -34,25 +33,23 @@ namespace geopm
         }
         m_num_process = procs.size();
         if (m_num_process == 0) {
-            throw Exception("ProcessRegionAggregator: expected at least one process",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("ProcessRegionAggregator: expected at least one process", GEOPM_ERROR_RUNTIME,
+                            __FILE__, __LINE__);
         }
     }
 
     void ProcessRegionAggregatorImp::update(void)
     {
         auto records = m_app_sampler.get_records();
-        for (const auto &rec: records) {
+        for (const auto &rec : records) {
             if (rec.event == EVENT_REGION_ENTRY) {
                 int process = rec.process;
                 uint64_t region_hash = rec.signal;
                 double entry_time = rec.time;
-                auto proc = m_region_info.emplace(std::piecewise_construct,
-                                                  std::forward_as_tuple(process),
+                auto proc = m_region_info.emplace(std::piecewise_construct, std::forward_as_tuple(process),
                                                   std::forward_as_tuple());
-                auto region = proc.first->second.emplace(std::piecewise_construct,
-                                                         std::forward_as_tuple(region_hash),
-                                                         std::forward_as_tuple());
+                auto region = proc.first->second.emplace(
+                    std::piecewise_construct, std::forward_as_tuple(region_hash), std::forward_as_tuple());
                 region.first->second.last_entry_time = entry_time;
             }
             else if (rec.event == EVENT_REGION_EXIT) {
@@ -61,13 +58,13 @@ namespace geopm
                 double exit_time = rec.time;
                 auto proc = m_region_info.find(process);
                 if (proc == m_region_info.end()) {
-                    throw Exception("ProcessRegionAggregator: region exit without entry",
-                                    GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+                    throw Exception("ProcessRegionAggregator: region exit without entry", GEOPM_ERROR_INVALID,
+                                    __FILE__, __LINE__);
                 }
                 auto region = proc->second.find(region_hash);
                 if (region == proc->second.end()) {
-                    throw Exception("ProcessRegionAggregator: region exit without entry",
-                                    GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+                    throw Exception("ProcessRegionAggregator: region exit without entry", GEOPM_ERROR_INVALID,
+                                    __FILE__, __LINE__);
                 }
                 region->second.total_runtime += exit_time - region->second.last_entry_time;
                 region->second.total_count += 1;
@@ -78,12 +75,10 @@ namespace geopm
                 auto short_region = m_app_sampler.get_short_region(short_idx);
                 uint64_t region_hash = short_region.hash;
 
-                auto proc = m_region_info.emplace(std::piecewise_construct,
-                                                  std::forward_as_tuple(process),
+                auto proc = m_region_info.emplace(std::piecewise_construct, std::forward_as_tuple(process),
                                                   std::forward_as_tuple());
-                auto region = proc.first->second.emplace(std::piecewise_construct,
-                                                         std::forward_as_tuple(region_hash),
-                                                         std::forward_as_tuple());
+                auto region = proc.first->second.emplace(
+                    std::piecewise_construct, std::forward_as_tuple(region_hash), std::forward_as_tuple());
                 region.first->second.total_runtime += short_region.total_time;
                 region.first->second.total_count += short_region.num_complete;
             }

@@ -39,35 +39,19 @@
 
 namespace geopm
 {
-    ReporterImp::ReporterImp(const std::string &start_time,
-                             const std::string &report_name,
-                             PlatformIO &platform_io,
-                             const PlatformTopo &platform_topo,
-                             int rank)
-        : ReporterImp(start_time,
-                      report_name,
-                      platform_io,
-                      platform_topo,
-                      rank,
-                      SampleAggregator::make_unique(),
-                      nullptr,
-                      environment().report_signals(),
-                      environment().policy(),
-                      environment().do_endpoint())
+    ReporterImp::ReporterImp(const std::string &start_time, const std::string &report_name,
+                             PlatformIO &platform_io, const PlatformTopo &platform_topo, int rank)
+        : ReporterImp(start_time, report_name, platform_io, platform_topo, rank, SampleAggregator::make_unique(),
+                      nullptr, environment().report_signals(), environment().policy(), environment().do_endpoint())
     {
-
     }
 
-    ReporterImp::ReporterImp(const std::string &start_time,
-                             const std::string &report_name,
-                             PlatformIO &platform_io,
-                             const PlatformTopo &platform_topo,
-                             int rank,
+    ReporterImp::ReporterImp(const std::string &start_time, const std::string &report_name,
+                             PlatformIO &platform_io, const PlatformTopo &platform_topo, int rank,
                              std::shared_ptr<SampleAggregator> sample_agg,
                              std::shared_ptr<ProcessRegionAggregator> proc_agg,
                              const std::vector<std::pair<std::string, int> > &env_signals,
-                             const std::string &policy_path,
-                             bool do_endpoint)
+                             const std::string &policy_path, bool do_endpoint)
         : m_start_time(start_time)
         , m_report_name(report_name)
         , m_platform_io(platform_io)
@@ -123,8 +107,7 @@ namespace geopm
                                const std::vector<std::pair<std::string, std::string> > &agent_report_header,
                                const std::vector<std::pair<std::string, std::string> > &agent_host_report,
                                const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report,
-                               const ApplicationIO &application_io,
-                               std::shared_ptr<Comm> comm,
+                               const ApplicationIO &application_io, std::shared_ptr<Comm> comm,
                                const TreeComm &tree_comm)
     {
         std::string report_name(application_io.report_name());
@@ -142,11 +125,8 @@ namespace geopm
             common_report << create_header(agent_name, application_io.profile_name(), agent_report_header);
         }
 
-        std::string host_report = create_report(application_io.region_name_set(),
-                                                get_max_memory(),
-                                                tree_comm.overhead_send(),
-                                                agent_host_report,
-                                                agent_region_report);
+        std::string host_report = create_report(application_io.region_name_set(), get_max_memory(),
+                                                tree_comm.overhead_send(), agent_host_report, agent_region_report);
         std::string full_report = gather_report(host_report, comm);
 
         if (!rank) {
@@ -156,8 +136,7 @@ namespace geopm
         }
     }
 
-    std::string ReporterImp::generate(const std::string &profile_name,
-                                      const std::string &agent_name,
+    std::string ReporterImp::generate(const std::string &profile_name, const std::string &agent_name,
                                       const std::vector<std::pair<std::string, std::string> > &agent_report_header,
                                       const std::vector<std::pair<std::string, std::string> > &agent_host_report,
                                       const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report)
@@ -165,17 +144,12 @@ namespace geopm
         std::ostringstream common_report;
         common_report << create_header(agent_name, profile_name, agent_report_header);
 
-        common_report << create_report({},
-                                       get_max_memory(),
-                                       0.0,
-                                       agent_host_report,
-                                       agent_region_report);
+        common_report << create_report({}, get_max_memory(), 0.0, agent_host_report, agent_region_report);
         common_report << std::endl;
         return common_report.str();
     }
 
-    std::string ReporterImp::create_header(const std::string &agent_name,
-                                           const std::string &profile_name,
+    std::string ReporterImp::create_header(const std::string &agent_name, const std::string &profile_name,
                                            const std::vector<std::pair<std::string, std::string> > &agent_report_header)
     {
         std::ostringstream common_report;
@@ -188,17 +162,15 @@ namespace geopm
             try {
                 policy_str = read_file(m_policy_path);
             }
-            catch(...) {
+            catch (...) {
                 policy_str = m_policy_path;
             }
         }
-        std::vector<std::pair<std::string, std::string> > header {
-            {"GEOPM Version", geopm_version()},
-            {"Start Time", m_start_time},
-            {"Profile", profile_name},
-            {"Agent", agent_name},
-            {"Policy", policy_str}
-        };
+        std::vector<std::pair<std::string, std::string> > header{{"GEOPM Version", geopm_version()},
+                                                                 {"Start Time", m_start_time},
+                                                                 {"Profile", profile_name},
+                                                                 {"Agent", agent_name},
+                                                                 {"Policy", policy_str}};
         yaml_write(common_report, M_INDENT_HEADER, header);
         yaml_write(common_report, M_INDENT_HEADER, agent_report_header);
         common_report << "\n";
@@ -206,10 +178,10 @@ namespace geopm
         return common_report.str();
     }
 
-
-    std::string ReporterImp::create_report(const std::set<std::string> &region_name_set, double max_memory, double comm_overhead,
-                                           const std::vector<std::pair<std::string, std::string> > &agent_host_report,
-                                           const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report)
+    std::string ReporterImp::create_report(
+        const std::set<std::string> &region_name_set, double max_memory, double comm_overhead,
+        const std::vector<std::pair<std::string, std::string> > &agent_host_report,
+        const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report)
     {
         // per-host report
         std::ostringstream report;
@@ -221,48 +193,42 @@ namespace geopm
 
         // vector of region data, in descending order by runtime
         struct region_info {
-            std::string name;
-            uint64_t hash;
-            double per_rank_avg_runtime;
-            int count;
+                std::string name;
+                uint64_t hash;
+                double per_rank_avg_runtime;
+                int count;
         };
 
         std::vector<region_info> region_ordered;
-        GEOPM_DEBUG_ASSERT(region_name_set.size() == 0 ||
-                           m_proc_region_agg != nullptr,
-                           "ReporterImp::create_report(): region set is not empty, but region aggregator pointer is null");
+        GEOPM_DEBUG_ASSERT(
+            region_name_set.size() == 0 || m_proc_region_agg != nullptr,
+            "ReporterImp::create_report(): region set is not empty, but region aggregator pointer is null");
         for (const auto &region : region_name_set) {
             uint64_t region_hash = geopm_crc32_str(region.c_str());
             int count = m_proc_region_agg->get_count_average(region_hash);
             if (count > 0) {
-                region_ordered.push_back({region,
-                                          region_hash,
-                                          m_proc_region_agg->get_runtime_average(region_hash),
-                                          count});
+                region_ordered.push_back(
+                    {region, region_hash, m_proc_region_agg->get_runtime_average(region_hash), count});
             }
         }
         // sort based on averge runtime, descending
-        std::sort(region_ordered.begin(), region_ordered.end(),
-                  [] (const region_info &a,
-                      const region_info &b) -> bool {
-                      return a.per_rank_avg_runtime > b.per_rank_avg_runtime;
-                  });
+        std::sort(region_ordered.begin(), region_ordered.end(), [](const region_info &a, const region_info &b) -> bool {
+            return a.per_rank_avg_runtime > b.per_rank_avg_runtime;
+        });
 
         double total_marked_runtime = 0.0;
         for (const auto &region : region_ordered) {
 #ifdef GEOPM_DEBUG
             if (GEOPM_REGION_HASH_INVALID == region.hash) {
-                throw Exception("ReporterImp::generate(): Invalid hash value detected.",
-                                GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+                throw Exception("ReporterImp::generate(): Invalid hash value detected.", GEOPM_ERROR_LOGIC,
+                                __FILE__, __LINE__);
             }
 #endif
             yaml_write(report, M_INDENT_REGION, "-");
             yaml_write(report, M_INDENT_REGION_FIELD,
-                       {{"region", '"' + region.name + '"'},
-                        {"hash", geopm::string_format_hex(region.hash)}});
+                       {{"region", '"' + region.name + '"'}, {"hash", geopm::string_format_hex(region.hash)}});
             yaml_write(report, M_INDENT_REGION_FIELD,
-                       {{"runtime (s)", region.per_rank_avg_runtime},
-                        {"count", region.count}});
+                       {{"runtime (s)", region.per_rank_avg_runtime}, {"count", region.count}});
             auto region_data = get_region_data(region.hash);
             yaml_write(report, M_INDENT_REGION_FIELD, region_data);
             const auto &it = agent_region_report.find(region.hash);
@@ -276,11 +242,8 @@ namespace geopm
         // Do not add epoch or unmarked section if no application attached
         if (!std::isnan(epoch_count)) {
             yaml_write(report, M_INDENT_UNMARKED, "Unmarked Totals:");
-            double unmarked_time = m_sample_agg->sample_application(m_sync_signal_idx["TIME"]) -
-                                   total_marked_runtime;
-            yaml_write(report, M_INDENT_UNMARKED_FIELD,
-                       {{"runtime (s)", unmarked_time},
-                        {"count", 0}});
+            double unmarked_time = m_sample_agg->sample_application(m_sync_signal_idx["TIME"]) - total_marked_runtime;
+            yaml_write(report, M_INDENT_UNMARKED_FIELD, {{"runtime (s)", unmarked_time}, {"count", 0}});
             auto unmarked_data = get_region_data(GEOPM_REGION_HASH_UNMARKED);
             yaml_write(report, M_INDENT_UNMARKED_FIELD, unmarked_data);
             // agent extensions for unmarked
@@ -291,25 +254,19 @@ namespace geopm
 
             yaml_write(report, M_INDENT_EPOCH, "Epoch Totals:");
             double epoch_runtime = m_sample_agg->sample_epoch(m_sync_signal_idx["TIME"]);
-            yaml_write(report, M_INDENT_EPOCH_FIELD,
-                       {{"runtime (s)", epoch_runtime},
-                        {"count", (int)epoch_count}});
+            yaml_write(report, M_INDENT_EPOCH_FIELD, {{"runtime (s)", epoch_runtime}, {"count", (int)epoch_count}});
             auto epoch_data = get_region_data(GEOPM_REGION_HASH_EPOCH);
             yaml_write(report, M_INDENT_EPOCH_FIELD, epoch_data);
         }
 
         yaml_write(report, M_INDENT_TOTALS, "Application Totals:");
         double total_runtime = m_sample_agg->sample_application(m_sync_signal_idx["TIME"]);
-        yaml_write(report, M_INDENT_TOTALS_FIELD,
-                   {{"runtime (s)", total_runtime},
-                    {"count", 0}});
+        yaml_write(report, M_INDENT_TOTALS_FIELD, {{"runtime (s)", total_runtime}, {"count", 0}});
         auto region_data = get_region_data(GEOPM_REGION_HASH_APP);
         yaml_write(report, M_INDENT_TOTALS_FIELD, region_data);
         // Controller overhead
-        std::vector<std::pair<std::string, double> > overhead {
-            {"geopmctl memory HWM (B)", max_memory},
-            {"geopmctl network BW (B/s)", comm_overhead / total_runtime}
-        };
+        std::vector<std::pair<std::string, double> > overhead{
+            {"geopmctl memory HWM (B)", max_memory}, {"geopmctl network BW (B/s)", comm_overhead / total_runtime}};
         yaml_write(report, M_INDENT_TOTALS_FIELD, overhead);
         return report.str();
     }
@@ -324,20 +281,19 @@ namespace geopm
         int num_ranks = comm->num_rank();
         buffer_size_array.resize(num_ranks);
         buffer_displacement.resize(num_ranks);
-        comm->gather(&buffer_size, sizeof(size_t), buffer_size_array.data(),
-                     sizeof(size_t), 0);
+        comm->gather(&buffer_size, sizeof(size_t), buffer_size_array.data(), sizeof(size_t), 0);
 
         if (comm->rank() == 0) {
             int full_report_size = std::accumulate(buffer_size_array.begin(), buffer_size_array.end(), 0) + 1;
             report_buffer.resize(full_report_size);
             buffer_displacement[0] = 0;
             for (int i = 1; i < num_ranks; ++i) {
-                buffer_displacement[i] = buffer_displacement[i-1] + buffer_size_array[i-1];
+                buffer_displacement[i] = buffer_displacement[i - 1] + buffer_size_array[i - 1];
             }
         }
 
-        comm->gatherv((void *) (host_report.c_str()), sizeof(char) * buffer_size,
-                      (void *) report_buffer.data(), buffer_size_array, buffer_displacement, 0);
+        comm->gatherv((void *)(host_report.c_str()), sizeof(char) * buffer_size, (void *)report_buffer.data(),
+                      buffer_size_array, buffer_displacement, 0);
         if (report_buffer.size() != 0) {
             report_buffer.back() = '\0';
         }
@@ -349,27 +305,23 @@ namespace geopm
 
     void ReporterImp::init_sync_fields(void)
     {
-        auto sample_only = [this](uint64_t hash, const std::vector<std::string> &sig) -> double
-        {
+        auto sample_only = [this](uint64_t hash, const std::vector<std::string> &sig) -> double {
             GEOPM_DEBUG_ASSERT(sig.size() == 1, "Wrong number of signals for sample_only()");
             return m_sample_agg->sample_region(m_sync_signal_idx[sig[0]], hash);
         };
-        auto divide = [this](uint64_t hash, const std::vector<std::string> &sig) -> double
-        {
+        auto divide = [this](uint64_t hash, const std::vector<std::string> &sig) -> double {
             GEOPM_DEBUG_ASSERT(sig.size() == 2, "Wrong number of signals for divide()");
             double numerator = m_sample_agg->sample_region(m_sync_signal_idx[sig[0]], hash);
             double denominator = m_sample_agg->sample_region(m_sync_signal_idx[sig[1]], hash);
             return denominator == 0 ? 0.0 : numerator / denominator;
         };
-        auto divide_pct = [this](uint64_t hash, const std::vector<std::string> &sig) -> double
-        {
+        auto divide_pct = [this](uint64_t hash, const std::vector<std::string> &sig) -> double {
             GEOPM_DEBUG_ASSERT(sig.size() == 2, "Wrong number of signals for divide_pct()");
             double numerator = m_sample_agg->sample_region(m_sync_signal_idx[sig[0]], hash);
             double denominator = m_sample_agg->sample_region(m_sync_signal_idx[sig[1]], hash);
             return denominator == 0 ? 0.0 : 100.0 * numerator / denominator;
         };
-        auto divide_sticker_scale = [this](uint64_t hash, const std::vector<std::string> &sig) -> double
-        {
+        auto divide_sticker_scale = [this](uint64_t hash, const std::vector<std::string> &sig) -> double {
             GEOPM_DEBUG_ASSERT(sig.size() == 2, "Wrong number of signals for divide_sticker_scale()");
             double numerator = m_sample_agg->sample_region(m_sync_signal_idx[sig[0]], hash);
             double denominator = m_sample_agg->sample_region(m_sync_signal_idx[sig[1]], hash);
@@ -402,8 +354,7 @@ namespace geopm
             {"gpu-core-energy (J)", {"GPU_CORE_ENERGY"}, sample_only},
             {"gpu-core-power (W)", {"GPU_CORE_POWER"}, sample_only},
             {"gpu-frequency (Hz)", {"GPU_CORE_FREQUENCY_STATUS"}, sample_only},
-            {"uncore-frequency (Hz)", {"CPU_UNCORE_FREQUENCY_STATUS"}, sample_only}
-        };
+            {"uncore-frequency (Hz)", {"CPU_UNCORE_FREQUENCY_STATUS"}, sample_only}};
 
         for (const auto &field : conditional_sync_fields) {
             for (const auto &signal : field.supporting_signals) {
@@ -422,7 +373,7 @@ namespace geopm
 
     void ReporterImp::init_environment_signals(void)
     {
-        for (const auto& signal_domain_pair : m_env_signals) {
+        for (const auto &signal_domain_pair : m_env_signals) {
             if (signal_domain_pair.second == GEOPM_DOMAIN_BOARD) {
                 m_env_signal_name_idx.emplace_back(
                     signal_domain_pair.first,
@@ -430,10 +381,11 @@ namespace geopm
             }
             else {
                 std::string full_signal_name;
-                const int& domain_type = signal_domain_pair.second;
+                const int &domain_type = signal_domain_pair.second;
                 const int num_domains = m_platform_topo.num_domain(domain_type);
                 for (int domain_idx = 0; domain_idx < num_domains; ++domain_idx) {
-                    full_signal_name = signal_domain_pair.first + "@" + m_platform_topo.domain_type_to_name(signal_domain_pair.second);
+                    full_signal_name = signal_domain_pair.first + "@"
+                                       + m_platform_topo.domain_type_to_name(signal_domain_pair.second);
                     full_signal_name += '-';
                     full_signal_name += std::to_string(domain_idx);
                     m_env_signal_name_idx.emplace_back(
@@ -510,15 +462,14 @@ namespace geopm
         // expect kibibyte units
         size_t len = max_memory.size();
         if (max_memory.substr(len - 2) != "kB") {
-            throw Exception("ReporterImp::get_max_memory(): HWM not in units of kB",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("ReporterImp::get_max_memory(): HWM not in units of kB", GEOPM_ERROR_RUNTIME,
+                            __FILE__, __LINE__);
         }
         double max_memory_bytes = std::stod(max_memory.substr(0, len - 2));
         return max_memory_bytes;
     }
 
-    void ReporterImp::yaml_write(std::ostream &os, int indent_level,
-                                 const std::string &val)
+    void ReporterImp::yaml_write(std::ostream &os, int indent_level, const std::string &val)
     {
         std::string indent(indent_level * M_SPACES_INDENT, ' ');
         os << indent << val << std::endl;
@@ -537,18 +488,14 @@ namespace geopm
                                  const std::vector<std::pair<std::string, double> > &data)
     {
         std::string indent(indent_level * M_SPACES_INDENT, ' ');
-        for (const auto &kv: data) {
+        for (const auto &kv : data) {
             os << indent << kv.first << ": " << kv.second << std::endl;
         }
     }
 
     static Reporter &basic_reporter(const std::string &start_time)
     {
-        static ReporterImp instance(start_time,
-                                    "",
-                                    PlatformIOProf::platform_io(),
-                                    platform_topo(),
-                                    0);
+        static ReporterImp instance(start_time, "", PlatformIOProf::platform_io(), platform_topo(), 0);
         return instance;
     }
 
@@ -588,10 +535,7 @@ int geopm_reporter_update(void)
     return err;
 }
 
-int geopm_reporter_generate(const char *profile_name,
-                            const char *agent_name,
-                            size_t result_max,
-                            char *result)
+int geopm_reporter_generate(const char *profile_name, const char *agent_name, size_t result_max, char *result)
 {
     int err = 0;
     try {

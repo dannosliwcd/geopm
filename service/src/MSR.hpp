@@ -17,16 +17,17 @@ namespace geopm
     {
         public:
             enum m_function_e {
-                M_FUNCTION_SCALE,           // Only apply scalar value (applied by all functions)
-                M_FUNCTION_LOG_HALF,        // 2.0 ^ -X
-                M_FUNCTION_7_BIT_FLOAT,     // 2 ^ Y * (1.0 + Z / 4.0) : Y in [0:5), Z in [5:7)
-                M_FUNCTION_LOGIC,           // A bit that controls logic
-                M_FUNCTION_OVERFLOW,        // Counter that may overflow
+                M_FUNCTION_SCALE,       // Only apply scalar value (applied by all functions)
+                M_FUNCTION_LOG_HALF,    // 2.0 ^ -X
+                M_FUNCTION_7_BIT_FLOAT, // 2 ^ Y * (1.0 + Z / 4.0) : Y in [0:5), Z in [5:7)
+                M_FUNCTION_LOGIC,       // A bit that controls logic
+                M_FUNCTION_OVERFLOW,    // Counter that may overflow
                 M_NUM_FUNCTION
             };
 
             /// @brief Convert a string to the corresponding m_function_e value
             static m_function_e string_to_function(const std::string &str);
+
         private:
             static const std::map<std::string, m_function_e> M_FUNCTION_STRING;
     };

@@ -25,25 +25,17 @@
 namespace geopm
 {
     // definition of the static data member
-    ApplicationSampler* ProfileTracerImp::m_application_sampler = nullptr;
+    ApplicationSampler *ProfileTracerImp::m_application_sampler = nullptr;
 
     ProfileTracerImp::ProfileTracerImp(const std::string &start_time)
-        : ProfileTracerImp(start_time,
-                           1024 * 1024,
-                           environment().do_trace_profile(),
-                           environment().trace_profile(),
-                           hostname(),
-                           ApplicationSampler::application_sampler())
+        : ProfileTracerImp(start_time, 1024 * 1024, environment().do_trace_profile(),
+                           environment().trace_profile(), hostname(), ApplicationSampler::application_sampler())
     {
-
     }
 
-    ProfileTracerImp::ProfileTracerImp(const std::string &start_time,
-                                       size_t buffer_size,
-                                       bool is_trace_enabled,
-                                       const std::string &file_name,
-                                       const std::string &host_name,
-                                       ApplicationSampler& application_sampler)
+    ProfileTracerImp::ProfileTracerImp(const std::string &start_time, size_t buffer_size,
+                                       bool is_trace_enabled, const std::string &file_name,
+                                       const std::string &host_name, ApplicationSampler &application_sampler)
         : m_is_trace_enabled(is_trace_enabled)
     {
         m_application_sampler = &application_sampler;
@@ -85,7 +77,8 @@ namespace geopm
                     result = string_format_integer(value);
                     break;
                 case EVENT_SHORT_REGION:
-                    GEOPM_DEBUG_ASSERT(m_application_sampler != nullptr,
+                    GEOPM_DEBUG_ASSERT(
+                        m_application_sampler != nullptr,
                         "The ProfileTracerImp::ProfileTracerImp() must be called prior to calling ProfileTracerImp::event_format()");
                     result = string_format_hex(m_application_sampler->get_short_region(value).hash);
                     break;

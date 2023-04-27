@@ -39,9 +39,7 @@ namespace geopm
             /// @return Index of signal to be used with sample().
             ///         This index matches the return value of
             ///         PlatformIO::push_signal() for the same signal.
-            virtual int push_signal(const std::string &signal_name,
-                                    int domain_type,
-                                    int domain_idx) = 0;
+            virtual int push_signal(const std::string &signal_name, int domain_type, int domain_idx) = 0;
             /// @brief Push a signal to be accumulated per-region as a
             ///        total.
             ///
@@ -67,9 +65,7 @@ namespace geopm
             /// @return Index of signal to be used with sample().
             ///         This index matches the return value of
             ///         PlatformIO::push_signal() for the same signal.
-            virtual int push_signal_total(const std::string &signal_name,
-                                          int domain_type,
-                                          int domain_idx) = 0;
+            virtual int push_signal_total(const std::string &signal_name, int domain_type, int domain_idx) = 0;
             /// @brief Push a signal to be accumulated per-region as
             ///        an average.
             ///
@@ -95,9 +91,7 @@ namespace geopm
             /// @return Index of signal to be used with sample().
             ///         This index matches the return value of
             ///         PlatformIO::push_signal() for the same signal.
-            virtual int push_signal_average(const std::string &signal_name,
-                                            int domain_type,
-                                            int domain_idx) = 0;
+            virtual int push_signal_average(const std::string &signal_name, int domain_type, int domain_idx) = 0;
             /// @brief Update stored totals for each signal.
             ///
             /// This method is to be called after each call to
@@ -243,6 +237,7 @@ namespace geopm
             /// @brief Get the aggregated value of a signal during the
             ///        last completed time interval.
             virtual double sample_period_last(int signal_idx) = 0;
+
         protected:
             SampleAggregator() = default;
     };

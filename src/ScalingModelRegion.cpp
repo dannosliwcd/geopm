@@ -22,17 +22,17 @@
 
 namespace geopm
 {
-    ScalingModelRegion::ScalingModelRegion(double big_o_in,
-                                           int verbosity,
-                                           bool do_imbalance,
-                                           bool do_progress,
-                                           bool do_unmarked)
+    ScalingModelRegion::ScalingModelRegion(double big_o_in, int verbosity, bool do_imbalance,
+                                           bool do_progress, bool do_unmarked)
         : ModelRegion(verbosity)
         , m_sysfs_cache_dir("/sys/devices/system/cpu/cpu0/cache")
         , m_llc_slop_size(320) // 5 cache lines
         , m_element_size(3 * 8)
         , m_rank_per_node(Comm::make_unique()->split("", Comm::M_COMM_SPLIT_TYPE_SHARED)->num_rank())
-        , m_array_len((llc_size() / m_rank_per_node - m_llc_slop_size) / m_element_size) // Array is sized to fit 3 in the LLC with slop assuming one LLC per node
+        , m_array_len((llc_size() / m_rank_per_node - m_llc_slop_size) / m_element_size) // Array is sized to
+                                                                                         // fit 3 in the LLC
+                                                                                         // with slop assuming
+                                                                                         // one LLC per node
         , m_arrays(3, nullptr)
     {
         int err = 0;
@@ -41,8 +41,7 @@ namespace geopm
         for (auto &it : m_arrays) {
             err = posix_memalign((void **)&it, align, array_size);
             if (err) {
-                throw Exception("ScalingModelRegion: posix_memalign error",
-                                err, __FILE__, __LINE__);
+                throw Exception("ScalingModelRegion: posix_memalign error", err, __FILE__, __LINE__);
             }
         }
         std::fill(m_arrays[0], m_arrays[0] + m_array_len, 0.0);
@@ -56,8 +55,7 @@ namespace geopm
 
         err = ModelRegion::region(GEOPM_REGION_HINT_MEMORY);
         if (err) {
-            throw Exception("ScalingModelRegion::ScalingModelRegion()",
-                            err, __FILE__, __LINE__);
+            throw Exception("ScalingModelRegion::ScalingModelRegion()", err, __FILE__, __LINE__);
         }
         big_o(big_o_in);
     }
@@ -153,7 +151,8 @@ namespace geopm
     {
         if (m_array_len != 0.0) {
             if (m_verbosity) {
-                std::cout << "Executing stream triad of length " << m_array_len << " elements " << m_num_atom << " times."  << std::endl;
+                std::cout << "Executing stream triad of length " << m_array_len << " elements " << m_num_atom
+                          << " times." << std::endl;
             }
             ModelRegion::region_enter();
             for (uint64_t atom_idx = 0; atom_idx < m_num_atom; ++atom_idx) {

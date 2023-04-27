@@ -19,16 +19,14 @@ namespace geopm
     {
         public:
             ProfileTracerImp(const std::string &start_time);
-            ProfileTracerImp(const std::string &start_time,
-                             size_t buffer_size,
-                             bool is_trace_enabled,
-                             const std::string &file_name,
-                             const std::string &host_name,
-                             ApplicationSampler& application_sampler = ApplicationSampler::application_sampler());
+            ProfileTracerImp(const std::string &start_time, size_t buffer_size, bool is_trace_enabled,
+                             const std::string &file_name, const std::string &host_name,
+                             ApplicationSampler &application_sampler = ApplicationSampler::application_sampler());
             virtual ~ProfileTracerImp();
             void update(const std::vector<record_s> &records);
-         private:
-             enum m_column_e {
+
+        private:
+            enum m_column_e {
                 M_COLUMN_TIME,
                 M_COLUMN_PROCESS,
                 M_COLUMN_EVENT,
@@ -37,7 +35,7 @@ namespace geopm
             };
             bool m_is_trace_enabled;
             std::unique_ptr<CSV> m_csv;
-            static ApplicationSampler* m_application_sampler;
+            static ApplicationSampler *m_application_sampler;
             static std::string event_format(double value);
     };
 }

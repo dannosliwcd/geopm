@@ -41,16 +41,12 @@ namespace geopm
             ///        happens when the period changes from the
             ///        previously detected length.  Suggested default
             ///        is 1.5.
-            EditDistEpochRecordFilter(int history_buffer_size,
-                                      int min_hysteresis_base_period,
-                                      int min_detectable_period,
-                                      double stable_period_hysteresis,
+            EditDistEpochRecordFilter(int history_buffer_size, int min_hysteresis_base_period,
+                                      int min_detectable_period, double stable_period_hysteresis,
                                       double unstable_period_hysteresis);
             EditDistEpochRecordFilter(std::shared_ptr<EditDistPeriodicityDetector> edpd,
-                                      int min_hysteresis_base_period,
-                                      int min_detectable_period,
-                                      double stable_period_hysteresis,
-                                      double unstable_period_hysteresis);
+                                      int min_hysteresis_base_period, int min_detectable_period,
+                                      double stable_period_hysteresis, double unstable_period_hysteresis);
             EditDistEpochRecordFilter(const std::string &name);
             virtual ~EditDistEpochRecordFilter() = default;
             std::vector<record_s> filter(const record_s &record) override;
@@ -59,12 +55,10 @@ namespace geopm
             ///        arguments for a EditDistanceEpochRecordFilter.
             ///        Failure to parse will result in a thrown
             ///        Exception with GEOPM_ERROR_INVALID type.
-            static void parse_name(const std::string &name,
-                                   int &history_buffer_size,
-                                   int &min_hysteresis_base_period,
-                                   int &min_detectable_period,
-                                   double &stable_period_hysteresis,
-                                   double &unstable_period_hysteresis);
+            static void parse_name(const std::string &name, int &history_buffer_size,
+                                   int &min_hysteresis_base_period, int &min_detectable_period,
+                                   double &stable_period_hysteresis, double &unstable_period_hysteresis);
+
         private:
             /// Implements:
             ///  1. The stable period detector state machine,
@@ -76,12 +70,12 @@ namespace geopm
             ///
             /// STATE MACHINE OPERATION
             /// -------------------------
-            /// PERIOD_DETECTED state means we are observing a stable period of N and as long as we stay in this
-            /// state we expect to observe an epoch distance of length N plus/minus erroneously added/removed
-            /// calls, which are indicated by the edit distance (score).
+            /// PERIOD_DETECTED state means we are observing a stable period of N and as long as we stay in
+            /// this state we expect to observe an epoch distance of length N plus/minus erroneously
+            /// added/removed calls, which are indicated by the edit distance (score).
             ///
-            /// The period stability is measured by comparing the period detected with the most current record vs
-            /// detected with the previous. We store the previous in m_last_period.
+            /// The period stability is measured by comparing the period detected with the most current record
+            /// vs detected with the previous. We store the previous in m_last_period.
             ///
             /// The conditions for NO_PERIOD_DETECTED -> PERIOD_DETECTED state transition:
             ///    * Stable period of N detected by String Edit Distance algorithm for

@@ -15,9 +15,7 @@
 
 namespace geopm
 {
-    RawMSRSignal::RawMSRSignal(std::shared_ptr<MSRIO> msrio,
-                               int cpu,
-                               uint64_t offset)
+    RawMSRSignal::RawMSRSignal(std::shared_ptr<MSRIO> msrio, int cpu, uint64_t offset)
         : m_msrio(msrio)
         , m_cpu(cpu)
         , m_offset(offset)
@@ -42,8 +40,7 @@ namespace geopm
     double RawMSRSignal::sample(void)
     {
         if (!m_is_batch_ready) {
-            throw Exception("setup_batch() must be called before sample().",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("setup_batch() must be called before sample().", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         GEOPM_DEBUG_ASSERT(m_data_idx != -1, "Signal not added to MSRIO");
 

@@ -29,17 +29,13 @@ namespace geopm
     {
         bool result = false;
         size_t key_size = key.size();
-        if (name.find(key) == 0 &&
-            (name[key_size] == '\0' ||
-             name[key_size] == '-')) {
+        if (name.find(key) == 0 && (name[key_size] == '\0' || name[key_size] == '-')) {
             result = true;
         }
         return result;
     }
 
-    std::unique_ptr<ModelRegion> ModelRegion::model_region(const std::string &name,
-                                                           double big_o,
-                                                           int verbosity)
+    std::unique_ptr<ModelRegion> ModelRegion::model_region(const std::string &name, double big_o, int verbosity)
     {
         bool do_imbalance = (name.find("-imbalance") != std::string::npos);
         bool do_progress = (name.find("-progress") != std::string::npos);
@@ -77,11 +73,11 @@ namespace geopm
             return geopm::make_unique<ReduceModelRegion>(big_o, verbosity, do_imbalance, do_progress, do_unmarked);
         }
         else if (name_check(name, "timed_scaling")) {
-            return geopm::make_unique<TimedScalingModelRegion>(big_o, verbosity, do_imbalance, do_progress, do_unmarked);
+            return geopm::make_unique<TimedScalingModelRegion>(big_o, verbosity, do_imbalance, do_progress,
+                                                               do_unmarked);
         }
         else {
-            throw Exception("model_region_factory: unknown name: " + name,
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("model_region_factory: unknown name: " + name, GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
     }
 
@@ -94,13 +90,9 @@ namespace geopm
         , m_num_progress_updates(1)
         , m_norm(1.0)
     {
-
     }
 
-    ModelRegion::~ModelRegion()
-    {
-
-    }
+    ModelRegion::~ModelRegion() {}
 
     std::string ModelRegion::name(void)
     {
@@ -146,8 +138,8 @@ namespace geopm
         if (!m_do_unmarked) {
             err = geopm_prof_enter(m_region_id);
             if (err != 0) {
-                throw Exception("ModelRegion::region_enter(): geopm_prof_enter() error on region_id: '" +
-                                geopm::string_format_hex(m_region_id)  + "'",
+                throw Exception("ModelRegion::region_enter(): geopm_prof_enter() error on region_id: '"
+                                    + geopm::string_format_hex(m_region_id) + "'",
                                 err, __FILE__, __LINE__);
             }
         }
@@ -159,8 +151,8 @@ namespace geopm
         if (!m_do_unmarked) {
             err = geopm_prof_exit(m_region_id);
             if (err != 0) {
-                throw Exception("ModelRegion::region_exit(): geopm_prof_exit() error on region_id: '" +
-                                geopm::string_format_hex(m_region_id)  + "'",
+                throw Exception("ModelRegion::region_exit(): geopm_prof_exit() error on region_id: '"
+                                    + geopm::string_format_hex(m_region_id) + "'",
                                 err, __FILE__, __LINE__);
             }
         }

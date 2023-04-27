@@ -52,33 +52,27 @@ static void action_sigchld(int signo, siginfo_t *siginfo, void *context)
 
 namespace geopm
 {
-    std::unique_ptr<BatchServer>
-    BatchServer::make_unique(int client_pid,
-                             const std::vector<geopm_request_s> &signal_config,
-                             const std::vector<geopm_request_s> &control_config)
+    std::unique_ptr<BatchServer> BatchServer::make_unique(int client_pid,
+                                                          const std::vector<geopm_request_s> &signal_config,
+                                                          const std::vector<geopm_request_s> &control_config)
     {
-        return geopm::make_unique<BatchServerImp>(client_pid, signal_config,
-                                                  control_config);
+        return geopm::make_unique<BatchServerImp>(client_pid, signal_config, control_config);
     }
 
-    std::string BatchServer::get_signal_shmem_key(
-        const std::string &server_key)
+    std::string BatchServer::get_signal_shmem_key(const std::string &server_key)
     {
         return M_SHMEM_PREFIX + server_key + "-signal";
     }
 
-    std::string BatchServer::get_control_shmem_key(
-        const std::string &server_key)
+    std::string BatchServer::get_control_shmem_key(const std::string &server_key)
     {
         return M_SHMEM_PREFIX + server_key + "-control";
     }
 
-    BatchServerImp::BatchServerImp(
-        int client_pid,
-        const std::vector<geopm_request_s> &signal_config,
-        const std::vector<geopm_request_s> &control_config)
-        : BatchServerImp(client_pid, signal_config, control_config, "", "",
-                         platform_io(), nullptr, nullptr, nullptr, nullptr, 0)
+    BatchServerImp::BatchServerImp(int client_pid, const std::vector<geopm_request_s> &signal_config,
+                                   const std::vector<geopm_request_s> &control_config)
+        : BatchServerImp(client_pid, signal_config, control_config, "", "", platform_io(), nullptr, nullptr,
+                         nullptr, nullptr, 0)
     {
         // Fork the server when calling real constructor.
         auto setup = [this]() {
@@ -86,50 +80,37 @@ namespace geopm
             this->create_shmem();
             return BatchStatus::M_MESSAGE_CONTINUE;
         };
-        auto run = [this]() {
-            this->run_batch();
-        };
+        auto run = [this]() { this->run_batch(); };
         parent_register_handler();
         m_server_pid = fork_with_setup(setup, run);
     }
 
-    BatchServerImp::BatchServerImp(
-        int client_pid,
-        const std::vector<geopm_request_s> &signal_config,
-        const std::vector<geopm_request_s> &control_config,
-        const std::string &signal_shmem_key,
-        const std::string &control_shmem_key,
-        PlatformIO &pio,
-        std::shared_ptr<BatchStatus> batch_status,
-        std::shared_ptr<POSIXSignal> posix_signal,
-        std::shared_ptr<SharedMemory> signal_shmem,
-        std::shared_ptr<SharedMemory> control_shmem,
-        int server_pid)
+    BatchServerImp::BatchServerImp(int client_pid, const std::vector<geopm_request_s> &signal_config,
+                                   const std::vector<geopm_request_s> &control_config,
+                                   const std::string &signal_shmem_key, const std::string &control_shmem_key,
+                                   PlatformIO &pio, std::shared_ptr<BatchStatus> batch_status,
+                                   std::shared_ptr<POSIXSignal> posix_signal,
+                                   std::shared_ptr<SharedMemory> signal_shmem,
+                                   std::shared_ptr<SharedMemory> control_shmem, int server_pid)
         : m_client_pid(client_pid)
         , m_server_key(std::to_string(m_client_pid))
         , m_signal_config(signal_config)
         , m_control_config(control_config)
-        , m_signal_shmem_key(!signal_shmem_key.empty() ? signal_shmem_key :
-                              BatchServer::get_signal_shmem_key(
-                                  m_server_key))
-        , m_control_shmem_key(!control_shmem_key.empty() ?
-                               control_shmem_key :
-                               BatchServer::get_control_shmem_key(
-                                  m_server_key))
+        , m_signal_shmem_key(!signal_shmem_key.empty() ? signal_shmem_key
+                                                       : BatchServer::get_signal_shmem_key(m_server_key))
+        , m_control_shmem_key(!control_shmem_key.empty() ? control_shmem_key
+                                                         : BatchServer::get_control_shmem_key(m_server_key))
         , m_pio(pio)
         , m_signal_shmem(signal_shmem)
         , m_control_shmem(control_shmem)
-        , m_batch_status(batch_status != nullptr ?
-                         batch_status : BatchStatus::make_unique_server(m_client_pid,
-                                                                        m_server_key))
-        , m_posix_signal(posix_signal != nullptr ?
-                         posix_signal : POSIXSignal::make_unique())
+        , m_batch_status(batch_status != nullptr ? batch_status
+                                                 : BatchStatus::make_unique_server(m_client_pid, m_server_key))
+        , m_posix_signal(posix_signal != nullptr ? posix_signal : POSIXSignal::make_unique())
         , m_server_pid(server_pid)
         , m_is_active(true)
         , m_is_client_attached(false)
         , m_is_client_waiting(false)
     {
-
     }
 
     BatchServerImp::~BatchServerImp()
@@ -139,7 +120,8 @@ namespace geopm
                 stop_batch();
             }
             catch (const Exception &ex) {
-                std::cerr << "Warning: <geopm> BatchServerImp::~BatchServerImp(): Exception thrown in destructor: " <<  ex.what() << "\n";
+                std::cerr << "Warning: <geopm> BatchServerImp::~BatchServerImp(): Exception thrown in destructor: "
+                          << ex.what() << "\n";
             }
             catch (...) {
                 std::cerr << "Warning: <geopm> BatchServerImp::~BatchServerImp(): Non-GEOPM exception thrown in destructor\n";
@@ -191,8 +173,7 @@ namespace geopm
         }
         catch (const Exception &ex) {
             // If we were not interrupted by SIGTERM with correct errno value rethrow
-            if (ex.err_value() != EINTR ||
-                g_sigterm_count == 0) {
+            if (ex.err_value() != EINTR || g_sigterm_count == 0) {
                 throw Exception("BatchServer::" + std::string(__func__) + " The client is unresponsive",
                                 GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
@@ -218,8 +199,7 @@ namespace geopm
         }
         catch (const Exception &ex) {
             // If we were not interrupted by SIGTERM with correct errno value rethrow
-            if (ex.err_value() != EINTR ||
-                g_sigterm_count == 0) {
+            if (ex.err_value() != EINTR || g_sigterm_count == 0) {
                 throw Exception("BatchServer::" + std::string(__func__) + " The client is unresponsive",
                                 GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
@@ -237,13 +217,14 @@ namespace geopm
                 std::cerr << "Warning: <geopm>: " << __FILE__ << ":" << __LINE__
                           << " Batch server was terminated while client was waiting: sending client quit message\n";
                 m_batch_status->send_message(BatchStatus::M_MESSAGE_QUIT);
-                std::cerr << "Warning: <geopm>: " << __FILE__ << ":" << __LINE__
-                          << " Batch server was terminated while client was waiting: client received quit message\n";
+                std::cerr
+                    << "Warning: <geopm>: " << __FILE__ << ":" << __LINE__
+                    << " Batch server was terminated while client was waiting: client received quit message\n";
                 m_is_client_waiting = false;
             }
             else if (std::string(ex.what()).find("Received unknown response from client: 0") != std::string::npos) {
-                std::cerr << "Warning: <geopm>: " << __FILE__ << ":" << __LINE__
-                          << " Batch client " << m_client_pid << " terminated while server " << getpid() << " was waiting\n";
+                std::cerr << "Warning: <geopm>: " << __FILE__ << ":" << __LINE__ << " Batch client "
+                          << m_client_pid << " terminated while server " << getpid() << " was waiting\n";
             }
             throw;
         }
@@ -253,8 +234,7 @@ namespace geopm
     {
         // Start event loop
         char out_message = BatchStatus::M_MESSAGE_CONTINUE;
-        while (out_message == BatchStatus::M_MESSAGE_CONTINUE &&
-               g_sigterm_count == 0) {
+        while (out_message == BatchStatus::M_MESSAGE_CONTINUE && g_sigterm_count == 0) {
             char in_message = read_message();
             switch (in_message) {
                 case BatchStatus::M_MESSAGE_READ:
@@ -273,8 +253,9 @@ namespace geopm
                     out_message = BatchStatus::M_MESSAGE_TERMINATE;
                     break;
                 default:
-                    throw Exception("BatchServerImp::run_batch(): Received unknown response from client: " +
-                                    std::to_string(in_message), GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                    throw Exception("BatchServerImp::run_batch(): Received unknown response from client: "
+                                        + std::to_string(in_message),
+                                    GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
                     break;
             }
             // If in_message came from client send response
@@ -293,15 +274,15 @@ namespace geopm
                 char err_msg[PATH_MAX];
                 geopm_error_message(g_wait_status, err_msg, PATH_MAX);
                 std::cerr << "Warning: <geopm> " << __FILE__ << ":" << __LINE__
-                          << " :  Received SIGCHLD but wait() failed: "
-                          << g_wait_status << " : \"" << err_msg << "\"\n";
+                          << " :  Received SIGCHLD but wait() failed: " << g_wait_status << " : \"" << err_msg
+                          << "\"\n";
                 g_wait_status = 0;
                 g_sigchld_status = 0;
             }
             else if (g_sigchld_status != 0) {
                 std::cerr << "Warning: <geopm> " << __FILE__ << ":" << __LINE__
-                          << " :  The batch server child process ended with non-zero status: "
-                          << g_sigchld_status << "\n";
+                          << " :  The batch server child process ended with non-zero status: " << g_sigchld_status
+                          << "\n";
                 g_sigchld_status = 0;
             }
         }
@@ -311,12 +292,10 @@ namespace geopm
     void BatchServerImp::push_requests(void)
     {
         for (const auto &req : m_signal_config) {
-            m_signal_handle.push_back(
-                m_pio.push_signal(req.name, req.domain_type, req.domain_idx));
+            m_signal_handle.push_back(m_pio.push_signal(req.name, req.domain_type, req.domain_idx));
         }
         for (const auto &req : m_control_config) {
-            m_control_handle.push_back(
-                m_pio.push_control(req.name, req.domain_type, req.domain_idx));
+            m_control_handle.push_back(m_pio.push_control(req.name, req.domain_type, req.domain_idx));
         }
     }
 
@@ -353,19 +332,17 @@ namespace geopm
     void BatchServerImp::create_shmem(void)
     {
         // Create shared memory regions
-        size_t signal_size  = m_signal_config.size()  * sizeof(double);
+        size_t signal_size = m_signal_config.size() * sizeof(double);
         size_t control_size = m_control_config.size() * sizeof(double);
         int uid = pid_to_uid(m_client_pid);
         int gid = pid_to_gid(m_client_pid);
         if (signal_size != 0) {
-            m_signal_shmem = SharedMemory::make_unique_owner_secure(
-                m_signal_shmem_key, signal_size);
+            m_signal_shmem = SharedMemory::make_unique_owner_secure(m_signal_shmem_key, signal_size);
             // Requires a chown if server is different user than client
             m_signal_shmem->chown(uid, gid);
         }
         if (control_size != 0) {
-            m_control_shmem = SharedMemory::make_unique_owner_secure(
-                m_control_shmem_key, control_size);
+            m_control_shmem = SharedMemory::make_unique_owner_secure(m_control_shmem_key, control_size);
             // Requires a chown if server is different user than client
             m_control_shmem->chown(uid, gid);
         }
@@ -393,8 +370,7 @@ namespace geopm
         m_posix_signal->sig_action(signo, &action, nullptr);
     }
 
-    int BatchServerImp::fork_with_setup(std::function<char(void)> setup,
-                                        std::function<void(void)> run)
+    int BatchServerImp::fork_with_setup(std::function<char(void)> setup, std::function<void(void)> run)
     {
         int pipe_fd[2];
         check_return(pipe(pipe_fd), "pipe(2)");
@@ -403,7 +379,7 @@ namespace geopm
         if (forked_pid == 0) {
             try {
                 check_return(close(pipe_fd[0]), "close(2)");
-                char msg = setup();  // BatchStatus::M_MESSAGE_CONTINUE
+                char msg = setup(); // BatchStatus::M_MESSAGE_CONTINUE
                 check_return(write(pipe_fd[1], &msg, 1), "write(2)");
                 check_return(close(pipe_fd[1]), "close(2)");
                 run();
@@ -412,8 +388,7 @@ namespace geopm
             }
             catch (const std::runtime_error &ex) {
                 std::cerr << "Warning: <geopm>: " << __FILE__ << ":" << __LINE__
-                          << " Batch server was terminated with exception: "
-                          << ex.what() << "\n";
+                          << " Batch server was terminated with exception: " << ex.what() << "\n";
             }
             catch (...) {
                 std::cerr << "Warning: <geopm>: " << __FILE__ << ":" << __LINE__
@@ -425,8 +400,9 @@ namespace geopm
         char msg = '\0';
         check_return(read(pipe_fd[0], &msg, 1), "read(2)");
         if (msg != BatchStatus::M_MESSAGE_CONTINUE) {
-            throw Exception("BatchServerImp: Receivied unexpected message from batch server at startup: \"" +
-                            std::to_string(msg) + "\"", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("BatchServerImp: Receivied unexpected message from batch server at startup: \""
+                                + std::to_string(msg) + "\"",
+                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         check_return(close(pipe_fd[0]), "close(2)");
         return forked_pid;

@@ -14,10 +14,7 @@
 
 namespace geopm
 {
-    ReduceModelRegion::ReduceModelRegion(double big_o_in,
-                                         int verbosity,
-                                         bool do_imbalance,
-                                         bool do_progress,
+    ReduceModelRegion::ReduceModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress,
                                          bool do_unmarked)
         : ModelRegion(verbosity)
     {
@@ -43,8 +40,8 @@ namespace geopm
         if (m_verbosity != 0) {
             std::cout << "Executing reduce\n";
         }
-        err = MPI_Allreduce(m_send_buffer.data(), m_recv_buffer.data(),
-                            m_num_elem, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        err = MPI_Allreduce(m_send_buffer.data(), m_recv_buffer.data(), m_num_elem, MPI_DOUBLE, MPI_SUM,
+                            MPI_COMM_WORLD);
         if (err) {
             throw Exception("MPI_Allreduce", err, __FILE__, __LINE__);
         }

@@ -11,14 +11,15 @@
 namespace geopm
 {
     class PlatformIO;
-    class PlatformIOProf {
+    class PlatformIOProf
+    {
         public:
             static PlatformIO &platform_io(void);
             virtual ~PlatformIOProf() = default;
+
         private:
             PlatformIOProf();
-            void print_load_warning(const std::string &io_group_name,
-                                    const std::string &what) const;
+            void print_load_warning(const std::string &io_group_name, const std::string &what) const;
             PlatformIO &m_platform_io;
     };
 }

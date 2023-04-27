@@ -17,14 +17,14 @@ namespace geopm
     class RatioSignal : public Signal
     {
         public:
-            RatioSignal(std::shared_ptr<Signal> numerator,
-                        std::shared_ptr<Signal> denominator);
+            RatioSignal(std::shared_ptr<Signal> numerator, std::shared_ptr<Signal> denominator);
             RatioSignal(const RatioSignal &other) = delete;
             RatioSignal &operator=(const RatioSignal &other) = delete;
             virtual ~RatioSignal() = default;
             void setup_batch(void) override;
             double sample(void) override;
             double read(void) const override;
+
         private:
             std::shared_ptr<Signal> m_numerator;
             std::shared_ptr<Signal> m_denominator;

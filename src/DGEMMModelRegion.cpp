@@ -21,11 +21,9 @@
 // Terrible DGEMM implementation should only be used if there is no
 // BLAS support.  Build assumes that the Intel(R) Math Kernel Library
 // is the only provider of BLAS.
-static inline
-void dgemm(const char *transa, const char *transb, const int *M,
-           const int *N, const int *K, const double *alpha,
-           const double *A, const int *LDA, const double *B,
-           const int *LDB, const double *beta, double *C, const int *LDC)
+static inline void dgemm(const char *transa, const char *transb, const int *M, const int *N, const int *K,
+                         const double *alpha, const double *A, const int *LDA, const double *B,
+                         const int *LDB, const double *beta, double *C, const int *LDC)
 {
 #pragma omp parallel for
     for (int i = 0; i < *M; ++i) {
@@ -41,10 +39,7 @@ void dgemm(const char *transa, const char *transb, const int *M,
 
 namespace geopm
 {
-    DGEMMModelRegion::DGEMMModelRegion(double big_o_in,
-                                       int verbosity,
-                                       bool do_imbalance,
-                                       bool do_progress,
+    DGEMMModelRegion::DGEMMModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress,
                                        bool do_unmarked)
         : ModelRegion(verbosity)
         , m_matrix_a(NULL)
@@ -60,8 +55,7 @@ namespace geopm
         m_do_unmarked = do_unmarked;
         int err = ModelRegion::region(GEOPM_REGION_HINT_COMPUTE);
         if (err) {
-            throw Exception("DGEMMModelRegion::DGEMMModelRegion()",
-                            err, __FILE__, __LINE__);
+            throw Exception("DGEMMModelRegion::DGEMMModelRegion()", err, __FILE__, __LINE__);
         }
         big_o(big_o_in);
         warmup();
@@ -90,7 +84,7 @@ namespace geopm
 
         num_progress_updates(big_o_in);
 
-        m_matrix_size = (int)pow(4e9 * big_o_in / m_num_progress_updates, 1.0/3.0);
+        m_matrix_size = (int)pow(4e9 * big_o_in / m_num_progress_updates, 1.0 / 3.0);
         if (big_o_in && m_big_o != big_o_in) {
             size_t mem_size = sizeof(double) * (m_matrix_size * (m_matrix_size + m_pad_size));
             int err = posix_memalign((void **)&m_matrix_a, m_pad_size, mem_size);
@@ -101,8 +95,7 @@ namespace geopm
                 err = posix_memalign((void **)&m_matrix_c, m_pad_size, mem_size);
             }
             if (err) {
-                throw Exception("DGEMMModelRegion::big_o(): posix_memalign() failed",
-                                err, __FILE__, __LINE__);
+                throw Exception("DGEMMModelRegion::big_o(): posix_memalign() failed", err, __FILE__, __LINE__);
             }
 #pragma omp parallel for
             for (size_t i = 0; i < mem_size / sizeof(double); ++i) {
@@ -128,7 +121,8 @@ namespace geopm
         if (m_big_o != 0.0) {
             if (m_verbosity) {
                 std::cout << "Executing " << m_matrix_size << " x " << m_matrix_size << " DGEMM "
-                          << m_num_progress_updates << " times." << std::endl << std::flush;
+                          << m_num_progress_updates << " times." << std::endl
+                          << std::flush;
             }
             ModelRegion::region_enter();
             for (uint64_t i = 0; i < m_num_progress_updates; ++i) {
@@ -145,8 +139,8 @@ namespace geopm
                 char transa = 'n';
                 char transb = 'n';
 
-                dgemm(&transa, &transb, &M, &N, &K, &alpha,
-                      m_matrix_a, &LDA, m_matrix_b, &LDB, &beta, m_matrix_c, &LDC);
+                dgemm(&transa, &transb, &M, &N, &K, &alpha, m_matrix_a, &LDA, m_matrix_b, &LDB, &beta,
+                      m_matrix_c, &LDC);
 
                 ModelRegion::loop_exit();
             }

@@ -25,6 +25,7 @@ namespace geopm
             /// @param record [in] Application sampler record to be
             ///        validated.
             void check(const record_s &record);
+
         private:
             bool m_is_empty;
             double m_time;

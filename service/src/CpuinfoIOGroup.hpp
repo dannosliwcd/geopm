@@ -18,8 +18,7 @@ namespace geopm
     {
         public:
             CpuinfoIOGroup();
-            CpuinfoIOGroup(const std::string &cpu_freq_min_path,
-                           const std::string &cpu_freq_max_path);
+            CpuinfoIOGroup(const std::string &cpu_freq_min_path, const std::string &cpu_freq_max_path);
             virtual ~CpuinfoIOGroup() = default;
             /// @return the list of signal names provided by this IOGroup.
             std::set<std::string> signal_names(void) const override;
@@ -32,11 +31,13 @@ namespace geopm
             bool is_valid_control(const std::string &control_name) const override;
             /// @return GEOPM_DOMAIN_BOARD; If the signal_name is valid for this IOGroup,
             ///
-            /// @details All constants provided by the CpuinfoIOGroup are assumed to be the same for the whole board.
+            /// @details All constants provided by the CpuinfoIOGroup are assumed to be the same for the whole
+            /// board.
             int signal_domain_type(const std::string &signal_name) const override;
             /// @return GEOPM_DOMAIN_INVALID; this IOGroup does not provide any controls.
             int control_domain_type(const std::string &control_name) const override;
-            /// @param signal_name Adds the signal specified to the list of signals to be read during read_batch()
+            /// @param signal_name Adds the signal specified to the list of signals to be read during
+            /// read_batch()
             ///
             /// @param domain_type This must be == GEOPM_DOMAIN_BOARD
             ///
@@ -128,15 +129,16 @@ namespace geopm
             ///
             /// @see geopm::PluginFactory
             static std::unique_ptr<IOGroup> make_plugin(void);
+
         private:
             /// @brief Add support for an alias of a signal by name.
             void register_signal_alias(const std::string &alias_name, const std::string &signal_name);
 
             struct m_signal_info_s {
-                double value;
-                int units;
-                std::function<double(const std::vector<double> &)> agg_function;
-                std::string description;
+                    double value;
+                    int units;
+                    std::function<double(const std::vector<double> &)> agg_function;
+                    std::string description;
             };
             std::map<std::string, m_signal_info_s> m_signal_available;
     };

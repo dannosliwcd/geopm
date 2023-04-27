@@ -91,6 +91,7 @@ namespace geopm
             /// @return Sum of all values passed to update() during
             ///         last interval.
             virtual double interval_total(void) const = 0;
+
         protected:
             SumAccumulator() = default;
     };
@@ -174,6 +175,7 @@ namespace geopm
             ///         tracked while the condition is true over the
             ///         last interval.
             virtual double interval_average(void) const = 0;
+
         protected:
             AvgAccumulator() = default;
     };
@@ -188,6 +190,7 @@ namespace geopm
             void exit(void) override;
             double total(void) const override;
             double interval_total(void) const override;
+
         private:
             double m_total;
             double m_current;
@@ -204,6 +207,7 @@ namespace geopm
             void exit(void) override;
             double average(void) const override;
             double interval_average(void) const override;
+
         private:
             double m_total;
             double m_weight;

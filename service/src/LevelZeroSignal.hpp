@@ -11,7 +11,6 @@
 #include "Signal.hpp"
 #include "LevelZeroDevicePool.hpp"
 
-
 namespace geopm
 {
     class LevelZeroDevicePool;
@@ -20,16 +19,16 @@ namespace geopm
     {
         public:
             virtual ~LevelZeroSignal() = default;
-            LevelZeroSignal(std::function<double (unsigned int)> devpool_func,
-                         unsigned int gpu, double scalar);
+            LevelZeroSignal(std::function<double(unsigned int)> devpool_func, unsigned int gpu, double scalar);
             LevelZeroSignal(const LevelZeroSignal &other) = delete;
             LevelZeroSignal &operator=(const LevelZeroSignal &other) = delete;
             void setup_batch(void) override;
             double sample(void) override;
             double read(void) const override;
             void set_sample(double value) override;
+
         private:
-            std::function<double (unsigned int)> m_devpool_func;
+            std::function<double(unsigned int)> m_devpool_func;
             unsigned int m_domain_idx;
             double m_scalar;
             bool m_is_batch_ready;

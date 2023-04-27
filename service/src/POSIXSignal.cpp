@@ -36,7 +36,7 @@ namespace geopm
         POSIXSignal::m_info_s custom_signal_info = {0};
         custom_signal_info.signo = info.si_signo;
         custom_signal_info.value = info.si_value.sival_int;
-        custom_signal_info.pid   = info.si_pid;
+        custom_signal_info.pid = info.si_pid;
         return custom_signal_info;
     }
 
@@ -47,8 +47,7 @@ namespace geopm
         return result;
     }
 
-    int POSIXSignalImp::sig_timed_wait(const sigset_t *sigset, siginfo_t *info,
-                                       const timespec *timeout) const
+    int POSIXSignalImp::sig_timed_wait(const sigset_t *sigset, siginfo_t *info, const timespec *timeout) const
     {
         int result = sigtimedwait(sigset, info, timeout);
         check_return(result, "sigtimedwait()");
@@ -62,8 +61,7 @@ namespace geopm
         check_return(sigqueue(pid, sig, signal_value), "sigqueue()");
     }
 
-    void POSIXSignalImp::sig_action(int signum, const struct sigaction *act,
-                                    struct sigaction *oldact) const
+    void POSIXSignalImp::sig_action(int signum, const struct sigaction *act, struct sigaction *oldact) const
     {
         check_return(sigaction(signum, act, oldact), "sigaction()");
     }
@@ -85,8 +83,8 @@ namespace geopm
     void POSIXSignalImp::check_return(int err, const std::string &func_name) const
     {
         if (err == -1) {
-            throw Exception("POSIXSignal(): POSIX signal function call " + func_name +
-                            " returned an error", errno, __FILE__, __LINE__);
+            throw Exception("POSIXSignal(): POSIX signal function call " + func_name + " returned an error",
+                            errno, __FILE__, __LINE__);
         }
     }
 }

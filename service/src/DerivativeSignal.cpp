@@ -15,10 +15,8 @@
 
 namespace geopm
 {
-    DerivativeSignal::DerivativeSignal(std::shared_ptr<Signal> time_sig,
-                                       std::shared_ptr<Signal> y_sig,
-                                       int num_sample_history,
-                                       double sleep_time)
+    DerivativeSignal::DerivativeSignal(std::shared_ptr<Signal> time_sig, std::shared_ptr<Signal> y_sig,
+                                       int num_sample_history, double sleep_time)
         : m_time_sig(time_sig)
         , m_y_sig(y_sig)
         , M_NUM_SAMPLE_HISTORY(num_sample_history)
@@ -28,8 +26,7 @@ namespace geopm
         , m_sleep_time(sleep_time)
         , m_last_result(NAN)
     {
-        GEOPM_DEBUG_ASSERT(m_time_sig && m_y_sig,
-                           "Signal pointers for time_sig and y_sig cannot be null.");
+        GEOPM_DEBUG_ASSERT(m_time_sig && m_y_sig, "Signal pointers for time_sig and y_sig cannot be null.");
     }
 
     void DerivativeSignal::setup_batch(void)
@@ -41,9 +38,7 @@ namespace geopm
         }
     }
 
-    double DerivativeSignal::compute_next(CircularBuffer<m_sample_s> &history,
-                                          int &num_fit,
-                                          double time, double signal)
+    double DerivativeSignal::compute_next(CircularBuffer<m_sample_s> &history, int &num_fit, double time, double signal)
     {
         // insert time and signal
         history.insert({time, signal});
@@ -60,8 +55,7 @@ namespace geopm
             double E = 1.0 / num_fit;
             double time_0 = history.value(buf_size - num_fit).time;
             const double sig_0 = history.value(buf_size - num_fit).sample;
-            for (size_t buf_off = buf_size - num_fit;
-                 buf_off < buf_size; ++buf_off) {
+            for (size_t buf_off = buf_size - num_fit; buf_off < buf_size; ++buf_off) {
                 double tt = history.value(buf_off).time;
                 double dt = tt - time_0;
                 double sig = history.value(buf_off).sample - sig_0;
@@ -83,15 +77,14 @@ namespace geopm
     double DerivativeSignal::sample(void)
     {
         if (!m_is_batch_ready) {
-            throw Exception("setup_batch() must be called before sample().",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("setup_batch() must be called before sample().", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         double time = m_time_sig->sample();
         size_t history_size = m_history.size();
         // Check if this is the first call ever to sample() (history_size == 0)
-        // Or check if this is the first call to sample() since the last call to read_batch() (last element of history buffer does not match the sampled time)
-        if (history_size == 0ULL ||
-            time != m_history.value(m_history.size() - 1).time) {
+        // Or check if this is the first call to sample() since the last call to read_batch() (last element of
+        // history buffer does not match the sampled time)
+        if (history_size == 0ULL || time != m_history.value(m_history.size() - 1).time) {
             double signal = m_y_sig->sample();
             m_last_result = compute_next(m_history, m_derivative_num_fit, time, signal);
         }

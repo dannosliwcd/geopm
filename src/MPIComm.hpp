@@ -27,7 +27,7 @@ namespace geopm
             MPIComm(const MPIComm *in_comm);
             MPIComm(const MPIComm *in_comm, std::vector<int> dimension, std::vector<int> periods, bool is_reorder);
             MPIComm(const MPIComm *in_comm, int color, int key);
-            MPIComm(const MPIComm *in_comm, const std::string &tag,  bool &is_ctl);
+            MPIComm(const MPIComm *in_comm, const std::string &tag, bool &is_ctl);
             MPIComm(const MPIComm *in_comm, const std::string &tag);
             MPIComm(const MPIComm *in_comm, const std::string &tag, int split_type);
             virtual ~MPIComm();
@@ -39,7 +39,8 @@ namespace geopm
             virtual std::shared_ptr<Comm> split() const override;
             virtual std::shared_ptr<Comm> split(int color, int key) const override;
             virtual std::shared_ptr<Comm> split(const std::string &tag, int split_type) const override;
-            virtual std::shared_ptr<Comm> split(std::vector<int> dimensions, std::vector<int> periods, bool is_reorder) const override;
+            virtual std::shared_ptr<Comm> split(std::vector<int> dimensions, std::vector<int> periods,
+                                                bool is_reorder) const override;
             virtual std::shared_ptr<Comm> split_cart(std::vector<int> dimensions) const override;
 
             virtual bool comm_supported(const std::string &description) const override;
@@ -60,13 +61,16 @@ namespace geopm
             virtual void broadcast(void *buffer, size_t size, int root) const override;
             virtual bool test(bool is_true) const override;
             virtual void reduce_max(double *send_buf, double *recv_buf, size_t count, int root) const override;
-            virtual void gather(const void *send_buf, size_t send_size, void *recv_buf,
-                                size_t recv_size, int root) const override;
+            virtual void gather(const void *send_buf, size_t send_size, void *recv_buf, size_t recv_size,
+                                int root) const override;
             virtual void gatherv(const void *send_buf, size_t send_size, void *recv_buf,
-                                 const std::vector<size_t> &recv_sizes, const std::vector<off_t> &rank_offset, int root) const override;
-            virtual void window_put(const void *send_buf, size_t send_size, int rank, off_t disp, size_t window_id) const override;
+                                 const std::vector<size_t> &recv_sizes, const std::vector<off_t> &rank_offset,
+                                 int root) const override;
+            virtual void window_put(const void *send_buf, size_t send_size, int rank, off_t disp,
+                                    size_t window_id) const override;
 
             void tear_down(void) override;
+
         protected:
             void check_window(size_t window_id) const;
             bool is_valid() const;

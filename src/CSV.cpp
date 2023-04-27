@@ -15,15 +15,13 @@
 
 namespace geopm
 {
-    CSVImp::CSVImp(const std::string &file_path,
-                   const std::string &host_name,
-                   const std::string &start_time,
+    CSVImp::CSVImp(const std::string &file_path, const std::string &host_name, const std::string &start_time,
                    size_t buffer_size)
-        : M_NAME_FORMAT_MAP {{"double", string_format_double},
-                             {"float", string_format_float},
-                             {"integer", string_format_integer},
-                             {"hex", string_format_hex},
-                             {"raw64", string_format_raw64}}
+        : M_NAME_FORMAT_MAP{{"double", string_format_double},
+                            {"float", string_format_float},
+                            {"integer", string_format_integer},
+                            {"hex", string_format_hex},
+                            {"raw64", string_format_raw64}}
         , M_SEPARATOR('|')
         , m_file_path(file_path)
         , m_buffer_limit(buffer_size)
@@ -53,13 +51,13 @@ namespace geopm
     void CSVImp::add_column(const std::string &name, const std::string &format)
     {
         if (m_is_active) {
-            throw Exception("CSVImp::add_column() cannot be called after activate()",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("CSVImp::add_column() cannot be called after activate()", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         const auto &it = M_NAME_FORMAT_MAP.find(format);
         if (M_NAME_FORMAT_MAP.end() == it) {
-            throw Exception("CSVImp::add_column(), format is unknown: " + format,
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("CSVImp::add_column(), format is unknown: " + format, GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         m_column_name.push_back(name);
         m_column_format.push_back(it->second);
@@ -68,8 +66,8 @@ namespace geopm
     void CSVImp::add_column(const std::string &name, std::function<std::string(double)> format)
     {
         if (m_is_active) {
-            throw Exception("CSVImp::add_column() cannot be called after activate()",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("CSVImp::add_column() cannot be called after activate()", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         m_column_name.push_back(name);
         m_column_format.push_back(format);
@@ -78,12 +76,12 @@ namespace geopm
     void CSVImp::update(const std::vector<double> &sample)
     {
         if (!m_is_active) {
-            throw Exception("CSVImp::activate() must be called prior to update",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("CSVImp::activate() must be called prior to update", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         if (sample.size() != m_column_format.size()) {
-            throw Exception("CSVImp::update(): Input vector incorrectly sized",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("CSVImp::update(): Input vector incorrectly sized", GEOPM_ERROR_INVALID, __FILE__,
+                            __LINE__);
         }
         for (size_t sample_idx = 0; sample_idx != sample.size(); ++sample_idx) {
             if (sample_idx) {
@@ -128,7 +126,7 @@ namespace geopm
         bool is_once = true;
         for (const auto &it : m_column_name) {
             if (is_once) {
-               is_once = false;
+                is_once = false;
             }
             else {
                 m_buffer << M_SEPARATOR;

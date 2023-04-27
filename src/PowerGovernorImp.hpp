@@ -28,6 +28,7 @@ namespace geopm
             bool do_write_batch(void) const override;
             void set_power_bounds(double min_pkg_power, double max_pkg_power) override;
             double power_package_time_window(void) const override;
+
         private:
             PlatformIO &m_platform_io;
             const PlatformTopo &m_platform_topo;

@@ -13,7 +13,6 @@
 #include <forward_list>
 #include <memory>
 
-
 namespace geopm
 {
     class ProfileRankSampler
@@ -95,11 +94,9 @@ namespace geopm
             virtual void check_sample_end(void) = 0;
     };
 
-
     class SharedMemory;
     class ControlMessage;
     class ProfileTable;
-
 
     /// @brief Retrieves sample data from a single application rank through
     ///        a shared memory interface.
@@ -131,6 +128,7 @@ namespace geopm
             bool name_fill(std::set<std::string> &name_set) override;
             void report_name(std::string &report_str) const override;
             void profile_name(std::string &prof_str) const override;
+
         private:
             /// Holds the shared memory region used for sampling from the
             /// application process.
@@ -192,6 +190,7 @@ namespace geopm
             void controller_ready(void) override;
             void abort(void) override;
             void check_sample_end(void) override;
+
         private:
             /// Holds the shared memory region used for application coordination
             /// and control.

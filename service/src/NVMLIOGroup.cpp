@@ -32,15 +32,12 @@ namespace geopm
     const std::string NVMLIOGroup::M_NAME_PREFIX = M_PLUGIN_NAME + "::";
 
     NVMLIOGroup::NVMLIOGroup()
-        : NVMLIOGroup(platform_topo(),
-                      nvml_device_pool(platform_topo().num_domain(GEOPM_DOMAIN_CPU)),
-                      nullptr)
+        : NVMLIOGroup(platform_topo(), nvml_device_pool(platform_topo().num_domain(GEOPM_DOMAIN_CPU)), nullptr)
     {
     }
 
     // Set up mapping between signal and control names and corresponding indices
-    NVMLIOGroup::NVMLIOGroup(const PlatformTopo &platform_topo,
-                             const NVMLDevicePool &device_pool,
+    NVMLIOGroup::NVMLIOGroup(const PlatformTopo &platform_topo, const NVMLDevicePool &device_pool,
                              std::shared_ptr<SaveControl> save_control_test)
         : m_platform_topo(platform_topo)
         , m_nvml_device_pool(device_pool)
@@ -48,199 +45,135 @@ namespace geopm
         , m_frequency_max_control_request(m_platform_topo.num_domain(GEOPM_DOMAIN_GPU), NAN)
         , m_frequency_min_control_request(m_platform_topo.num_domain(GEOPM_DOMAIN_GPU), NAN)
         , m_initial_power_limit(m_platform_topo.num_domain(GEOPM_DOMAIN_GPU), 0)
-        , m_signal_available({{M_NAME_PREFIX + "GPU_CORE_FREQUENCY_STATUS", {
-                                  "Streaming Multiprocessor frequency in hertz",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::average,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_UTILIZATION", {
-                                  "Fraction of time the GPU operated on a kernel in the last set of driver samples",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::average,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_POWER", {
-                                  "GPU power usage in watts",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::sum,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL", {
-                                  "GPU power limit in watts",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::sum,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_UNCORE_FREQUENCY_STATUS", {
-                                  "GPU memory frequency in hertz",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::average,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_CORE_THROTTLE_REASONS", {
-                                  "GPU clock throttling reasons",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::integer_bitwise_or,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_TEMPERATURE", {
-                                  "GPU temperature in degrees Celsius",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::average,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_ENERGY_CONSUMPTION_TOTAL", {
-                                  "GPU energy consumption in joules since the driver was loaded",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::sum,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_PERFORMANCE_STATE", {
-                                  "GPU performance state, defined by the NVML API as a value from 0 to 15"
-                                  "\n  with 0 being maximum performance, 15 being minimum performance, and 32 being unknown",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::expect_same,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_PCIE_RX_THROUGHPUT", {
-                                  "GPU PCIE receive throughput in bytes per second over a 20 millisecond period",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::sum,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_PCIE_TX_THROUGHPUT", {
-                                  "GPU PCIE transmit throughput in bytes per second over a 20 millisecond period",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::sum,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_CPU_ACTIVE_AFFINITIZATION", {
-                                  "Returns the associated GPU for a given CPU as determined by running processes."
-                                  "\n  If no GPUs map to the CPU then -1 is returned"
-                                  "\n  If multiple GPUs map to the CPU NAN is returned",
-                                  {},
-                                  GEOPM_DOMAIN_CPU,
-                                  Agg::expect_same,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_UNCORE_UTILIZATION", {
-                                  "Fraction of time the GPU memory was accessed in the last set of driver samples",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::average,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_AVAIL", {
-                                  "Streaming Multiprocessor Maximum frequency in hertz",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::expect_same,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_AVAIL", {
-                                  "Streaming Multiprocessor Minimum frequency in hertz",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::expect_same,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_STEP", {
-                                  "The Streaming Multiprocessor frequency step size in hertz.\n"
-                                  "The average step size is provided in the case where the step size is variable.",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::expect_same,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_CONTROL", {
-                                  "Latest frequency maximum control request in hertz",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::expect_same,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_CONTROL", {
-                                  "Latest frequency minimum control request in hertz",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::expect_same,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }},
-                              {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_RESET_CONTROL", {
-                                  "Resets Streaming Multiprocessor frequency min and max limits to default values.",
-                                  {},
-                                  GEOPM_DOMAIN_GPU,
-                                  Agg::expect_same,
-                                  IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                  string_format_double
-                                  }}
-                             })
-        , m_control_available({{M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_CONTROL", {
-                                    "Sets Streaming Multiprocessor frequency max (in hertz)",
-                                    {},
-                                    GEOPM_DOMAIN_GPU,
-                                    Agg::expect_same,
-                                    string_format_double
-                                    }},
-                               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_CONTROL", {
-                                    "Sets Streaming Multiprocessor frequency min (in hertz)",
-                                    {},
-                                    GEOPM_DOMAIN_GPU,
-                                    Agg::expect_same,
-                                    string_format_double
-                                    }},
-                               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_RESET_CONTROL", {
-                                    "Resets Streaming Multiprocessor frequency min and max limits to default values."
-                                    "\n  Parameter provided is unused.",
-                                    {},
-                                    GEOPM_DOMAIN_GPU,
-                                    Agg::average,
-                                    string_format_double
-                                    }},
-                               {M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL", {
-                                    "Sets GPU power limit in watts",
-                                    {},
-                                    GEOPM_DOMAIN_GPU,
-                                    Agg::sum,
-                                    string_format_double
-                                    }}
-                              })
+        , m_signal_available(
+              {{M_NAME_PREFIX + "GPU_CORE_FREQUENCY_STATUS",
+                {"Streaming Multiprocessor frequency in hertz", {}, GEOPM_DOMAIN_GPU, Agg::average, IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE, string_format_double}},
+               {M_NAME_PREFIX + "GPU_UTILIZATION",
+                {"Fraction of time the GPU operated on a kernel in the last set of driver samples",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::average,
+                 IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_POWER",
+                {"GPU power usage in watts", {}, GEOPM_DOMAIN_GPU, Agg::sum, IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE, string_format_double}},
+               {M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL",
+                {"GPU power limit in watts", {}, GEOPM_DOMAIN_GPU, Agg::sum, IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE, string_format_double}},
+               {M_NAME_PREFIX + "GPU_UNCORE_FREQUENCY_STATUS",
+                {"GPU memory frequency in hertz", {}, GEOPM_DOMAIN_GPU, Agg::average, IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE, string_format_double}},
+               {M_NAME_PREFIX + "GPU_CORE_THROTTLE_REASONS",
+                {"GPU clock throttling reasons", {}, GEOPM_DOMAIN_GPU, Agg::integer_bitwise_or, IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE, string_format_double}},
+               {M_NAME_PREFIX + "GPU_TEMPERATURE",
+                {"GPU temperature in degrees Celsius", {}, GEOPM_DOMAIN_GPU, Agg::average, IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE, string_format_double}},
+               {M_NAME_PREFIX + "GPU_ENERGY_CONSUMPTION_TOTAL",
+                {"GPU energy consumption in joules since the driver was loaded",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::sum,
+                 IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_PERFORMANCE_STATE",
+                {"GPU performance state, defined by the NVML API as a value from 0 to 15"
+                 "\n  with 0 being maximum performance, 15 being minimum performance, and 32 being unknown",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::expect_same,
+                 IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_PCIE_RX_THROUGHPUT",
+                {"GPU PCIE receive throughput in bytes per second over a 20 millisecond period",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::sum,
+                 IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_PCIE_TX_THROUGHPUT",
+                {"GPU PCIE transmit throughput in bytes per second over a 20 millisecond period",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::sum,
+                 IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_CPU_ACTIVE_AFFINITIZATION",
+                {"Returns the associated GPU for a given CPU as determined by running processes."
+                 "\n  If no GPUs map to the CPU then -1 is returned"
+                 "\n  If multiple GPUs map to the CPU NAN is returned",
+                 {},
+                 GEOPM_DOMAIN_CPU,
+                 Agg::expect_same,
+                 IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_UNCORE_UTILIZATION",
+                {"Fraction of time the GPU memory was accessed in the last set of driver samples",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::average,
+                 IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_AVAIL",
+                {"Streaming Multiprocessor Maximum frequency in hertz",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::expect_same,
+                 IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_AVAIL",
+                {"Streaming Multiprocessor Minimum frequency in hertz",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::expect_same,
+                 IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_STEP",
+                {"The Streaming Multiprocessor frequency step size in hertz.\n"
+                 "The average step size is provided in the case where the step size is variable.",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::expect_same,
+                 IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_CONTROL",
+                {"Latest frequency maximum control request in hertz",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::expect_same,
+                 IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_CONTROL",
+                {"Latest frequency minimum control request in hertz",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::expect_same,
+                 IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_RESET_CONTROL",
+                {"Resets Streaming Multiprocessor frequency min and max limits to default values.",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::expect_same,
+                 IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                 string_format_double}}})
+        , m_control_available(
+              {{M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_CONTROL",
+                {"Sets Streaming Multiprocessor frequency max (in hertz)", {}, GEOPM_DOMAIN_GPU, Agg::expect_same, string_format_double}},
+               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_CONTROL",
+                {"Sets Streaming Multiprocessor frequency min (in hertz)", {}, GEOPM_DOMAIN_GPU, Agg::expect_same, string_format_double}},
+               {M_NAME_PREFIX + "GPU_CORE_FREQUENCY_RESET_CONTROL",
+                {"Resets Streaming Multiprocessor frequency min and max limits to default values."
+                 "\n  Parameter provided is unused.",
+                 {},
+                 GEOPM_DOMAIN_GPU,
+                 Agg::average,
+                 string_format_double}},
+               {M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL",
+                {"Sets GPU power limit in watts", {}, GEOPM_DOMAIN_GPU, Agg::sum, string_format_double}}})
         , m_mock_save_ctl(save_control_test)
     {
         // populate signals for each domain
         for (auto &sv : m_signal_available) {
             std::vector<std::shared_ptr<signal_s> > result;
-            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(signal_domain_type(sv.first)); ++domain_idx) {
+            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(signal_domain_type(sv.first));
+                 ++domain_idx) {
                 std::shared_ptr<signal_s> sgnl = std::make_shared<signal_s>(signal_s{0, false});
                 result.push_back(sgnl);
             }
@@ -254,8 +187,8 @@ namespace geopm
                 // TODO: Long term this should simply hide the FREQUENCY_MIN and FREQUENCY_MAX signals,
                 //       not prevent loading of the IO Group
 
-                throw Exception("NVMLIOGroup::" + std::string(__func__) +
-                                ": No supported frequencies found for GPU " + std::to_string(domain_idx),
+                throw Exception("NVMLIOGroup::" + std::string(__func__)
+                                    + ": No supported frequencies found for GPU " + std::to_string(domain_idx),
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
 
@@ -270,7 +203,7 @@ namespace geopm
 
             // Calculated step size if there are 2 or more supported frequencies
             if (supported_frequency.size() >= 2) {
-                double step = (double) (supported_frequency.back() - supported_frequency.front())
+                double step = (double)(supported_frequency.back() - supported_frequency.front())
                               / (supported_frequency.size() - 1);
 
                 m_frequency_step.push_back(step);
@@ -278,18 +211,16 @@ namespace geopm
             else {
                 m_frequency_step.push_back(NAN);
             }
-
         }
 
-        std::vector <std::string> unsupported_signal_names;
+        std::vector<std::string> unsupported_signal_names;
         for (auto &sv : m_signal_available) {
             for (unsigned int domain_idx = 0; domain_idx < sv.second.signals.size(); ++domain_idx) {
                 try {
                     read_signal(sv.first, sv.second.domain, domain_idx);
                 }
                 catch (const geopm::Exception &ex) {
-                    if (ex.err_value() != GEOPM_ERROR_RUNTIME &&
-                        ex.err_value() != GEOPM_ERROR_INVALID) {
+                    if (ex.err_value() != GEOPM_ERROR_RUNTIME && ex.err_value() != GEOPM_ERROR_INVALID) {
                         throw;
                     }
                     unsupported_signal_names.push_back(sv.first);
@@ -298,7 +229,7 @@ namespace geopm
             }
         }
 
-        for(const auto &name : unsupported_signal_names) {
+        for (const auto &name : unsupported_signal_names) {
             m_signal_available.erase(name);
         }
 
@@ -314,7 +245,8 @@ namespace geopm
         // populate controls for each domain
         for (auto &sv : m_control_available) {
             std::vector<std::shared_ptr<control_s> > result;
-            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(control_domain_type(sv.first)); ++domain_idx) {
+            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(control_domain_type(sv.first));
+                 ++domain_idx) {
                 std::shared_ptr<control_s> ctrl = std::make_shared<control_s>(control_s{0, false});
                 result.push_back(ctrl);
             }
@@ -396,13 +328,13 @@ namespace geopm
     int NVMLIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": signal_name " + signal_name +
-                            " not valid for NVMLIOGroup.",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": signal_name " + signal_name
+                                + " not valid for NVMLIOGroup.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != signal_domain_type(signal_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name + ": domain_type must be " +
-                            std::to_string(signal_domain_type(signal_name)),
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name
+                                + ": domain_type must be " + std::to_string(signal_domain_type(signal_name)),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(signal_domain_type(signal_name))) {
@@ -440,13 +372,13 @@ namespace geopm
     int NVMLIOGroup::push_control(const std::string &control_name, int domain_type, int domain_idx)
     {
         if (!is_valid_control(control_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": control_name " + control_name +
-                            " not valid for NVMLIOGroup",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": control_name " + control_name
+                                + " not valid for NVMLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != control_domain_type(control_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + control_name + ": domain_type must be " +
-                            std::to_string(control_domain_type(control_name)),
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + control_name
+                                + ": domain_type must be " + std::to_string(control_domain_type(control_name)),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
@@ -480,7 +412,7 @@ namespace geopm
     // before using them elsewhere
     std::map<pid_t, double> NVMLIOGroup::gpu_process_map(void) const
     {
-        std::map<pid_t,double> gpu_pid_map;
+        std::map<pid_t, double> gpu_pid_map;
 
         for (int gpu_idx = 0; gpu_idx < m_platform_topo.num_domain(GEOPM_DOMAIN_GPU); ++gpu_idx) {
             std::vector<int> active_process_list = m_nvml_device_pool.active_process_list(gpu_idx);
@@ -506,16 +438,15 @@ namespace geopm
         size_t alloc_size = CPU_ALLOC_SIZE(num_cpu);
         cpu_set_t *proc_cpuset = CPU_ALLOC(num_cpu);
         if (proc_cpuset == NULL) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) +
-                            ": failed to allocate process CPU mask",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": failed to allocate process CPU mask",
                             ENOMEM, __FILE__, __LINE__);
         }
         for (auto &proc : process_map) {
             int err = sched_getaffinity(proc.first, alloc_size, proc_cpuset);
             if (err == EINVAL || err == EFAULT) {
-                throw Exception("NVMLIOGroup::" + std::string(__func__) +
-                                ": failed to get affinity mask for process: " +
-                                std::to_string(proc.first), err, __FILE__, __LINE__);
+                throw Exception("NVMLIOGroup::" + std::string(__func__)
+                                    + ": failed to get affinity mask for process: " + std::to_string(proc.first),
+                                err, __FILE__, __LINE__);
             }
             if (!err && CPU_ISSET(cpu_idx, proc_cpuset)) {
                 result = proc.second;
@@ -573,8 +504,9 @@ namespace geopm
             for (auto &sv : m_control_available) {
                 for (unsigned int domain_idx = 0; domain_idx < sv.second.controls.size(); ++domain_idx) {
                     if (sv.second.controls.at(domain_idx)->m_is_adjusted) {
-                        try{
-                            write_control(sv.first, sv.second.domain, domain_idx, sv.second.controls.at(domain_idx)->m_setting);
+                        try {
+                            write_control(sv.first, sv.second.domain, domain_idx,
+                                          sv.second.controls.at(domain_idx)->m_setting);
                             sv.second.controls.at(domain_idx)->m_is_adjusted = false;
                         }
                         catch (...) {
@@ -587,7 +519,8 @@ namespace geopm
                 }
             }
             do_throw = true;
-        } while (do_retry);
+        }
+        while (do_retry);
     }
 
     // Return the latest value read by read_batch()
@@ -595,7 +528,8 @@ namespace geopm
     {
         // Do conversion of signal values stored in read batch
         if (batch_idx < 0 || batch_idx >= (int)m_signal_pushed.size()) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": batch_idx " +std::to_string(batch_idx)+ " out of range",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": batch_idx "
+                                + std::to_string(batch_idx) + " out of range",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (!m_is_batch_read) {
@@ -610,7 +544,8 @@ namespace geopm
     void NVMLIOGroup::adjust(int batch_idx, double setting)
     {
         if (batch_idx < 0 || (unsigned)batch_idx >= m_control_pushed.size()) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + "(): batch_idx " +std::to_string(batch_idx)+ " out of range",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + "(): batch_idx "
+                                + std::to_string(batch_idx) + " out of range",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -622,13 +557,12 @@ namespace geopm
     double NVMLIOGroup::read_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name +
-                            " not valid for NVMLIOGroup",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name + " not valid for NVMLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != signal_domain_type(signal_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name + ": domain_type must be " +
-                            std::to_string(signal_domain_type(signal_name)),
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name
+                                + ": domain_type must be " + std::to_string(signal_domain_type(signal_name)),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(signal_domain_type(signal_name))) {
@@ -638,14 +572,16 @@ namespace geopm
 
         double result = NAN;
         if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_STATUS" || signal_name == "GPU_CORE_FREQUENCY_STATUS") {
-            result = (double) m_nvml_device_pool.frequency_status_sm(domain_idx) * 1e6;
+            result = (double)m_nvml_device_pool.frequency_status_sm(domain_idx) * 1e6;
         }
-        else if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_AVAIL" || signal_name == "GPU_CORE_FREQUENCY_MIN_AVAIL") {
+        else if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_AVAIL"
+                 || signal_name == "GPU_CORE_FREQUENCY_MIN_AVAIL") {
             if (m_supported_freq.at(domain_idx).size() != 0) {
                 result = 1e6 * m_supported_freq.at(domain_idx).front();
             }
         }
-        else if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_AVAIL" || signal_name == "GPU_CORE_FREQUENCY_MAX_AVAIL") {
+        else if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_AVAIL"
+                 || signal_name == "GPU_CORE_FREQUENCY_MAX_AVAIL") {
             if (m_supported_freq.at(domain_idx).size() != 0) {
                 result = 1e6 * m_supported_freq.at(domain_idx).back();
             }
@@ -657,58 +593,59 @@ namespace geopm
             }
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_UTILIZATION" || signal_name == "GPU_UTILIZATION") {
-            result = (double) m_nvml_device_pool.utilization(domain_idx) / 100;
+            result = (double)m_nvml_device_pool.utilization(domain_idx) / 100;
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_CORE_THROTTLE_REASONS") {
-            result = (double) m_nvml_device_pool.throttle_reasons(domain_idx);
+            result = (double)m_nvml_device_pool.throttle_reasons(domain_idx);
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_POWER" || signal_name == "GPU_POWER") {
-            result = (double) m_nvml_device_pool.power(domain_idx) * 1e-3;
+            result = (double)m_nvml_device_pool.power(domain_idx) * 1e-3;
         }
-        else if (signal_name == M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL" ||
-                 signal_name == "GPU_POWER_LIMIT_CONTROL") {
-            result = (double) m_nvml_device_pool.power_limit(domain_idx) * 1e-3;
+        else if (signal_name == M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL" || signal_name == "GPU_POWER_LIMIT_CONTROL") {
+            result = (double)m_nvml_device_pool.power_limit(domain_idx) * 1e-3;
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_UNCORE_FREQUENCY_STATUS") {
-            result = (double) m_nvml_device_pool.frequency_status_mem(domain_idx) * 1e6;
+            result = (double)m_nvml_device_pool.frequency_status_mem(domain_idx) * 1e6;
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_TEMPERATURE" || signal_name == "GPU_TEMPERATURE") {
-            result = (double) m_nvml_device_pool.temperature(domain_idx);
+            result = (double)m_nvml_device_pool.temperature(domain_idx);
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_ENERGY_CONSUMPTION_TOTAL" || signal_name == "GPU_ENERGY") {
-            result = (double) m_nvml_device_pool.energy(domain_idx) * 1e-3;
+            result = (double)m_nvml_device_pool.energy(domain_idx) * 1e-3;
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_PERFORMANCE_STATE") {
-            result = (double) m_nvml_device_pool.performance_state(domain_idx);
+            result = (double)m_nvml_device_pool.performance_state(domain_idx);
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_PCIE_RX_THROUGHPUT") {
-            result = (double) m_nvml_device_pool.throughput_rx_pcie(domain_idx) * 1024;
+            result = (double)m_nvml_device_pool.throughput_rx_pcie(domain_idx) * 1024;
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_PCIE_TX_THROUGHPUT") {
-            result = (double) m_nvml_device_pool.throughput_tx_pcie(domain_idx) * 1024;
+            result = (double)m_nvml_device_pool.throughput_tx_pcie(domain_idx) * 1024;
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_UNCORE_UTILIZATION") {
-            result = (double) m_nvml_device_pool.utilization_mem(domain_idx) * 1e-2;
+            result = (double)m_nvml_device_pool.utilization_mem(domain_idx) * 1e-2;
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_CPU_ACTIVE_AFFINITIZATION") {
             std::map<pid_t, double> process_map = gpu_process_map();
             result = cpu_gpu_affinity(domain_idx, process_map);
         }
-        else if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_CONTROL" || signal_name == "GPU_CORE_FREQUENCY_MAX_CONTROL") {
+        else if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_CONTROL"
+                 || signal_name == "GPU_CORE_FREQUENCY_MAX_CONTROL") {
             result = m_frequency_max_control_request.at(domain_idx);
         }
-        else if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_CONTROL" || signal_name == "GPU_CORE_FREQUENCY_MIN_CONTROL") {
+        else if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_CONTROL"
+                 || signal_name == "GPU_CORE_FREQUENCY_MIN_CONTROL") {
             result = m_frequency_min_control_request.at(domain_idx);
         }
         else if (signal_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_RESET_CONTROL") {
             ; // No-op.  Nothing to return.
         }
         else {
-    #ifdef GEOPM_DEBUG
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": Handling not defined for " +
-                            signal_name, GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+#ifdef GEOPM_DEBUG
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": Handling not defined for " + signal_name,
+                            GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
 
-    #endif
+#endif
         }
         return result;
     }
@@ -717,13 +654,12 @@ namespace geopm
     void NVMLIOGroup::write_control(const std::string &control_name, int domain_type, int domain_idx, double setting)
     {
         if (!is_valid_control(control_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + control_name +
-                            " not valid for NVMLIOGroup",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + control_name + " not valid for NVMLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != control_domain_type(control_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + control_name + ": domain_type must be " +
-                            std::to_string(control_domain_type(control_name)),
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + control_name
+                                + ": domain_type must be " + std::to_string(control_domain_type(control_name)),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(control_domain_type(control_name))) {
@@ -731,9 +667,10 @@ namespace geopm
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
-        if (control_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_CONTROL" || control_name == "GPU_CORE_FREQUENCY_MAX_CONTROL") {
+        if (control_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MAX_CONTROL"
+            || control_name == "GPU_CORE_FREQUENCY_MAX_CONTROL") {
             double min_request;
-            if(!std::isnan(m_frequency_min_control_request.at(domain_idx))) {
+            if (!std::isnan(m_frequency_min_control_request.at(domain_idx))) {
                 min_request = m_frequency_min_control_request.at(domain_idx);
             }
             else {
@@ -742,9 +679,10 @@ namespace geopm
             m_nvml_device_pool.frequency_control_sm(domain_idx, min_request * 1e-6, setting * 1e-6);
             m_frequency_max_control_request.at(domain_idx) = setting;
         }
-        else if (control_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_CONTROL" || control_name == "GPU_CORE_FREQUENCY_MIN_CONTROL") {
+        else if (control_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_MIN_CONTROL"
+                 || control_name == "GPU_CORE_FREQUENCY_MIN_CONTROL") {
             double max_request;
-            if(!std::isnan(m_frequency_max_control_request.at(domain_idx))) {
+            if (!std::isnan(m_frequency_max_control_request.at(domain_idx))) {
                 max_request = m_frequency_max_control_request.at(domain_idx);
             }
             else {
@@ -756,14 +694,15 @@ namespace geopm
         else if (control_name == M_NAME_PREFIX + "GPU_CORE_FREQUENCY_RESET_CONTROL") {
             m_nvml_device_pool.frequency_reset_control(domain_idx);
         }
-        else if (control_name == M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL" || control_name == "GPU_POWER_LIMIT_CONTROL") {
+        else if (control_name == M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL"
+                 || control_name == "GPU_POWER_LIMIT_CONTROL") {
             m_nvml_device_pool.power_control(domain_idx, setting * 1e3);
         }
         else {
-    #ifdef GEOPM_DEBUG
-                throw Exception("NVMLIOGroup::" + std::string(__func__) + "Handling not defined for "
-                                + control_name, GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
-    #endif
+#ifdef GEOPM_DEBUG
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + "Handling not defined for " + control_name,
+                            GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+#endif
         }
     }
 
@@ -793,9 +732,8 @@ namespace geopm
 #ifdef GEOPM_DEBUG
                 std::cerr << "Warning: <geopm> NVMLIOGroup: Failed to "
                              "restore frequency control & power settings for "
-                             "GPU domain " << std::to_string(domain_idx)
-                             << ".  Exception: " << ex.what()
-                             << std::endl;
+                             "GPU domain "
+                          << std::to_string(domain_idx) << ".  Exception: " << ex.what() << std::endl;
 #endif
             }
         }
@@ -806,8 +744,7 @@ namespace geopm
     {
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name +
-                            "not valid for NVMLIOGroup",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name + "not valid for NVMLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.agg_function;
@@ -818,8 +755,7 @@ namespace geopm
     {
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name +
-                            "not valid for NVMLIOGroup",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + signal_name + "not valid for NVMLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.format_function;
@@ -829,8 +765,8 @@ namespace geopm
     std::string NVMLIOGroup::signal_description(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": signal_name " + signal_name +
-                            " not valid for NVMLIOGroup.",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": signal_name " + signal_name
+                                + " not valid for NVMLIOGroup.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return m_signal_available.at(signal_name).m_description;
@@ -840,8 +776,7 @@ namespace geopm
     std::string NVMLIOGroup::control_description(const std::string &control_name) const
     {
         if (!is_valid_control(control_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + control_name +
-                            "not valid for NVMLIOGroup",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": " + control_name + "not valid for NVMLIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -851,8 +786,8 @@ namespace geopm
     int NVMLIOGroup::signal_behavior(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": signal_name " + signal_name +
-                            " not valid for NVMLIOGroup.",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": signal_name " + signal_name
+                                + " not valid for NVMLIOGroup.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return m_signal_available.at(signal_name).behavior;
@@ -863,16 +798,9 @@ namespace geopm
         std::vector<SaveControl::m_setting_s> settings;
         int num_domains = m_platform_topo.num_domain(GEOPM_DOMAIN_GPU);
         for (int domain_idx = 0; domain_idx < num_domains; ++domain_idx) {
-            settings.push_back({M_NAME_PREFIX + "GPU_CORE_FREQUENCY_RESET_CONTROL",
-                                GEOPM_DOMAIN_GPU,
-                                domain_idx,
-                                0});
-            double curr_value = read_signal(M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL",
-                                            GEOPM_DOMAIN_GPU, domain_idx);
-            settings.push_back({M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL",
-                                GEOPM_DOMAIN_GPU,
-                                domain_idx,
-                                curr_value});
+            settings.push_back({M_NAME_PREFIX + "GPU_CORE_FREQUENCY_RESET_CONTROL", GEOPM_DOMAIN_GPU, domain_idx, 0});
+            double curr_value = read_signal(M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL", GEOPM_DOMAIN_GPU, domain_idx);
+            settings.push_back({M_NAME_PREFIX + "GPU_POWER_LIMIT_CONTROL", GEOPM_DOMAIN_GPU, domain_idx, curr_value});
         }
 
         std::shared_ptr<SaveControl> save_ctl = m_mock_save_ctl;
@@ -908,12 +836,11 @@ namespace geopm
         return geopm::make_unique<NVMLIOGroup>();
     }
 
-    void NVMLIOGroup::register_signal_alias(const std::string &alias_name,
-                                            const std::string &signal_name)
+    void NVMLIOGroup::register_signal_alias(const std::string &alias_name, const std::string &signal_name)
     {
         if (m_signal_available.find(alias_name) != m_signal_available.end()) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": signal_name " + alias_name +
-                            " was previously registered.",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": signal_name " + alias_name
+                                + " was previously registered.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto it = m_signal_available.find(signal_name);
@@ -923,16 +850,15 @@ namespace geopm
         }
         // copy signal info but append to description
         m_signal_available[alias_name] = it->second;
-        m_signal_available[alias_name].m_description =
-            m_signal_available[signal_name].m_description + '\n' + "    alias_for: " + signal_name;
+        m_signal_available[alias_name].m_description = m_signal_available[signal_name].m_description + '\n'
+                                                       + "    alias_for: " + signal_name;
     }
 
-    void NVMLIOGroup::register_control_alias(const std::string &alias_name,
-                                           const std::string &control_name)
+    void NVMLIOGroup::register_control_alias(const std::string &alias_name, const std::string &control_name)
     {
         if (m_control_available.find(alias_name) != m_control_available.end()) {
-            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": contro1_name " + alias_name +
-                            " was previously registered.",
+            throw Exception("NVMLIOGroup::" + std::string(__func__) + ": contro1_name " + alias_name
+                                + " was previously registered.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto it = m_control_available.find(control_name);
@@ -942,7 +868,7 @@ namespace geopm
         }
         // copy control info but append to description
         m_control_available[alias_name] = it->second;
-        m_control_available[alias_name].m_description =
-        m_control_available[control_name].m_description + '\n' + "    alias_for: " + control_name;
+        m_control_available[alias_name].m_description = m_control_available[control_name].m_description + '\n'
+                                                        + "    alias_for: " + control_name;
     }
 }

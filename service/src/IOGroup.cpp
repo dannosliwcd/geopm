@@ -9,7 +9,6 @@
 #include <functional>
 #include <mutex>
 
-
 #include "geopm/IOGroup.hpp"
 
 #include "geopm_plugin.hpp"
@@ -38,26 +37,15 @@
 #include <iostream>
 #endif
 
-
 namespace geopm
 {
     const std::string IOGroup::M_PLUGIN_PREFIX = "libgeopmiogroup_";
 
-    const std::string IOGroup::M_UNITS[IOGroup::M_NUM_UNITS] = {
-        "none",
-        "seconds",
-        "hertz",
-        "watts",
-        "joules",
-        "celsius"
-    };
+    const std::string IOGroup::M_UNITS[IOGroup::M_NUM_UNITS] = {"none",  "seconds", "hertz",
+                                                                "watts", "joules",  "celsius"};
 
-    const std::string IOGroup::M_BEHAVIORS[IOGroup::M_NUM_SIGNAL_BEHAVIOR] = {
-        "constant",
-        "monotone",
-        "variable",
-        "label"
-    };
+    const std::string IOGroup::M_BEHAVIORS[IOGroup::M_NUM_SIGNAL_BEHAVIOR] = {"constant", "monotone",
+                                                                              "variable", "label"};
 
     const std::map<std::string, IOGroup::m_units_e> IOGroup::M_UNITS_STRING = {
         {IOGroup::M_UNITS[M_UNITS_NONE], M_UNITS_NONE},
@@ -65,8 +53,7 @@ namespace geopm
         {IOGroup::M_UNITS[M_UNITS_HERTZ], M_UNITS_HERTZ},
         {IOGroup::M_UNITS[M_UNITS_WATTS], M_UNITS_WATTS},
         {IOGroup::M_UNITS[M_UNITS_JOULES], M_UNITS_JOULES},
-        {IOGroup::M_UNITS[M_UNITS_CELSIUS], M_UNITS_CELSIUS}
-    };
+        {IOGroup::M_UNITS[M_UNITS_CELSIUS], M_UNITS_CELSIUS}};
 
     const std::map<std::string, IOGroup::m_signal_behavior_e> IOGroup::M_BEHAVIOR_STRING = {
         {IOGroup::M_BEHAVIORS[M_SIGNAL_BEHAVIOR_CONSTANT], M_SIGNAL_BEHAVIOR_CONSTANT},
@@ -74,7 +61,6 @@ namespace geopm
         {IOGroup::M_BEHAVIORS[M_SIGNAL_BEHAVIOR_VARIABLE], M_SIGNAL_BEHAVIOR_VARIABLE},
         {IOGroup::M_BEHAVIORS[M_SIGNAL_BEHAVIOR_LABEL], M_SIGNAL_BEHAVIOR_LABEL},
     };
-
 
     IOGroupFactory::IOGroupFactory()
     {
@@ -88,40 +74,29 @@ namespace geopm
         // service enabling save/restore by geopmd.  If the geopm
         // service is not active then loading the ServiceIOGroup will
         // fail.
-        register_plugin(MSRIOGroup::plugin_name(),
-                        MSRIOGroup::make_plugin);
+        register_plugin(MSRIOGroup::plugin_name(), MSRIOGroup::make_plugin);
 #ifdef GEOPM_ENABLE_SYSTEMD
         if (getuid() != 0) {
-            register_plugin(ServiceIOGroup::plugin_name(),
-                            ServiceIOGroup::make_plugin);
+            register_plugin(ServiceIOGroup::plugin_name(), ServiceIOGroup::make_plugin);
         }
 #endif
-        register_plugin(TimeIOGroup::plugin_name(),
-                        TimeIOGroup::make_plugin);
-        register_plugin(CpuinfoIOGroup::plugin_name(),
-                        CpuinfoIOGroup::make_plugin);
-        register_plugin(SSTIOGroup::plugin_name(),
-                        SSTIOGroup::make_plugin);
+        register_plugin(TimeIOGroup::plugin_name(), TimeIOGroup::make_plugin);
+        register_plugin(CpuinfoIOGroup::plugin_name(), CpuinfoIOGroup::make_plugin);
+        register_plugin(SSTIOGroup::plugin_name(), SSTIOGroup::make_plugin);
 #ifdef GEOPM_CNL_IOGROUP
-        register_plugin(CNLIOGroup::plugin_name(),
-                        CNLIOGroup::make_plugin);
+        register_plugin(CNLIOGroup::plugin_name(), CNLIOGroup::make_plugin);
 #endif
 #ifdef GEOPM_ENABLE_DCGM
-        register_plugin(DCGMIOGroup::plugin_name(),
-                        DCGMIOGroup::make_plugin);
+        register_plugin(DCGMIOGroup::plugin_name(), DCGMIOGroup::make_plugin);
 #endif
 #ifdef GEOPM_ENABLE_NVML
-        register_plugin(NVMLIOGroup::plugin_name(),
-                        NVMLIOGroup::make_plugin);
+        register_plugin(NVMLIOGroup::plugin_name(), NVMLIOGroup::make_plugin);
 #endif
 #ifdef GEOPM_ENABLE_LEVELZERO
-        register_plugin(LevelZeroIOGroup::plugin_name(),
-                        LevelZeroIOGroup::make_plugin);
+        register_plugin(LevelZeroIOGroup::plugin_name(), LevelZeroIOGroup::make_plugin);
 #endif
-        register_plugin(ConstConfigIOGroup::plugin_name(),
-                        ConstConfigIOGroup::make_plugin);
+        register_plugin(ConstConfigIOGroup::plugin_name(), ConstConfigIOGroup::make_plugin);
     }
-
 
     IOGroupFactory &iogroup_factory(void)
     {
@@ -135,18 +110,15 @@ namespace geopm
         return instance;
     }
 
-
     std::vector<std::string> IOGroup::iogroup_names(void)
     {
         return iogroup_factory().plugin_names();
     }
 
-
     std::unique_ptr<IOGroup> IOGroup::make_unique(const std::string &iogroup_name)
     {
         return iogroup_factory().make_plugin(iogroup_name);
     }
-
 
     std::function<std::string(double)> IOGroup::format_function(const std::string &signal_name) const
     {
@@ -168,8 +140,8 @@ namespace geopm
     {
         auto it = M_UNITS_STRING.find(str);
         if (it == M_UNITS_STRING.end()) {
-            throw Exception("IOGroup::string_to_units(): invalid units string",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("IOGroup::string_to_units(): invalid units string", GEOPM_ERROR_INVALID, __FILE__,
+                            __LINE__);
         }
         return it->second;
     }
@@ -177,8 +149,7 @@ namespace geopm
     std::string IOGroup::units_to_string(int uni)
     {
         if (uni >= IOGroup::M_NUM_UNITS || uni < 0) {
-            throw Exception("IOGroup::units_to_string): invalid units value",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("IOGroup::units_to_string): invalid units value", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return IOGroup::M_UNITS[uni];
     }
@@ -187,8 +158,8 @@ namespace geopm
     {
         auto it = M_BEHAVIOR_STRING.find(str);
         if (it == M_BEHAVIOR_STRING.end()) {
-            throw Exception("IOGroup::string_to_behavior(): invalid behavior string",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("IOGroup::string_to_behavior(): invalid behavior string", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         return it->second;
     }

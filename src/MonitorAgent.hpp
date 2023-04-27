@@ -54,6 +54,7 @@ namespace geopm
             static std::vector<std::string> policy_names(void);
             /// @return a list of sample names
             static std::vector<std::string> sample_names(void);
+
         private:
             struct geopm_time_s m_last_wait;
             const double M_WAIT_SEC;

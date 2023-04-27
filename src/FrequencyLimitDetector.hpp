@@ -32,8 +32,7 @@ namespace geopm
             /// @param observed_core_frequencies The measured frequency for
             /// each core across a region of interest (e.g., epoch to epoch,
             /// across GEOPM regions, etc).
-            virtual void update_max_frequency_estimates(
-                const std::vector<double> &observed_core_frequencies) = 0;
+            virtual void update_max_frequency_estimates(const std::vector<double> &observed_core_frequencies) = 0;
 
             /// @brief Estimate the maximum achievable frequencies of a given core.
             /// @param [in] core_idx GEOPM topology index of the core to query.
@@ -41,18 +40,17 @@ namespace geopm
             /// vector element is a pair of a count of high-priority cores in
             /// the package, and this core's achievable frequency if that count
             /// is not exceeded.
-            virtual std::vector<std::pair<unsigned int, double> > get_core_frequency_limits(
-                unsigned int core_idx) const = 0;
+            virtual std::vector<std::pair<unsigned int, double> >
+                get_core_frequency_limits(unsigned int core_idx) const = 0;
 
             /// @brief Estimate the low priority frequency of a given core.
-            virtual double get_core_low_priority_frequency(
-                unsigned int core_idx) const = 0;
+            virtual double get_core_low_priority_frequency(unsigned int core_idx) const = 0;
 
-            static std::unique_ptr<FrequencyLimitDetector> make_unique(
-                PlatformIO &platform_io, const PlatformTopo &platform_topo);
+            static std::unique_ptr<FrequencyLimitDetector> make_unique(PlatformIO &platform_io,
+                                                                       const PlatformTopo &platform_topo);
 
-            static std::shared_ptr<FrequencyLimitDetector> make_shared(
-                PlatformIO &platform_io, const PlatformTopo &platform_topo);
+            static std::shared_ptr<FrequencyLimitDetector> make_shared(PlatformIO &platform_io,
+                                                                       const PlatformTopo &platform_topo);
     };
 }
 

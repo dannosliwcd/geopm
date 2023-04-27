@@ -27,7 +27,6 @@ namespace geopm
     GPUActivityAgent::GPUActivityAgent()
         : GPUActivityAgent(PlatformIOProf::platform_io(), platform_topo())
     {
-
     }
 
     GPUActivityAgent::GPUActivityAgent(PlatformIO &plat_io, const PlatformTopo &topo)
@@ -37,10 +36,8 @@ namespace geopm
         , M_WAIT_SEC(0.020) // 20ms wait default
         , M_POLICY_PHI_DEFAULT(0.5)
         , M_GPU_ACTIVITY_CUTOFF(0.05)
-        , M_NUM_GPU(m_platform_topo.num_domain(
-                    GEOPM_DOMAIN_GPU))
-        , M_NUM_GPU_CHIP(m_platform_topo.num_domain(
-                         GEOPM_DOMAIN_GPU_CHIP))
+        , M_NUM_GPU(m_platform_topo.num_domain(GEOPM_DOMAIN_GPU))
+        , M_NUM_GPU_CHIP(m_platform_topo.num_domain(GEOPM_DOMAIN_GPU_CHIP))
         , M_NUM_CHIP_PER_GPU(M_NUM_GPU_CHIP / M_NUM_GPU)
         , m_do_write_batch(false)
         , m_do_send_policy(true)
@@ -88,42 +85,38 @@ namespace geopm
 
 #ifdef GEOPM_DEBUG
         {
-            int max_agent_domain = std::max(*std::max_element(std::begin(control_domains), std::end(control_domains)),
-                                            *std::max_element(std::begin(signal_domains), std::end(signal_domains)));
+            int max_agent_domain = std::max(
+                *std::max_element(std::begin(control_domains), std::end(control_domains)),
+                *std::max_element(std::begin(signal_domains), std::end(signal_domains)));
 
             if (m_agent_domain != max_agent_domain) {
-                throw Exception("GPUActivityAgent::" + std::string(__func__) +
-                                "(): Required signals and controls do not all exist at the same domain.",
+                throw Exception("GPUActivityAgent::" + std::string(__func__)
+                                    + "(): Required signals and controls do not all exist at the same domain.",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
 #endif
 
-        if (m_agent_domain != GEOPM_DOMAIN_GPU &&
-            m_agent_domain != GEOPM_DOMAIN_GPU_CHIP) {
-            throw Exception("GPUActivityAgent::" + std::string(__func__) +
-                            "(): Required signals and controls do not exist at the " +
-                            "GPU or GPU_CHIP domain!", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        if (m_agent_domain != GEOPM_DOMAIN_GPU && m_agent_domain != GEOPM_DOMAIN_GPU_CHIP) {
+            throw Exception("GPUActivityAgent::" + std::string(__func__)
+                                + "(): Required signals and controls do not exist at the " + "GPU or GPU_CHIP domain!",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         m_agent_domain_count = m_platform_topo.num_domain(m_agent_domain);
 
         for (int domain_idx = 0; domain_idx < m_agent_domain_count; ++domain_idx) {
             // Signals
-            m_gpu_core_activity.push_back({m_platform_io.push_signal("GPU_CORE_ACTIVITY",
-                                           m_agent_domain,
-                                           domain_idx), NAN});
-            m_gpu_utilization.push_back({m_platform_io.push_signal("GPU_UTILIZATION",
-                                         m_agent_domain,
-                                         domain_idx), NAN});
+            m_gpu_core_activity.push_back(
+                {m_platform_io.push_signal("GPU_CORE_ACTIVITY", m_agent_domain, domain_idx), NAN});
+            m_gpu_utilization.push_back(
+                {m_platform_io.push_signal("GPU_UTILIZATION", m_agent_domain, domain_idx), NAN});
 
             // Controls
-            m_gpu_freq_min_control.push_back(m_control{m_platform_io.push_control("GPU_CORE_FREQUENCY_MIN_CONTROL",
-                                                       m_agent_domain,
-                                                       domain_idx), NAN});
-            m_gpu_freq_max_control.push_back(m_control{m_platform_io.push_control("GPU_CORE_FREQUENCY_MAX_CONTROL",
-                                                       m_agent_domain,
-                                                       domain_idx), NAN});
+            m_gpu_freq_min_control.push_back(m_control{
+                m_platform_io.push_control("GPU_CORE_FREQUENCY_MIN_CONTROL", m_agent_domain, domain_idx), NAN});
+            m_gpu_freq_max_control.push_back(m_control{
+                m_platform_io.push_control("GPU_CORE_FREQUENCY_MAX_CONTROL", m_agent_domain, domain_idx), NAN});
         }
 
         // We treat energy & time as special cases and only use them at a specific domain.
@@ -132,9 +125,9 @@ namespace geopm
         m_time = {m_platform_io.push_signal("TIME", GEOPM_DOMAIN_BOARD, 0), NAN};
 
         for (int domain_idx = 0; domain_idx < M_NUM_GPU; ++domain_idx) {
-            m_gpu_energy.push_back({m_platform_io.push_signal("GPU_ENERGY",
-                                    m_platform_io.signal_domain_type("GPU_ENERGY"),
-                                    domain_idx), NAN});
+            m_gpu_energy.push_back(
+                {m_platform_io.push_signal("GPU_ENERGY", m_platform_io.signal_domain_type("GPU_ENERGY"), domain_idx),
+                 NAN});
         }
 
         m_freq_gpu_min = m_platform_io.read_signal("GPU_CORE_FREQUENCY_MIN_AVAIL", GEOPM_DOMAIN_BOARD, 0);
@@ -154,12 +147,10 @@ namespace geopm
             m_freq_gpu_efficient = (m_freq_gpu_max + m_freq_gpu_min) / 2;
         }
 
-        if (m_freq_gpu_efficient > m_freq_gpu_max ||
-            m_freq_gpu_efficient < m_freq_gpu_min ) {
-            throw Exception("GPUActivityAgent::" + std::string(__func__) +
-                            "(): GPU efficient frequency out of range: " +
-                            std::to_string(m_freq_gpu_efficient) +
-                            ".", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        if (m_freq_gpu_efficient > m_freq_gpu_max || m_freq_gpu_efficient < m_freq_gpu_min) {
+            throw Exception("GPUActivityAgent::" + std::string(__func__) + "(): GPU efficient frequency out of range: "
+                                + std::to_string(m_freq_gpu_efficient) + ".",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
     }
 
@@ -174,18 +165,16 @@ namespace geopm
             in_policy[M_POLICY_GPU_PHI] = M_POLICY_PHI_DEFAULT;
         }
 
-        if (in_policy[M_POLICY_GPU_PHI] < 0.0 ||
-            in_policy[M_POLICY_GPU_PHI] > 1.0) {
-            throw Exception("GPUActivityAgent::" + std::string(__func__) +
-                            "(): POLICY_GPU_PHI value out of range: " +
-                            std::to_string(in_policy[M_POLICY_GPU_PHI]) + ".",
+        if (in_policy[M_POLICY_GPU_PHI] < 0.0 || in_policy[M_POLICY_GPU_PHI] > 1.0) {
+            throw Exception("GPUActivityAgent::" + std::string(__func__) + "(): POLICY_GPU_PHI value out of range: "
+                                + std::to_string(in_policy[M_POLICY_GPU_PHI]) + ".",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
     }
 
     // Distribute incoming policy to children
-    void GPUActivityAgent::split_policy(const std::vector<double>& in_policy,
-                                        std::vector<std::vector<double> >& out_policy)
+    void GPUActivityAgent::split_policy(const std::vector<double> &in_policy,
+                                        std::vector<std::vector<double> > &out_policy)
     {
         GEOPM_DEBUG_ASSERT(in_policy.size() == M_NUM_POLICY,
                            "GPUActivityAgent::split_policy(): policy vector incorrectly sized");
@@ -201,9 +190,8 @@ namespace geopm
     }
 
     void GPUActivityAgent::aggregate_sample(const std::vector<std::vector<double> > &in_sample,
-                                            std::vector<double>& out_sample)
+                                            std::vector<double> &out_sample)
     {
-
     }
 
     // Indicate whether to send samples up to the parent
@@ -212,7 +200,7 @@ namespace geopm
         return false;
     }
 
-    void GPUActivityAgent::adjust_platform(const std::vector<double>& in_policy)
+    void GPUActivityAgent::adjust_platform(const std::vector<double> &in_policy)
     {
         GEOPM_DEBUG_ASSERT(in_policy.size() == M_NUM_POLICY,
                            "GPUActivityAgent::adjust_platform(): policy vector incorrectly sized");
@@ -236,16 +224,13 @@ namespace geopm
         if (phi > 0.5) {
             // Energy Biased.  Scale F_max down to F_efficient based upon phi value
             // Active region phi usage
-            m_resolved_f_gpu_max = std::max(m_freq_gpu_efficient, m_freq_gpu_max -
-                                                                  f_gpu_range *
-                                                                  (phi-0.5) / 0.5);
+            m_resolved_f_gpu_max = std::max(m_freq_gpu_efficient, m_freq_gpu_max - f_gpu_range * (phi - 0.5) / 0.5);
         }
         else if (phi < 0.5) {
             // Perf Biased.  Scale F_efficient up to F_max based upon phi value
             // Active region phi usage
-            m_resolved_f_gpu_efficient = std::min(m_freq_gpu_max, m_freq_gpu_efficient +
-                                                                  f_gpu_range *
-                                                                  (0.5-phi) / 0.5);
+            m_resolved_f_gpu_efficient = std::min(m_freq_gpu_max,
+                                                  m_freq_gpu_efficient + f_gpu_range * (0.5 - phi) / 0.5);
         }
 
         // Values after phi has been applied
@@ -287,8 +272,7 @@ namespace geopm
                 // achieved through tracking the GPU Utilization signal and setting frequency
                 // to a separate idle value (f_idle) during regions where GPU Utilization is
                 // zero (or below some bar).
-                if (!std::isnan(gpu_utilization) &&
-                    gpu_utilization > 0) {
+                if (!std::isnan(gpu_utilization) && gpu_utilization > 0) {
                     gpu_utilization = std::min(gpu_utilization, 1.0);
                     f_request = m_resolved_f_gpu_efficient + m_f_range * (gpu_core_activity / gpu_utilization);
                 }
@@ -341,25 +325,20 @@ namespace geopm
 
         // set frequency control per gpu
         for (int domain_idx = 0; domain_idx < m_agent_domain_count; ++domain_idx) {
-            if (gpu_freq_request.at(domain_idx) !=
-                m_gpu_freq_min_control.at(domain_idx).last_setting ||
-                gpu_freq_request.at(domain_idx) !=
-                m_gpu_freq_max_control.at(domain_idx).last_setting) {
+            if (gpu_freq_request.at(domain_idx) != m_gpu_freq_min_control.at(domain_idx).last_setting
+                || gpu_freq_request.at(domain_idx) != m_gpu_freq_max_control.at(domain_idx).last_setting) {
 
                 m_platform_io.adjust(m_gpu_freq_min_control.at(domain_idx).batch_idx,
                                      gpu_freq_request.at(domain_idx));
-                m_gpu_freq_min_control.at(domain_idx).last_setting =
-                                     gpu_freq_request.at(domain_idx);
+                m_gpu_freq_min_control.at(domain_idx).last_setting = gpu_freq_request.at(domain_idx);
 
                 m_platform_io.adjust(m_gpu_freq_max_control.at(domain_idx).batch_idx,
                                      gpu_freq_request.at(domain_idx));
-                m_gpu_freq_max_control.at(domain_idx).last_setting =
-                                     gpu_freq_request.at(domain_idx);
+                m_gpu_freq_max_control.at(domain_idx).last_setting = gpu_freq_request.at(domain_idx);
                 ++m_gpu_frequency_requests;
                 m_do_write_batch = true;
             }
         }
-
     }
 
     // If controls have a valid updated value write them.
@@ -376,15 +355,13 @@ namespace geopm
 
         // Collect latest signal values
         for (int domain_idx = 0; domain_idx < m_agent_domain_count; ++domain_idx) {
-            m_gpu_core_activity.at(domain_idx).value = m_platform_io.sample(m_gpu_core_activity.at(
-                                                                               domain_idx).batch_idx);
-            m_gpu_utilization.at(domain_idx).value = m_platform_io.sample(m_gpu_utilization.at(
-                                                                          domain_idx).batch_idx);
+            m_gpu_core_activity.at(domain_idx).value
+                = m_platform_io.sample(m_gpu_core_activity.at(domain_idx).batch_idx);
+            m_gpu_utilization.at(domain_idx).value = m_platform_io.sample(m_gpu_utilization.at(domain_idx).batch_idx);
         }
 
         for (int domain_idx = 0; domain_idx < M_NUM_GPU; ++domain_idx) {
-            m_gpu_energy.at(domain_idx).value = m_platform_io.sample(m_gpu_energy.at(
-                                                                     domain_idx).batch_idx);
+            m_gpu_energy.at(domain_idx).value = m_platform_io.sample(m_gpu_energy.at(domain_idx).batch_idx);
         }
 
         m_time.value = m_platform_io.sample(m_time.batch_idx);
@@ -397,7 +374,7 @@ namespace geopm
         do {
             geopm_time(&current_time);
         }
-        while(geopm_time_diff(&m_last_wait, &current_time) < M_WAIT_SEC);
+        while (geopm_time_diff(&m_last_wait, &current_time) < M_WAIT_SEC);
         geopm_time(&m_last_wait);
     }
 
@@ -423,11 +400,11 @@ namespace geopm
             double energy_stop = m_gpu_active_energy_stop.at(domain_idx);
             double energy_start = m_gpu_active_energy_start.at(domain_idx);
             double region_stop = m_gpu_active_region_stop.at(domain_idx);
-            double region_start =  m_gpu_active_region_start.at(domain_idx);
-            result.push_back({"GPU " + std::to_string(domain_idx) +
-                              " Active Region Energy", std::to_string(energy_stop - energy_start)});
-            result.push_back({"GPU " + std::to_string(domain_idx) +
-                              " Active Region Time", std::to_string(region_stop - region_start)});
+            double region_start = m_gpu_active_region_start.at(domain_idx);
+            result.push_back({"GPU " + std::to_string(domain_idx) + " Active Region Energy",
+                              std::to_string(energy_stop - energy_start)});
+            result.push_back({"GPU " + std::to_string(domain_idx) + " Active Region Time",
+                              std::to_string(region_stop - region_start)});
         }
 
         return result;
@@ -446,13 +423,9 @@ namespace geopm
     }
 
     // Updates the trace with values for signals from this Agent
-    void GPUActivityAgent::trace_values(std::vector<double> &values)
-    {
-    }
+    void GPUActivityAgent::trace_values(std::vector<double> &values) {}
 
-    void GPUActivityAgent::enforce_policy(const std::vector<double> &policy) const
-    {
-    }
+    void GPUActivityAgent::enforce_policy(const std::vector<double> &policy) const {}
 
     std::vector<std::function<std::string(double)> > GPUActivityAgent::trace_formats(void) const
     {

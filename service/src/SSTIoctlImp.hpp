@@ -48,6 +48,7 @@ namespace geopm
             ///                 in this ioctl call. The maximum count of operations
             ///                 is specified by the SST version information.
             int mmio(sst_mmio_interface_batch_s *mmio_batch) override;
+
         private:
             const std::string m_path;
             const int m_fd;

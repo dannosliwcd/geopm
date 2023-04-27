@@ -22,8 +22,8 @@ namespace geopm
     {
         auto it = M_FUNCTION_STRING.find(str);
         if (it == M_FUNCTION_STRING.end()) {
-            throw Exception("MSR::string_to_function(): invalid function string",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("MSR::string_to_function(): invalid function string", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         return it->second;
     }

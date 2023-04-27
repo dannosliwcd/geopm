@@ -31,10 +31,9 @@
 #include "geopm/Helper.hpp"
 #include "GPUTopo.hpp"
 
-
 int geopm_read_cpuid(void)
 {
-    uint32_t key = 1; //processor features
+    uint32_t key = 1; // processor features
     uint32_t proc_info = 0;
     uint32_t model;
     uint32_t family;
@@ -54,11 +53,11 @@ int geopm_read_cpuid(void)
     ext_family = (proc_info & extended_family_mask) >> 20;
 
     if (family == 6) {
-        model+=(ext_model << 4);
+        model += (ext_model << 4);
     }
     else if (family == 15) {
-        model+=(ext_model << 4);
-        family+=ext_family;
+        model += (ext_model << 4);
+        family += ext_family;
     }
 
     return ((family << 8) + model);
@@ -87,7 +86,6 @@ static int geopm_topo_popen(const char *cmd, FILE **fid)
     if (!err) {
         *fid = popen(cmd, "r");
         while (*fid && !g_is_popen_complete) {
-
         }
         g_is_popen_complete = 0;
         sigaction(SIGCHLD, &save_action, NULL);
@@ -112,7 +110,6 @@ namespace geopm
     PlatformTopoImp::PlatformTopoImp()
         : PlatformTopoImp("")
     {
-
     }
 
     PlatformTopoImp::PlatformTopoImp(const std::string &test_cache_file_name)
@@ -180,17 +177,16 @@ namespace geopm
         return result;
     }
 
-    std::set<int> PlatformTopoImp::domain_cpus(int domain_type,
-                                               int domain_idx) const
+    std::set<int> PlatformTopoImp::domain_cpus(int domain_type, int domain_idx) const
     {
         if (domain_type < 0 || domain_type >= GEOPM_NUM_DOMAIN) {
-            throw Exception("PlatformTopoImp::domain_cpus(): domain_type out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("PlatformTopoImp::domain_cpus(): domain_type out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         int num_dom = num_domain(domain_type);
         if (domain_idx < 0 || domain_idx >= num_dom) {
-            throw Exception("PlatformTopoImp::domain_cpus(): domain_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("PlatformTopoImp::domain_cpus(): domain_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
 
         std::set<int> cpu_idx;
@@ -205,20 +201,15 @@ namespace geopm
                 cpu_idx = m_gpu_info.at(domain_type).at(domain_idx);
                 break;
             case GEOPM_DOMAIN_PACKAGE:
-                for (int thread_idx = 0;
-                     thread_idx != m_thread_per_core;
-                     ++thread_idx) {
+                for (int thread_idx = 0; thread_idx != m_thread_per_core; ++thread_idx) {
                     for (int core_idx = domain_idx * m_core_per_package;
-                         core_idx != (domain_idx + 1) * m_core_per_package;
-                         ++core_idx) {
+                         core_idx != (domain_idx + 1) * m_core_per_package; ++core_idx) {
                         cpu_idx.insert(core_idx + thread_idx * m_core_per_package * m_num_package);
                     }
                 }
                 break;
             case GEOPM_DOMAIN_CORE:
-                for (int thread_idx = 0;
-                     thread_idx != m_thread_per_core;
-                     ++thread_idx) {
+                for (int thread_idx = 0; thread_idx != m_thread_per_core; ++thread_idx) {
                     cpu_idx.insert(domain_idx + thread_idx * m_core_per_package * m_num_package);
                 }
                 break;
@@ -229,28 +220,26 @@ namespace geopm
                 cpu_idx = m_numa_map[domain_idx];
                 break;
             default:
-                throw Exception("PlatformTopoImp::domain_cpus(domain_type=" +
-                                std::to_string(domain_type) +
-                                ") support not yet implemented",
+                throw Exception("PlatformTopoImp::domain_cpus(domain_type=" + std::to_string(domain_type)
+                                    + ") support not yet implemented",
                                 GEOPM_ERROR_NOT_IMPLEMENTED, __FILE__, __LINE__);
                 break;
         }
         return cpu_idx;
     }
 
-    int PlatformTopoImp::domain_idx(int domain_type,
-                                    int cpu_idx) const
+    int PlatformTopoImp::domain_idx(int domain_type, int cpu_idx) const
     {
         int result = -1;
         int num_cpu = num_domain(GEOPM_DOMAIN_CPU);
 
         if (domain_type < 0 || domain_type >= GEOPM_NUM_DOMAIN) {
-            throw Exception("PlatformTopoImp::domain_idx(): domain_type out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("PlatformTopoImp::domain_idx(): domain_type out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         if (cpu_idx < 0 || cpu_idx >= num_cpu) {
-            throw Exception("PlatformTopoImp::domain_idx(): cpu_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("PlatformTopoImp::domain_idx(): cpu_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
 
         int core_idx = 0;
@@ -271,11 +260,9 @@ namespace geopm
                 break;
             case GEOPM_DOMAIN_MEMORY:
             case GEOPM_DOMAIN_GPU:
-            case GEOPM_DOMAIN_GPU_CHIP:
-                {
-                const auto &domain_map = (domain_type == GEOPM_DOMAIN_MEMORY) ?
-                                         m_numa_map :
-                                         m_gpu_info.at(domain_type);
+            case GEOPM_DOMAIN_GPU_CHIP: {
+                const auto &domain_map = (domain_type == GEOPM_DOMAIN_MEMORY) ? m_numa_map
+                                                                              : m_gpu_info.at(domain_type);
                 for (const auto &set_it : domain_map) {
                     for (const auto &cpu_it : set_it) {
                         if (cpu_it == cpu_idx) {
@@ -290,8 +277,7 @@ namespace geopm
                     }
                     ++numa_idx;
                 }
-                }
-                break;
+            } break;
             case GEOPM_DOMAIN_PACKAGE_INTEGRATED_GPU:
             case GEOPM_DOMAIN_PACKAGE_INTEGRATED_MEMORY:
             case GEOPM_DOMAIN_NIC:
@@ -302,8 +288,8 @@ namespace geopm
                 break;
             case GEOPM_DOMAIN_INVALID:
             default:
-                throw Exception("PlatformTopoImp::domain_idx() invalid domain specified",
-                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+                throw Exception("PlatformTopoImp::domain_idx() invalid domain specified", GEOPM_ERROR_INVALID,
+                                __FILE__, __LINE__);
                 break;
         }
         return result;
@@ -326,33 +312,27 @@ namespace geopm
             // All domains are within the board domain
             result = true;
         }
-        else if (outer_domain == GEOPM_DOMAIN_CORE &&
-                 inner_domain == GEOPM_DOMAIN_CPU) {
+        else if (outer_domain == GEOPM_DOMAIN_CORE && inner_domain == GEOPM_DOMAIN_CPU) {
             // Only the CPU domain is within the core.
             result = true;
         }
-        else if (outer_domain == GEOPM_DOMAIN_PACKAGE &&
-                 package_domain.find(inner_domain) != package_domain.end()) {
+        else if (outer_domain == GEOPM_DOMAIN_PACKAGE && package_domain.find(inner_domain) != package_domain.end()) {
             // Everything under the package scope is in the package_domain set.
             result = true;
         }
-        else if (outer_domain == GEOPM_DOMAIN_MEMORY &&
-                 inner_domain == GEOPM_DOMAIN_CPU) {
+        else if (outer_domain == GEOPM_DOMAIN_MEMORY && inner_domain == GEOPM_DOMAIN_CPU) {
             // To support mapping CPU signals to DRAM domain (e.g. power)
             result = true;
         }
-        else if (outer_domain == GEOPM_DOMAIN_GPU &&
-                 inner_domain == GEOPM_DOMAIN_CPU) {
+        else if (outer_domain == GEOPM_DOMAIN_GPU && inner_domain == GEOPM_DOMAIN_CPU) {
             // To support mapping CPU signals to GPU domain
             result = true;
         }
-        else if (outer_domain == GEOPM_DOMAIN_GPU &&
-                 inner_domain == GEOPM_DOMAIN_GPU_CHIP) {
+        else if (outer_domain == GEOPM_DOMAIN_GPU && inner_domain == GEOPM_DOMAIN_GPU_CHIP) {
             // To support mapping GPU SUBDEVICE signals to GPU domain
             result = true;
         }
-        else if (outer_domain == GEOPM_DOMAIN_GPU_CHIP &&
-                 inner_domain == GEOPM_DOMAIN_CPU) {
+        else if (outer_domain == GEOPM_DOMAIN_GPU_CHIP && inner_domain == GEOPM_DOMAIN_CPU) {
             // To support mapping CPU signals to GPU SUBDEVICE domain
             result = true;
         }
@@ -362,8 +342,8 @@ namespace geopm
     std::set<int> PlatformTopoImp::domain_nested(int inner_domain, int outer_domain, int outer_idx) const
     {
         if (!is_nested_domain(inner_domain, outer_domain)) {
-            throw Exception("PlatformTopoImp::domain_nested(): domain type " + std::to_string(inner_domain) +
-                            " is not contained within domain type " + std::to_string(outer_domain),
+            throw Exception("PlatformTopoImp::domain_nested(): domain type " + std::to_string(inner_domain)
+                                + " is not contained within domain type " + std::to_string(outer_domain),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         std::set<int> inner_domain_idx;
@@ -403,7 +383,8 @@ namespace geopm
     std::string PlatformTopo::domain_type_to_name(int domain_type)
     {
         if (domain_type <= GEOPM_DOMAIN_INVALID || domain_type >= GEOPM_NUM_DOMAIN) {
-            throw Exception("PlatformTopo::domain_type_to_name(): unrecognized domain_type: " + std::to_string(domain_type),
+            throw Exception("PlatformTopo::domain_type_to_name(): unrecognized domain_type: "
+                                + std::to_string(domain_type),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return domain_names()[domain_type];
@@ -488,8 +469,8 @@ namespace geopm
             err = geopm_topo_popen(cmd.str().c_str(), &pid);
             if (err) {
                 unlink(cache_file_name.c_str());
-                throw Exception("PlatformTopo::create_cache(): Could not popen lscpu command: ",
-                                err, __FILE__, __LINE__);
+                throw Exception("PlatformTopo::create_cache(): Could not popen lscpu command: ", err,
+                                __FILE__, __LINE__);
             }
             if (pclose(pid)) {
                 unlink(cache_file_name.c_str());
@@ -499,10 +480,7 @@ namespace geopm
             if (gtopo.num_gpu() != 0) {
                 std::ofstream cache_stream;
                 cache_stream.open(tmp_path, std::ios_base::app);
-                std::vector<int> gpu_domains = {
-                    GEOPM_DOMAIN_GPU,
-                    GEOPM_DOMAIN_GPU_CHIP
-                };
+                std::vector<int> gpu_domains = {GEOPM_DOMAIN_GPU, GEOPM_DOMAIN_GPU_CHIP};
                 for (const auto &domain_type : gpu_domains) {
                     std::string short_name = gpu_short_name(domain_type);
                     int num_domain = gtopo.num_gpu(domain_type);
@@ -526,15 +504,10 @@ namespace geopm
         }
     }
 
-    void PlatformTopoImp::parse_lscpu(const std::map<std::string, std::string> &lscpu_map,
-                                      int &num_package,
-                                      int &core_per_package,
-                                      int &thread_per_core)
+    void PlatformTopoImp::parse_lscpu(const std::map<std::string, std::string> &lscpu_map, int &num_package,
+                                      int &core_per_package, int &thread_per_core)
     {
-        std::vector<std::string> keys = {"CPU(s)",
-                                         "Thread(s) per core",
-                                         "Core(s) per socket",
-                                         "Socket(s)",
+        std::vector<std::string> keys = {"CPU(s)", "Thread(s) per core", "Core(s) per socket", "Socket(s)",
                                          "On-line CPU(s) mask"};
         std::vector<std::string> values(keys.size());
 
@@ -557,14 +530,15 @@ namespace geopm
             thread_per_core = std::stoi(values[1].c_str());
         }
         catch (const std::invalid_argument &ex) {
-            throw Exception("PlatformTopoImp: Unable to convert strings to numbers when parsing lscpu output: " + std::string(ex.what()),
+            throw Exception("PlatformTopoImp: Unable to convert strings to numbers when parsing lscpu output: "
+                                + std::string(ex.what()),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         int total_cores_expected_online = num_package * core_per_package * thread_per_core;
         if (total_cores_expected_online != atoi(values[0].c_str())) {
             // Check how many CPUs are actually online
             std::string online_cpu_mask = values[4];
-            if (online_cpu_mask.substr(0,2) == "0x") {
+            if (online_cpu_mask.substr(0, 2) == "0x") {
                 online_cpu_mask = online_cpu_mask.substr(2);
             }
             int online_cpus = 0;
@@ -599,7 +573,7 @@ namespace geopm
                 numa_map.push_back({});
                 auto cpu_set_it = numa_map.end() - 1;
                 std::string hex_mask = lscpu_it->second;
-                if (hex_mask.substr(0,2) == "0x") {
+                if (hex_mask.substr(0, 2) == "0x") {
                     hex_mask = hex_mask.substr(2);
                 }
                 int cpu_idx = 0;
@@ -625,7 +599,8 @@ namespace geopm
         return numa_map;
     }
 
-    std::vector<std::set<int> > PlatformTopoImp::parse_lscpu_gpu(const std::map<std::string, std::string> &lscpu_map, int domain_type)
+    std::vector<std::set<int> > PlatformTopoImp::parse_lscpu_gpu(const std::map<std::string, std::string> &lscpu_map,
+                                                                 int domain_type)
     {
         std::vector<std::set<int> > gpu_map;
         bool is_domain_found = true;
@@ -653,15 +628,15 @@ namespace geopm
         struct sysinfo si;
         int err = sysinfo(&si);
         if (err) {
-            throw Exception("PlatformTopoImp::check_file(): sysinfo err: ",
-                            errno ? errno : GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("PlatformTopoImp::check_file(): sysinfo err: ", errno ? errno : GEOPM_ERROR_RUNTIME,
+                            __FILE__, __LINE__);
         }
 
         struct stat file_stat;
         err = stat(file_path.c_str(), &file_stat);
         if (err) {
-            throw Exception("PlatformTopoImp::check_file(): stat failure:",
-                            errno ? errno : GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("PlatformTopoImp::check_file(): stat failure:", errno ? errno : GEOPM_ERROR_RUNTIME,
+                            __FILE__, __LINE__);
         }
 
         struct geopm_time_s current_time;
@@ -713,7 +688,7 @@ namespace geopm
     void PlatformTopoImp::lscpu(std::map<std::string, std::string> &lscpu_map)
     {
         std::string lscpu_contents = read_lscpu();
-        std::istringstream lscpu_stream (lscpu_contents);
+        std::istringstream lscpu_stream(lscpu_contents);
 
         std::string line;
         while (std::getline(lscpu_stream, line)) {
@@ -722,8 +697,7 @@ namespace geopm
                 std::string key(line.substr(0, colon_pos));
                 std::string value(line.substr(colon_pos + 1));
                 size_t data_pos = value.find_first_not_of(" \t");
-                if (data_pos &&
-                    data_pos != std::string::npos) {
+                if (data_pos && data_pos != std::string::npos) {
                     // Trim leading white space
                     value = value.substr(data_pos);
                 }
@@ -736,135 +710,130 @@ namespace geopm
 
     std::string PlatformTopoImp::gpu_short_name(int domain_type)
     {
-        static const std::map<int, std::string> gpu_short_name_map {
-                {GEOPM_DOMAIN_GPU, "node"},
-                {GEOPM_DOMAIN_GPU_CHIP, "chip"}
-        };
+        static const std::map<int, std::string> gpu_short_name_map{{GEOPM_DOMAIN_GPU, "node"},
+                                                                   {GEOPM_DOMAIN_GPU_CHIP, "chip"}};
         return gpu_short_name_map.at(domain_type);
     }
 }
 
-extern "C"
+extern "C" {
+int geopm_topo_num_domain(int domain_type)
 {
-    int geopm_topo_num_domain(int domain_type)
-    {
-        int result = 0;
-        try {
-            result = geopm::platform_topo().num_domain(domain_type);
-        }
-        catch (...) {
-            result = geopm::exception_handler(std::current_exception());
-            result = result < 0 ? result : GEOPM_ERROR_RUNTIME;
-        }
-        return result;
+    int result = 0;
+    try {
+        result = geopm::platform_topo().num_domain(domain_type);
     }
-
-    int geopm_topo_domain_idx(int domain_type, int cpu_idx)
-    {
-        int result = 0;
-        try {
-            result = geopm::platform_topo().domain_idx(domain_type, cpu_idx);
-        }
-        catch (...) {
-            result = geopm::exception_handler(std::current_exception());
-            result = result < 0 ? result : GEOPM_ERROR_RUNTIME;
-        }
-        return result;
+    catch (...) {
+        result = geopm::exception_handler(std::current_exception());
+        result = result < 0 ? result : GEOPM_ERROR_RUNTIME;
     }
+    return result;
+}
 
-    int geopm_topo_num_domain_nested(int inner_domain, int outer_domain)
-    {
-        int result = GEOPM_ERROR_INVALID;
-        try {
-            if (geopm::platform_topo().is_nested_domain(inner_domain, outer_domain)) {
-                int num_inner_domain = geopm::platform_topo().num_domain(inner_domain);
-                int num_outer_domain = geopm::platform_topo().num_domain(outer_domain);
-                if (num_outer_domain > 0 && num_inner_domain > 0) {
-                    result = num_inner_domain / num_outer_domain;
-                }
+int geopm_topo_domain_idx(int domain_type, int cpu_idx)
+{
+    int result = 0;
+    try {
+        result = geopm::platform_topo().domain_idx(domain_type, cpu_idx);
+    }
+    catch (...) {
+        result = geopm::exception_handler(std::current_exception());
+        result = result < 0 ? result : GEOPM_ERROR_RUNTIME;
+    }
+    return result;
+}
+
+int geopm_topo_num_domain_nested(int inner_domain, int outer_domain)
+{
+    int result = GEOPM_ERROR_INVALID;
+    try {
+        if (geopm::platform_topo().is_nested_domain(inner_domain, outer_domain)) {
+            int num_inner_domain = geopm::platform_topo().num_domain(inner_domain);
+            int num_outer_domain = geopm::platform_topo().num_domain(outer_domain);
+            if (num_outer_domain > 0 && num_inner_domain > 0) {
+                result = num_inner_domain / num_outer_domain;
             }
         }
-        catch (...) {
-            result = geopm::exception_handler(std::current_exception());
-            result = result < 0 ? result : GEOPM_ERROR_RUNTIME;
-        }
-        return result;
     }
+    catch (...) {
+        result = geopm::exception_handler(std::current_exception());
+        result = result < 0 ? result : GEOPM_ERROR_RUNTIME;
+    }
+    return result;
+}
 
-    int geopm_topo_domain_nested(int inner_domain, int outer_domain, int outer_idx,
-                                 size_t num_domain_nested, int *domain_nested)
-    {
-        int err = 0;
-        try {
-            int num_domain_nested_ref = geopm_topo_num_domain_nested(inner_domain, outer_domain);
-            if (num_domain_nested_ref > 0 &&
-                num_domain_nested == (size_t)num_domain_nested_ref) {
-                std::set<int> nested_set(geopm::platform_topo().domain_nested(inner_domain, outer_domain, outer_idx));
-                if (nested_set.size() == (size_t)num_domain_nested) {
-                    int idx = 0;
-                    for (const auto &domain : nested_set) {
-                        domain_nested[idx] = domain;
-                        ++idx;
-                    }
-                }
-                else {
-                    err = GEOPM_ERROR_RUNTIME;
+int geopm_topo_domain_nested(int inner_domain, int outer_domain, int outer_idx, size_t num_domain_nested,
+                             int *domain_nested)
+{
+    int err = 0;
+    try {
+        int num_domain_nested_ref = geopm_topo_num_domain_nested(inner_domain, outer_domain);
+        if (num_domain_nested_ref > 0 && num_domain_nested == (size_t)num_domain_nested_ref) {
+            std::set<int> nested_set(geopm::platform_topo().domain_nested(inner_domain, outer_domain, outer_idx));
+            if (nested_set.size() == (size_t)num_domain_nested) {
+                int idx = 0;
+                for (const auto &domain : nested_set) {
+                    domain_nested[idx] = domain;
+                    ++idx;
                 }
             }
             else {
-                err = num_domain_nested_ref;
+                err = GEOPM_ERROR_RUNTIME;
             }
         }
-        catch (...) {
-            err = geopm::exception_handler(std::current_exception());
-            err = err < 0 ? err : GEOPM_ERROR_RUNTIME;
+        else {
+            err = num_domain_nested_ref;
         }
-        return err;
     }
+    catch (...) {
+        err = geopm::exception_handler(std::current_exception());
+        err = err < 0 ? err : GEOPM_ERROR_RUNTIME;
+    }
+    return err;
+}
 
-    int geopm_topo_domain_name(int domain_type, size_t domain_name_max,
-                               char *domain_name)
-    {
-        int err = 0;
-        try {
-            std::string domain_name_string = geopm::platform_topo().domain_type_to_name(domain_type);
+int geopm_topo_domain_name(int domain_type, size_t domain_name_max, char *domain_name)
+{
+    int err = 0;
+    try {
+        std::string domain_name_string = geopm::platform_topo().domain_type_to_name(domain_type);
+        domain_name[domain_name_max - 1] = '\0';
+        strncpy(domain_name, domain_name_string.c_str(), domain_name_max);
+        if (domain_name[domain_name_max - 1] != '\0') {
             domain_name[domain_name_max - 1] = '\0';
-            strncpy(domain_name, domain_name_string.c_str(), domain_name_max);
-            if (domain_name[domain_name_max - 1] != '\0') {
-                domain_name[domain_name_max - 1] = '\0';
-                err = GEOPM_ERROR_INVALID;
-            }
+            err = GEOPM_ERROR_INVALID;
         }
-        catch (...) {
-            err = geopm::exception_handler(std::current_exception());
-            err = err < 0 ? err : GEOPM_ERROR_RUNTIME;
-        }
-        return err;
     }
+    catch (...) {
+        err = geopm::exception_handler(std::current_exception());
+        err = err < 0 ? err : GEOPM_ERROR_RUNTIME;
+    }
+    return err;
+}
 
-    int geopm_topo_domain_type(const char *domain_name)
-    {
-        int result = 0;
-        try {
-            result = geopm::platform_topo().domain_name_to_type(domain_name);
-        }
-        catch (...) {
-            result = geopm::exception_handler(std::current_exception());
-            result = result < 0 ? result : GEOPM_ERROR_RUNTIME;
-        }
-        return result;
+int geopm_topo_domain_type(const char *domain_name)
+{
+    int result = 0;
+    try {
+        result = geopm::platform_topo().domain_name_to_type(domain_name);
     }
+    catch (...) {
+        result = geopm::exception_handler(std::current_exception());
+        result = result < 0 ? result : GEOPM_ERROR_RUNTIME;
+    }
+    return result;
+}
 
-    int geopm_topo_create_cache(void)
-    {
-        int err = 0;
-        try {
-            geopm::PlatformTopo::create_cache();
-        }
-        catch (...) {
-            err = geopm::exception_handler(std::current_exception());
-            err = err < 0 ? err : GEOPM_ERROR_RUNTIME;
-        }
-        return err;
+int geopm_topo_create_cache(void)
+{
+    int err = 0;
+    try {
+        geopm::PlatformTopo::create_cache();
     }
+    catch (...) {
+        err = geopm::exception_handler(std::current_exception());
+        err = err < 0 ? err : GEOPM_ERROR_RUNTIME;
+    }
+    return err;
+}
 }

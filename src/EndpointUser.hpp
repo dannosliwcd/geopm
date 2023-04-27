@@ -44,19 +44,15 @@ namespace geopm
             EndpointUserImp() = delete;
             EndpointUserImp &operator=(const EndpointUserImp &other) = delete;
             EndpointUserImp(const EndpointUserImp &other) = delete;
-            EndpointUserImp(const std::string &data_path,
-                              const std::set<std::string> &hosts);
-            EndpointUserImp(const std::string &data_path,
-                            std::unique_ptr<SharedMemory> policy_shmem,
-                            std::unique_ptr<SharedMemory> sample_shmem,
-                            const std::string &agent_name,
-                            int num_sample,
-                            const std::string &profile_name,
-                            const std::string &hostlist_path,
+            EndpointUserImp(const std::string &data_path, const std::set<std::string> &hosts);
+            EndpointUserImp(const std::string &data_path, std::unique_ptr<SharedMemory> policy_shmem,
+                            std::unique_ptr<SharedMemory> sample_shmem, const std::string &agent_name,
+                            int num_sample, const std::string &profile_name, const std::string &hostlist_path,
                             const std::set<std::string> &hosts);
             virtual ~EndpointUserImp();
             double read_policy(std::vector<double> &policy) override;
             void write_sample(const std::vector<double> &sample) override;
+
         private:
             std::string m_path;
             std::unique_ptr<SharedMemory> m_policy_shmem;

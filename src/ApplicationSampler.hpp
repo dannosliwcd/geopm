@@ -148,9 +148,11 @@ namespace geopm
             // Deprecated API's below for access to legacy objects
             virtual void set_sampler(std::shared_ptr<ProfileSampler> sampler) = 0;
             virtual std::shared_ptr<ProfileSampler> get_sampler(void) = 0;
+
         protected:
             virtual ~ApplicationSampler() = default;
             ApplicationSampler() = default;
+
         private:
             static std::set<uint64_t> region_hash_network_once(void);
     };

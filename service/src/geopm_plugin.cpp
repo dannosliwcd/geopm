@@ -18,13 +18,12 @@
 
 #include "config.h"
 
-
 namespace geopm
 {
     void plugin_load(const std::string &plugin_prefix)
     {
         std::string env_plugin_path_str(geopm::get_env("GEOPM_PLUGIN_PATH"));
-        std::vector<std::string> plugin_paths {GEOPM_DEFAULT_PLUGIN_PATH};
+        std::vector<std::string> plugin_paths{GEOPM_DEFAULT_PLUGIN_PATH};
         std::string so_suffix = ".so." GEOPM_ABI_VERSION;
         std::replace(so_suffix.begin(), so_suffix.end(), ':', '.');
 
@@ -47,10 +46,10 @@ namespace geopm
         }
         for (const auto &plugin : plugins) {
             if (NULL == dlopen(plugin.c_str(), RTLD_NOLOAD)) {
-                if (NULL == dlopen(plugin.c_str(), RTLD_LAZY|RTLD_GLOBAL)) {
+                if (NULL == dlopen(plugin.c_str(), RTLD_LAZY | RTLD_GLOBAL)) {
 #ifdef GEOPM_DEBUG
-                    std::cerr << "Warning: <geopm> Failed to dlopen plugin with dlerror(): "
-                              << dlerror() << std::endl;
+                    std::cerr << "Warning: <geopm> Failed to dlopen plugin with dlerror(): " << dlerror()
+                              << std::endl;
 #endif
                 }
             }

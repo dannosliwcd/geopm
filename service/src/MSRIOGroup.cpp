@@ -50,9 +50,8 @@ namespace geopm
     const std::string snb_msr_json(void);
     const std::string skx_msr_json(void);
 
-    const std::string MSRIOGroup::M_DEFAULT_DESCRIPTION =
-        "Refer to the Intel(R) 64 and IA-32 Architectures Software Developer's "
-        "Manual for information about this MSR";
+    const std::string MSRIOGroup::M_DEFAULT_DESCRIPTION = "Refer to the Intel(R) 64 and IA-32 Architectures Software Developer's "
+                                                          "Manual for information about this MSR";
 
     const std::string MSRIOGroup::M_PLUGIN_NAME = "MSR";
     const std::string MSRIOGroup::M_NAME_PREFIX = M_PLUGIN_NAME + "::";
@@ -60,8 +59,7 @@ namespace geopm
     // Return true if turbo ratio limits are writable in all domains that
     // report writability.  Return false otherwise. In debug builds, print a
     // warning if there is mixed writability across domains.
-    static bool is_trl_writable_in_all_domains(const Json &msr_json,
-                                               const PlatformTopo &topo,
+    static bool is_trl_writable_in_all_domains(const Json &msr_json, const PlatformTopo &topo,
                                                std::shared_ptr<MSRIO> msrio)
     {
         bool is_writable = false;
@@ -70,30 +68,24 @@ namespace geopm
 
         if (platform_info_obj_it != msr_obj.end()) {
             auto platform_info_obj = platform_info_obj_it->second.object_items();
-            auto platform_info_offset = std::stoull(
-                platform_info_obj["offset"].string_value(), 0, 16);
-            auto domain_type = PlatformTopo::domain_name_to_type(
-                platform_info_obj["domain"].string_value());
-            auto trl_mode_it =
-                platform_info_obj["fields"].object_items().find("PROGRAMMABLE_RATIO_LIMITS_TURBO_MODE");
+            auto platform_info_offset = std::stoull(platform_info_obj["offset"].string_value(), 0, 16);
+            auto domain_type = PlatformTopo::domain_name_to_type(platform_info_obj["domain"].string_value());
+            auto trl_mode_it = platform_info_obj["fields"].object_items().find("PROGRAMMABLE_RATIO_LIMITS_TURBO_MODE");
 
             if (trl_mode_it != platform_info_obj.end()) {
                 auto begin_bit = (int)(trl_mode_it->second["begin_bit"].number_value());
                 auto end_bit = (int)(trl_mode_it->second["end_bit"].number_value());
-                int function = MSR::string_to_function(
-                    trl_mode_it->second["function"].string_value());
+                int function = MSR::string_to_function(trl_mode_it->second["function"].string_value());
                 double scalar = trl_mode_it->second["scalar"].number_value();
 
                 int num_domain = topo.num_domain(domain_type);
                 int num_domain_with_writable_trl = 0;
                 for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
-                    std::set<int> cpus = topo.domain_nested(
-                        GEOPM_DOMAIN_CPU, domain_type, domain_idx);
+                    std::set<int> cpus = topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
                     int cpu_idx = *(cpus.begin());
-                    auto platform_info_msr = std::make_shared<RawMSRSignal>(
-                        msrio, cpu_idx, platform_info_offset);
-                    auto trl_mode_signal = geopm::make_unique<MSRFieldSignal>(
-                        platform_info_msr, begin_bit, end_bit, function, scalar);
+                    auto platform_info_msr = std::make_shared<RawMSRSignal>(msrio, cpu_idx, platform_info_offset);
+                    auto trl_mode_signal = geopm::make_unique<MSRFieldSignal>(platform_info_msr, begin_bit,
+                                                                              end_bit, function, scalar);
 
                     num_domain_with_writable_trl += trl_mode_signal->read() != 0;
                 }
@@ -103,13 +95,11 @@ namespace geopm
                 }
                 else if (num_domain_with_writable_trl != 0) {
 #ifdef GEOPM_DEBUG
-                    std::cerr
-                        << "Warning: <geopm> " << num_domain_with_writable_trl
-                        << " out of " << num_domain
-                        << " entries for PROGRAMMABLE_RATIO_LIMITS_TURBO_MODE "
-                           "indicate writable turbo ratio limits; defaulting "
-                           "to no writable turbo ratio limits"
-                        << std::endl;
+                    std::cerr << "Warning: <geopm> " << num_domain_with_writable_trl << " out of " << num_domain
+                              << " entries for PROGRAMMABLE_RATIO_LIMITS_TURBO_MODE "
+                                 "indicate writable turbo ratio limits; defaulting "
+                                 "to no writable turbo ratio limits"
+                              << std::endl;
 #endif
                 }
             }
@@ -121,10 +111,10 @@ namespace geopm
     MSRIOGroup::MSRIOGroup()
         : MSRIOGroup(platform_topo(), std::make_shared<MSRIOImp>(), cpuid(), geopm_sched_num_cpu(), nullptr)
     {
-
     }
 
-    MSRIOGroup::MSRIOGroup(const PlatformTopo &topo, std::shared_ptr<MSRIO> msrio, int cpuid, int num_cpu, std::shared_ptr<SaveControl> save_control)
+    MSRIOGroup::MSRIOGroup(const PlatformTopo &topo, std::shared_ptr<MSRIO> msrio, int cpuid, int num_cpu,
+                           std::shared_ptr<SaveControl> save_control)
         : m_platform_topo(topo)
         , m_msrio(std::move(msrio))
         , m_cpuid(cpuid)
@@ -137,7 +127,7 @@ namespace geopm
         , m_rdt_info(get_rdt_info())
         , m_pmc_bit_width(get_pmc_bit_width())
         , m_derivative_window(8)
-        , m_sleep_time(0.005)  // 5000 us
+        , m_sleep_time(0.005) // 5000 us
         , m_mock_save_ctl(save_control)
     {
         // Load available signals and controls from files
@@ -150,8 +140,7 @@ namespace geopm
             // Only load architectural MSRs
 #ifdef GEOPM_DEBUG
             std::cerr << "Warning: <geopm> MSRIOGroup::MSRIOGroup(): "
-                      << "Unable to load CPUID specific MSRs: "
-                      << ex.what() << std::endl;
+                      << "Unable to load CPUID specific MSRs: " << ex.what() << std::endl;
 #endif
         }
         auto custom_files = msr_data_files();
@@ -166,13 +155,13 @@ namespace geopm
         // If HWP is not enabled, prune all related signals/controls
         if (!m_is_hwp_enabled) {
             auto all_signal_names = signal_names();
-            for(const auto &name : all_signal_names) {
+            for (const auto &name : all_signal_names) {
                 if (string_begins_with(name, "MSR::HWP")) {
                     m_signal_available.erase(name);
                 }
             }
             auto all_control_names = control_names();
-            for(const auto &name : all_control_names) {
+            for (const auto &name : all_control_names) {
                 if (string_begins_with(name, "MSR::HWP")) {
                     m_control_available.erase(name);
                 }
@@ -217,7 +206,7 @@ namespace geopm
     void MSRIOGroup::register_frequency_signals(void)
     {
         // HWP vs P-State signals
-        if (m_is_hwp_enabled){
+        if (m_is_hwp_enabled) {
             register_signal_alias("CPU_FREQUENCY_STATUS", "MSR::PERF_STATUS:FREQ");
 
             register_signal_alias("CPU_FREQUENCY_MIN_CONTROL", "MSR::HWP_REQUEST:MINIMUM_PERFORMANCE");
@@ -230,18 +219,15 @@ namespace geopm
         }
 
         std::string max_turbo_name;
-        if (m_is_hwp_enabled)
-        {
+        if (m_is_hwp_enabled) {
             max_turbo_name = "MSR::HWP_CAPABILITIES:HIGHEST_PERFORMANCE";
         }
         else {
             if (m_cpuid == MSRIOGroup::M_CPUID_KNL) {
                 max_turbo_name = "MSR::TURBO_RATIO_LIMIT:GROUP_0_MAX_RATIO_LIMIT";
             }
-            else if (m_cpuid == MSRIOGroup::M_CPUID_SNB ||
-                     m_cpuid == MSRIOGroup::M_CPUID_IVT ||
-                     m_cpuid == MSRIOGroup::M_CPUID_HSX ||
-                     m_cpuid == MSRIOGroup::M_CPUID_BDX) {
+            else if (m_cpuid == MSRIOGroup::M_CPUID_SNB || m_cpuid == MSRIOGroup::M_CPUID_IVT
+                     || m_cpuid == MSRIOGroup::M_CPUID_HSX || m_cpuid == MSRIOGroup::M_CPUID_BDX) {
                 max_turbo_name = "MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_1CORE";
             }
             else if (m_cpuid >= MSRIOGroup::M_CPUID_SKX) {
@@ -258,10 +244,10 @@ namespace geopm
         register_signal_alias("CPU_UNCORE_FREQUENCY_STATUS", "MSR::UNCORE_PERF_STATUS:FREQ");
         register_signal_alias("CPU_UNCORE_FREQUENCY_MIN_CONTROL", "MSR::UNCORE_RATIO_LIMIT:MIN_RATIO");
         register_signal_alias("CPU_UNCORE_FREQUENCY_MAX_CONTROL", "MSR::UNCORE_RATIO_LIMIT:MAX_RATIO");
-
     }
 
-    void MSRIOGroup::register_frequency_controls(void) {
+    void MSRIOGroup::register_frequency_controls(void)
+    {
         if (m_is_hwp_enabled) {
             register_control_alias("CPU_FREQUENCY_MIN_CONTROL", "MSR::HWP_REQUEST:MINIMUM_PERFORMANCE");
             register_control_alias("CPU_FREQUENCY_MAX_CONTROL", "MSR::HWP_REQUEST:MAXIMUM_PERFORMANCE");
@@ -274,25 +260,22 @@ namespace geopm
         // Uncore controls
         register_control_alias("CPU_UNCORE_FREQUENCY_MIN_CONTROL", "MSR::UNCORE_RATIO_LIMIT:MIN_RATIO");
         register_control_alias("CPU_UNCORE_FREQUENCY_MAX_CONTROL", "MSR::UNCORE_RATIO_LIMIT:MAX_RATIO");
-
     }
 
-    void MSRIOGroup::set_signal_description(const std::string &name,
-                                            const std::string &description)
+    void MSRIOGroup::set_signal_description(const std::string &name, const std::string &description)
     {
         auto it = m_signal_available.find(name);
         if (it != m_signal_available.end()) {
             // Look for "alias_for".  Preserve it if present.
             auto pos = it->second.description.find("    alias_for");
-            if(pos != std::string::npos) {
+            if (pos != std::string::npos) {
                 it->second.description.erase(0, pos);
             }
             it->second.description.insert(0, description + '\n');
         }
     }
 
-    void MSRIOGroup::set_control_description(const std::string &name,
-                                             const std::string &description)
+    void MSRIOGroup::set_control_description(const std::string &name, const std::string &description)
     {
         auto it = m_control_available.find(name);
         if (it != m_control_available.end()) {
@@ -305,35 +288,30 @@ namespace geopm
         std::string max_name = "MSR::TEMPERATURE_TARGET:PROCHOT_MIN";
         auto max_it = m_signal_available.find(max_name);
         if (max_it == m_signal_available.end()) {
-            throw Exception("MSRIOGroup::register_temperature_signals(): " +
-                            max_name + " not found",
+            throw Exception("MSRIOGroup::register_temperature_signals(): " + max_name + " not found",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         int max_domain = max_it->second.domain;
         // mapping of high-level signal name to description and
         // underlying digital readout MSR
-        struct temp_data
-        {
-            std::string temp_name;
-            std::string description;
-            std::string msr_name;
+        struct temp_data {
+                std::string temp_name;
+                std::string description;
+                std::string msr_name;
         };
-        std::vector<temp_data> temp_signals {
+        std::vector<temp_data> temp_signals{
             {"CPU_CORE_TEMPERATURE", "Core temperature", "MSR::THERM_STATUS:DIGITAL_READOUT"},
-            {"CPU_PACKAGE_TEMPERATURE", "Package temperature", "MSR::PACKAGE_THERM_STATUS:DIGITAL_READOUT"}
-        };
+            {"CPU_PACKAGE_TEMPERATURE", "Package temperature", "MSR::PACKAGE_THERM_STATUS:DIGITAL_READOUT"}};
         for (const auto &ts : temp_signals) {
             std::string signal_name = ts.temp_name;
             std::string msr_name = ts.msr_name;
             auto read_it = m_signal_available.find(msr_name);
-            if (max_it != m_signal_available.end() &&
-                read_it != m_signal_available.end()) {
+            if (max_it != m_signal_available.end() && read_it != m_signal_available.end()) {
                 auto readings = read_it->second.signals;
                 int read_domain = read_it->second.domain;
                 int num_domain = m_platform_topo.num_domain(read_domain);
                 GEOPM_DEBUG_ASSERT(num_domain == (int)readings.size(),
-                                   "size of domain for " + msr_name +
-                                   " does not match number of signals available.");
+                                   "size of domain for " + msr_name + " does not match number of signals available.");
                 std::vector<std::shared_ptr<Signal> > result(num_domain);
                 for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
                     int max_idx = *m_platform_topo.domain_nested(max_domain, read_domain, domain_idx).begin();
@@ -341,15 +319,14 @@ namespace geopm
                     auto sub = readings[domain_idx];
                     result[domain_idx] = std::make_shared<DifferenceSignal>(max, sub);
                 }
-                m_signal_available[signal_name] = {result,
-                                                   read_domain,
-                                                   IOGroup::M_UNITS_CELSIUS,
-                                                   agg_function(msr_name),
-                                                   ts.description +
-                                                   "\n    alias_for: Temperature derived from PROCHOT and "
-                                                   + ts.msr_name,
-                                                   IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
-                                                   string_format_double};
+                m_signal_available[signal_name] = {
+                    result,
+                    read_domain,
+                    IOGroup::M_UNITS_CELSIUS,
+                    agg_function(msr_name),
+                    ts.description + "\n    alias_for: Temperature derived from PROCHOT and " + ts.msr_name,
+                    IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
+                    string_format_double};
             }
         }
     }
@@ -370,23 +347,16 @@ namespace geopm
         // Mapping of high-level signal name to description and
         // underlying energy MSR.  The domain will match that of the
         // energy signal.
-        struct power_data
-        {
-            std::string power_name;
-            std::string description;
-            std::string msr_name;
+        struct power_data {
+                std::string power_name;
+                std::string description;
+                std::string msr_name;
         };
-        std::vector<power_data> power_signals {
-            {"CPU_POWER",
-                    "Average package power over 40 ms or 8 control loop iterations",
-                    "CPU_ENERGY"},
-            {"DRAM_POWER",
-                    "Average DRAM power over 40 ms or 8 control loop iterations",
-                    "DRAM_ENERGY"},
-            {"MSR::BOARD_POWER",
-                    "Average BOARD power over 40 ms or 8 control loop iterations",
-                    "MSR::PLATFORM_ENERGY_STATUS:ENERGY"}
-        };
+        std::vector<power_data> power_signals{
+            {"CPU_POWER", "Average package power over 40 ms or 8 control loop iterations", "CPU_ENERGY"},
+            {"DRAM_POWER", "Average DRAM power over 40 ms or 8 control loop iterations", "DRAM_ENERGY"},
+            {"MSR::BOARD_POWER", "Average BOARD power over 40 ms or 8 control loop iterations",
+             "MSR::PLATFORM_ENERGY_STATUS:ENERGY"}};
         for (const auto &ps : power_signals) {
             std::string signal_name = ps.power_name;
             std::string msr_name = ps.msr_name;
@@ -396,15 +366,12 @@ namespace geopm
                 int energy_domain = read_it->second.domain;
                 int num_domain = m_platform_topo.num_domain(energy_domain);
                 GEOPM_DEBUG_ASSERT(num_domain == (int)readings.size(),
-                                   "size of domain for " + msr_name +
-                                   " does not match number of signals available.");
+                                   "size of domain for " + msr_name + " does not match number of signals available.");
                 std::vector<std::shared_ptr<Signal> > result(num_domain);
                 for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
                     auto eng = readings[domain_idx];
-                    result[domain_idx] =
-                        std::make_shared<DerivativeSignal>(time_sig, eng,
-                                                           m_derivative_window,
-                                                           m_sleep_time);
+                    result[domain_idx] = std::make_shared<DerivativeSignal>(time_sig, eng,
+                                                                            m_derivative_window, m_sleep_time);
                 }
                 m_signal_available[signal_name] = {result,
                                                    energy_domain,
@@ -438,26 +405,22 @@ namespace geopm
         std::shared_ptr<Signal> time_sig = time_it->second.signals.at(0);
 
         int derivative_window = 8;
-        double sleep_time = 0.005;  // 5000 us
+        double sleep_time = 0.005; // 5000 us
 
         // Mapping of high-level signal name to description and
         // underlying CNT MSRs.  The domain will match that of the
         // CNT signals.
-        struct cnt_data
-        {
-            std::string cnt_name;
-            std::string description;
-            std::string msr_name;
+        struct cnt_data {
+                std::string cnt_name;
+                std::string description;
+                std::string msr_name;
         };
 
-        std::vector<cnt_data> cnt_signals {
-            {"MSR::PCNT_RATE",
-                    "Average cpu pcnt rate over 8 control loop iterations (40ms if using geopmread)",
-                    "MSR::PPERF:PCNT"},
-            {"MSR::ACNT_RATE",
-                    "Average cpu acnt rate over 8 control loop iterations (40ms if using geopmread)",
-                    "MSR::APERF:ACNT"}
-        };
+        std::vector<cnt_data> cnt_signals{
+            {"MSR::PCNT_RATE", "Average cpu pcnt rate over 8 control loop iterations (40ms if using geopmread)",
+             "MSR::PPERF:PCNT"},
+            {"MSR::ACNT_RATE", "Average cpu acnt rate over 8 control loop iterations (40ms if using geopmread)",
+             "MSR::APERF:ACNT"}};
 
         // This block is taking the derivative of the MSR::PPERF:PCNT signal
         // and the MSR::APERF:ACNT signal.  Later the ratio of PCNT Rate over
@@ -474,18 +437,15 @@ namespace geopm
                 int cnt_domain = read_it->second.domain;
                 int num_domain = m_platform_topo.num_domain(cnt_domain);
                 GEOPM_DEBUG_ASSERT(num_domain == (int)readings.size(),
-                                   "size of domain for " + msr_name +
-                                   " does not match number of signals available.");
+                                   "size of domain for " + msr_name + " does not match number of signals available.");
                 std::vector<std::shared_ptr<Signal> > result(num_domain);
                 for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
                     auto dt_cnt = readings[domain_idx];
                     // The derivative signal is being used here due to
                     // signal noise when sampled at faster cadences, similar
                     // to the energy signal.
-                    result[domain_idx] =
-                        std::make_shared<DerivativeSignal>(time_sig, dt_cnt,
-                                                           derivative_window,
-                                                           sleep_time);
+                    result[domain_idx] = std::make_shared<DerivativeSignal>(time_sig, dt_cnt,
+                                                                            derivative_window, sleep_time);
                 }
 
                 // Store the PCNT_RATE and ACNT_RATE in a data structure that is not
@@ -510,21 +470,18 @@ namespace geopm
             int cnt_domain = read_it->second.domain;
             int num_domain = m_platform_topo.num_domain(cnt_domain);
             GEOPM_DEBUG_ASSERT(num_domain == (int)readings.size(),
-                               "size of domain for " + msr_name +
-                               " does not match number of signals available.");
+                               "size of domain for " + msr_name + " does not match number of signals available.");
             std::vector<std::shared_ptr<Signal> > result(num_domain);
             for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
                 auto numer_it = signal_hidden.find("MSR::PCNT_RATE");
                 auto denom_it = signal_hidden.find("MSR::ACNT_RATE");
-                if (numer_it != signal_hidden.end() &&
-                    denom_it != signal_hidden.end()){
+                if (numer_it != signal_hidden.end() && denom_it != signal_hidden.end()) {
                     auto numerators = numer_it->second.signals;
                     auto numerator = numerators[domain_idx];
                     auto denominators = denom_it->second.signals;
                     auto denominator = denominators[domain_idx];
 
-                    result[domain_idx] =
-                        std::make_shared<RatioSignal>(numerator, denominator);
+                    result[domain_idx] = std::make_shared<RatioSignal>(numerator, denominator);
                 }
             }
 
@@ -563,24 +520,21 @@ namespace geopm
             int ctr_domain = read_it->second.domain;
             num_domain = m_platform_topo.num_domain(ctr_domain);
             GEOPM_DEBUG_ASSERT(num_domain == (int)readings.size(),
-                               "size of domain for " + msr_name +
-                               " does not match number of signals available.");
+                               "size of domain for " + msr_name + " does not match number of signals available.");
             std::vector<std::shared_ptr<Signal> > result(num_domain);
             for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
                 auto ctr = readings[domain_idx];
-                result[domain_idx] =
-                    std::make_shared<MultiplicationSignal>(ctr, (double)m_rdt_info.mbm_scalar);
+                result[domain_idx] = std::make_shared<MultiplicationSignal>(ctr, (double)m_rdt_info.mbm_scalar);
             }
             m_signal_available[signal_name] = {result,
                                                ctr_domain,
                                                IOGroup::M_UNITS_NONE,
                                                agg_function(msr_name),
-                                               description + "\n    alias_for: " + msr_name + " multiplied by " +
-                                               std::to_string(m_rdt_info.mbm_scalar) + " (provided by cpuid)",
+                                               description + "\n    alias_for: " + msr_name + " multiplied by "
+                                                   + std::to_string(m_rdt_info.mbm_scalar) + " (provided by cpuid)",
                                                IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE,
                                                string_format_double};
         }
-
 
         // MSR::TIME is a board level signal as defined in register_power_signals;
         auto time_it = m_signal_available.find("MSR::TIME");
@@ -599,15 +553,12 @@ namespace geopm
             int ctr_domain = read_it->second.domain;
             num_domain = m_platform_topo.num_domain(ctr_domain);
             GEOPM_DEBUG_ASSERT(num_domain == (int)readings.size(),
-                               "size of domain for " + msr_name +
-                               " does not match number of signals available.");
+                               "size of domain for " + msr_name + " does not match number of signals available.");
             std::vector<std::shared_ptr<Signal> > result(num_domain);
             for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
                 auto ctr = readings[domain_idx];
-                result[domain_idx] =
-                    std::make_shared<DerivativeSignal>(time_sig, ctr,
-                                                       m_derivative_window,
-                                                       m_sleep_time);
+                result[domain_idx] = std::make_shared<DerivativeSignal>(time_sig, ctr, m_derivative_window,
+                                                                        m_sleep_time);
             }
             m_signal_available[signal_name] = {result,
                                                ctr_domain,
@@ -618,7 +569,6 @@ namespace geopm
                                                string_format_double};
         }
     }
-
 
     std::set<std::string> MSRIOGroup::signal_names(void) const
     {
@@ -678,8 +628,7 @@ namespace geopm
             enable_fixed_counters();
         }
         if (!is_valid_signal(signal_name)) {
-            throw Exception("MSRIOGroup::push_signal(): signal name \"" +
-                            signal_name + "\" not found",
+            throw Exception("MSRIOGroup::push_signal(): signal name \"" + signal_name + "\" not found",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != signal_domain_type(signal_name)) {
@@ -687,19 +636,19 @@ namespace geopm
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("MSRIOGroup::push_signal(): domain_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("MSRIOGroup::push_signal(): domain_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         int result = -1;
         bool is_found = false;
 
-        GEOPM_DEBUG_ASSERT(m_signal_available.at(signal_name).signals.size() == (size_t)m_platform_topo.num_domain(domain_type),
+        GEOPM_DEBUG_ASSERT(m_signal_available.at(signal_name).signals.size()
+                               == (size_t)m_platform_topo.num_domain(domain_type),
                            "Signal " + signal_name + " not correctly scoped to number of domains.");
         std::shared_ptr<Signal> signal = m_signal_available.at(signal_name).signals[domain_idx];
         // Check if signal was already pushed
         for (size_t ii = 0; !is_found && ii < m_signal_pushed.size(); ++ii) {
-            GEOPM_DEBUG_ASSERT(m_signal_pushed[ii] != nullptr,
-                               "NULL Signal pointer was saved in active signals");
+            GEOPM_DEBUG_ASSERT(m_signal_pushed[ii] != nullptr, "NULL Signal pointer was saved in active signals");
             // same location means this signal or its alias was already pushed
             if (m_signal_pushed[ii].get() == signal.get()) {
                 result = ii;
@@ -724,8 +673,7 @@ namespace geopm
         check_control(control_name);
 
         if (!is_valid_control(control_name)) {
-            throw Exception("MSRIOGroup::push_control(): control name \"" +
-                            control_name + "\" not found",
+            throw Exception("MSRIOGroup::push_control(): control name \"" + control_name + "\" not found",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != control_domain_type(control_name)) {
@@ -733,18 +681,18 @@ namespace geopm
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("MSRIOGroup::push_control(): domain_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("MSRIOGroup::push_control(): domain_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         int result = -1;
         bool is_found = false;
-        GEOPM_DEBUG_ASSERT(m_control_available.at(control_name).controls.size() == (size_t)m_platform_topo.num_domain(domain_type),
+        GEOPM_DEBUG_ASSERT(m_control_available.at(control_name).controls.size()
+                               == (size_t)m_platform_topo.num_domain(domain_type),
                            "Control " + control_name + " not correctly scoped to number of domains.");
         std::shared_ptr<Control> control = m_control_available.at(control_name).controls[domain_idx];
         // Check if control was already pushed
         for (size_t ii = 0; !is_found && ii < m_control_pushed.size(); ++ii) {
-            GEOPM_DEBUG_ASSERT(m_control_pushed[ii] != nullptr,
-                               "NULL Control pointer was saved in active controls");
+            GEOPM_DEBUG_ASSERT(m_control_pushed[ii] != nullptr, "NULL Control pointer was saved in active controls");
             if (m_control_pushed[ii].get() == control.get()) {
                 result = ii;
                 is_found = true;
@@ -781,7 +729,7 @@ namespace geopm
     void MSRIOGroup::write_batch(void)
     {
         if (m_control_pushed.size() != 0) {
-            if (std::any_of(m_is_adjusted.begin(), m_is_adjusted.end(), [](bool it) {return !it;})) {
+            if (std::any_of(m_is_adjusted.begin(), m_is_adjusted.end(), [](bool it) { return !it; })) {
                 throw Exception("MSRIOGroup::write_batch() called before all controls were adjusted",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
@@ -793,13 +741,12 @@ namespace geopm
     double MSRIOGroup::sample(int signal_idx)
     {
         if (signal_idx < 0 || signal_idx >= (int)m_signal_pushed.size()) {
-            throw Exception("MSRIOGroup::sample(): signal_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("MSRIOGroup::sample(): signal_idx out of range", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         if (!m_is_read) {
-            throw Exception("MSRIOGroup::sample() called before signal was read.",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("MSRIOGroup::sample() called before signal was read.", GEOPM_ERROR_RUNTIME,
+                            __FILE__, __LINE__);
         }
         return m_signal_pushed[signal_idx]->sample();
     }
@@ -807,8 +754,7 @@ namespace geopm
     void MSRIOGroup::adjust(int control_idx, double setting)
     {
         if (control_idx < 0 || (unsigned)control_idx >= m_control_pushed.size()) {
-            throw Exception("MSRIOGroup::adjust(): control_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("MSRIOGroup::adjust(): control_idx out of range", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         m_control_pushed[control_idx]->adjust(setting);
         m_is_adjusted[control_idx] = true;
@@ -820,17 +766,17 @@ namespace geopm
             enable_fixed_counters();
         }
         if (!is_valid_signal(signal_name)) {
-            throw Exception("MSRIOGroup::read_signal(): signal name \"" +
-                            signal_name + "\" not found",
+            throw Exception("MSRIOGroup::read_signal(): signal name \"" + signal_name + "\" not found",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != signal_domain_type(signal_name)) {
-            throw Exception("MSRIOGroup::read_signal(): domain_type requested does not match the domain of the signal (" + signal_name + ").",
+            throw Exception("MSRIOGroup::read_signal(): domain_type requested does not match the domain of the signal ("
+                                + signal_name + ").",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("MSRIOGroup::read_signal(): domain_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("MSRIOGroup::read_signal(): domain_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         std::shared_ptr<Signal> ref_sig = m_signal_available.at(signal_name).signals[domain_idx];
         return ref_sig->read();
@@ -841,8 +787,7 @@ namespace geopm
         check_control(control_name);
 
         if (!is_valid_control(control_name)) {
-            throw Exception("MSRIOGroup::write_control(): control name \"" +
-                            control_name + "\" not found",
+            throw Exception("MSRIOGroup::write_control(): control name \"" + control_name + "\" not found",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != control_domain_type(control_name)) {
@@ -850,8 +795,8 @@ namespace geopm
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("MSRIOGroup::write_control(): domain_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("MSRIOGroup::write_control(): domain_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
 
         if (control_name == "CPU_POWER_LIMIT_CONTROL") {
@@ -894,7 +839,7 @@ namespace geopm
 
     int MSRIOGroup::cpuid(void)
     {
-        uint32_t key = 1; //processor features
+        uint32_t key = 1; // processor features
         uint32_t proc_info = 0;
         uint32_t model;
         uint32_t family;
@@ -914,11 +859,11 @@ namespace geopm
         ext_family = (proc_info & extended_family_mask) >> 20;
 
         if (family == 6) {
-            model+=(ext_model << 4);
+            model += (ext_model << 4);
         }
         else if (family == 15) {
-            model+=(ext_model << 4);
-            family+=ext_family;
+            model += (ext_model << 4);
+            family += ext_family;
         }
 
         return ((family << 8) + model);
@@ -926,7 +871,7 @@ namespace geopm
 
     bool MSRIOGroup::get_hwp_enabled(void)
     {
-        uint32_t leaf = 6; //thermal and power management features
+        uint32_t leaf = 6; // thermal and power management features
         uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
         const uint32_t hwp_mask = 0x80;
         bool supported, enabled = false;
@@ -990,10 +935,7 @@ namespace geopm
         }
 
         rdt_info rdt = {
-            .rdt_support = supported,
-            .rmid_bit_width = (uint32_t)ceil(log2((double)max + 1)),
-            .mbm_scalar = scale
-        };
+            .rdt_support = supported, .rmid_bit_width = (uint32_t)ceil(log2((double)max + 1)), .mbm_scalar = scale};
 
         return rdt;
     }
@@ -1013,12 +955,10 @@ namespace geopm
         return (eax >> 16) & 0xff;
     }
 
-    void MSRIOGroup::register_signal_alias(const std::string &signal_name,
-                                           const std::string &msr_name_field)
+    void MSRIOGroup::register_signal_alias(const std::string &signal_name, const std::string &msr_name_field)
     {
         if (m_signal_available.find(signal_name) != m_signal_available.end()) {
-            throw Exception("MSRIOGroup::register_signal_alias(): signal_name " + signal_name +
-                            " was previously registered.",
+            throw Exception("MSRIOGroup::register_signal_alias(): signal_name " + signal_name + " was previously registered.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto it = m_signal_available.find(msr_name_field);
@@ -1028,16 +968,15 @@ namespace geopm
         }
         // copy signal info but append to description
         m_signal_available[signal_name] = it->second;
-        m_signal_available[signal_name].description =
-            m_signal_available[msr_name_field].description + '\n' + "    alias_for: " + msr_name_field;
+        m_signal_available[signal_name].description = m_signal_available[msr_name_field].description + '\n'
+                                                      + "    alias_for: " + msr_name_field;
     }
 
-    void MSRIOGroup::register_control_alias(const std::string &control_name,
-                                            const std::string &msr_name_field)
+    void MSRIOGroup::register_control_alias(const std::string &control_name, const std::string &msr_name_field)
     {
         if (m_control_available.find(control_name) != m_control_available.end()) {
-            throw Exception("MSRIOGroup::register_control_alias(): control_name " + control_name +
-                            " was previously registered.",
+            throw Exception("MSRIOGroup::register_control_alias(): control_name " + control_name
+                                + " was previously registered.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto it = m_control_available.find(msr_name_field);
@@ -1047,8 +986,8 @@ namespace geopm
         }
         // copy control info but append to description
         m_control_available[control_name] = it->second;
-        m_control_available[control_name].description =
-            m_control_available[msr_name_field].description + '\n' + "    alias_for: " + msr_name_field;
+        m_control_available[control_name].description = m_control_available[msr_name_field].description + '\n'
+                                                        + "    alias_for: " + msr_name_field;
     }
 
     std::string MSRIOGroup::plugin_name(void)
@@ -1094,8 +1033,7 @@ namespace geopm
     std::function<double(const std::vector<double> &)> MSRIOGroup::agg_function(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("MSRIOGroup::agg_function(): signal_name " + signal_name +
-                            " not valid for MSRIOGroup",
+            throw Exception("MSRIOGroup::agg_function(): signal_name " + signal_name + " not valid for MSRIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return m_signal_available.at(signal_name).agg_function;
@@ -1104,8 +1042,7 @@ namespace geopm
     std::function<std::string(double)> MSRIOGroup::format_function(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("MSRIOGroup::format_function(): signal_name " + signal_name +
-                            " not valid for MSRIOGroup",
+            throw Exception("MSRIOGroup::format_function(): signal_name " + signal_name + " not valid for MSRIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -1126,14 +1063,13 @@ namespace geopm
     std::string MSRIOGroup::signal_description(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("MSRIOGroup::signal_description(): signal_name " + signal_name +
-                            " not valid for MSRIOGroup",
+            throw Exception("MSRIOGroup::signal_description(): signal_name " + signal_name + " not valid for MSRIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         std::string result = "Invalid signal description: no description found.";
         auto it = m_signal_available.find(signal_name);
         if (it != m_signal_available.end()) {
-            result =  "    description: " + it->second.description + '\n'; // Includes alias_for if applicable
+            result = "    description: " + it->second.description + '\n'; // Includes alias_for if applicable
             result += "    units: " + IOGroup::units_to_string(it->second.units) + '\n';
             result += "    aggregation: " + Agg::function_to_name(it->second.agg_function) + '\n';
             result += "    domain: " + m_platform_topo.domain_type_to_name(it->second.domain) + '\n';
@@ -1151,14 +1087,13 @@ namespace geopm
     std::string MSRIOGroup::control_description(const std::string &control_name) const
     {
         if (!is_valid_control(control_name)) {
-            throw Exception("MSRIOGroup::control_description(): control_name " + control_name +
-                            " not valid for MSRIOGroup",
+            throw Exception("MSRIOGroup::control_description(): control_name " + control_name + " not valid for MSRIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         std::string result = "Invalid control description: no description found.";
         auto it = m_control_available.find(control_name);
         if (it != m_control_available.end()) {
-            result =  "    description: " + it->second.description + '\n'; // Includes alias_for if applicable
+            result = "    description: " + it->second.description + '\n'; // Includes alias_for if applicable
             result += "    units: " + IOGroup::units_to_string(it->second.units) + '\n';
             result += "    domain: " + m_platform_topo.domain_type_to_name(it->second.domain) + '\n';
             result += "    iogroup: MSRIOGroup";
@@ -1175,8 +1110,7 @@ namespace geopm
     int MSRIOGroup::signal_behavior(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("MSRIOGroup::signal_behavior(): signal_name " + signal_name +
-                            " not valid for MSRIOGroup",
+            throw Exception("MSRIOGroup::signal_behavior(): signal_name " + signal_name + " not valid for MSRIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         int result = -1;
@@ -1217,28 +1151,23 @@ namespace geopm
         if (cpu_id == MSRIOGroup::M_CPUID_KNL) {
             platform_msrs = knl_msr_json();
         }
-        else if (cpu_id == MSRIOGroup::M_CPUID_HSX ||
-                 cpu_id == MSRIOGroup::M_CPUID_BDX) {
+        else if (cpu_id == MSRIOGroup::M_CPUID_HSX || cpu_id == MSRIOGroup::M_CPUID_BDX) {
             platform_msrs = hsx_msr_json();
         }
-        else if (cpu_id == MSRIOGroup::M_CPUID_SNB ||
-                 cpu_id == MSRIOGroup::M_CPUID_IVT) {
+        else if (cpu_id == MSRIOGroup::M_CPUID_SNB || cpu_id == MSRIOGroup::M_CPUID_IVT) {
             platform_msrs = snb_msr_json();
         }
-        else if (cpu_id == MSRIOGroup::M_CPUID_SKX ||
-                 cpu_id == MSRIOGroup::M_CPUID_ICX) {
+        else if (cpu_id == MSRIOGroup::M_CPUID_SKX || cpu_id == MSRIOGroup::M_CPUID_ICX) {
             platform_msrs = skx_msr_json();
         }
         else if (cpu_id >= MSRIOGroup::M_CPUID_ICX) {
 #ifdef GEOPM_DEBUG
-            std::cerr << "Warning: <geopm> New/Untested CPUID detected; Defaulting to SKX MSRs"
-                      << std::endl;
+            std::cerr << "Warning: <geopm> New/Untested CPUID detected; Defaulting to SKX MSRs" << std::endl;
 #endif
             platform_msrs = skx_msr_json();
         }
         else {
-            throw Exception("MSRIOGroup: Unsupported CPUID",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("MSRIOGroup: Unsupported CPUID", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         return platform_msrs;
     }
@@ -1248,7 +1177,7 @@ namespace geopm
         std::set<std::string> data_files;
         // search path for additional json files to parse
         std::string env_plugin_path(geopm::get_env("GEOPM_PLUGIN_PATH"));
-        std::vector<std::string> plugin_paths {GEOPM_DEFAULT_PLUGIN_PATH};
+        std::vector<std::string> plugin_paths{GEOPM_DEFAULT_PLUGIN_PATH};
         if (!env_plugin_path.empty()) {
             std::vector<std::string> dirs = string_split(env_plugin_path, ":");
             plugin_paths.insert(plugin_paths.end(), dirs.begin(), dirs.end());
@@ -1268,16 +1197,12 @@ namespace geopm
 
     void MSRIOGroup::check_control(const std::string &control_name)
     {
-        static const std::set<std::string> FREQ_CONTROL_SET {
-            "CPU_POWER_LIMIT_CONTROL",
-            "MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT",
-            "CPU_FREQUENCY_MAX_CONTROL",
-            "MSR::PERF_CTL:FREQ"};
+        static const std::set<std::string> FREQ_CONTROL_SET{"CPU_POWER_LIMIT_CONTROL",
+                                                            "MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT",
+                                                            "CPU_FREQUENCY_MAX_CONTROL", "MSR::PERF_CTL:FREQ"};
         static bool do_check_governor = true;
 
-        if (do_check_governor &&
-            FREQ_CONTROL_SET.find(control_name) != FREQ_CONTROL_SET.end())
-        {
+        if (do_check_governor && FREQ_CONTROL_SET.find(control_name) != FREQ_CONTROL_SET.end()) {
             bool do_print_warning = false;
             std::string scaling_driver = "cpufreq-sysfs-read-error";
             std::string scaling_governor = scaling_driver;
@@ -1308,48 +1233,45 @@ namespace geopm
                 do_print_warning = true;
             }
             if (do_print_warning) {
-                std::cerr << "Warning: <geopm> MSRIOGroup::" << std::string(__func__)
-                          << "(): Incompatible CPU frequency driver/governor detected ("
-                          << scaling_driver << "/" << scaling_governor << "). "
-                          << "The \"acpi-cpufreq\" driver and \"performance\" or \"userspace\" governor are required when setting "
-                          << "CPU frequency or power limits with GEOPM.  Other Linux power settings, including the intel_pstate driver,"
-                          << "may overwrite GEOPM controls for frequency and power limits." << std::endl;
-                    }
+                std::cerr
+                    << "Warning: <geopm> MSRIOGroup::" << std::string(__func__)
+                    << "(): Incompatible CPU frequency driver/governor detected (" << scaling_driver << "/"
+                    << scaling_governor << "). "
+                    << "The \"acpi-cpufreq\" driver and \"performance\" or \"userspace\" governor are required when setting "
+                    << "CPU frequency or power limits with GEOPM.  Other Linux power settings, including the intel_pstate driver,"
+                    << "may overwrite GEOPM controls for frequency and power limits." << std::endl;
+            }
             do_check_governor = false;
         }
 
-        static const std::set<std::string> POWER_CONTROL_SET {
-            "CPU_POWER_LIMIT_CONTROL",
-            "MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT"};
+        static const std::set<std::string> POWER_CONTROL_SET{"CPU_POWER_LIMIT_CONTROL",
+                                                             "MSR::PKG_POWER_LIMIT:PL1_POWER_LIMIT"};
         static bool do_check_rapl_lock = true;
         static std::string rapl_error = "Unable to control power when RAPL lock bit is set."
                                         "  Check BIOS settings to ensure RAPL is enabled.";
 
-        if (do_check_rapl_lock &&
-            POWER_CONTROL_SET.find(control_name) != POWER_CONTROL_SET.end()) {
-            check_control_lock("MSR::PKG_POWER_LIMIT:LOCK",
-                               rapl_error);
+        if (do_check_rapl_lock && POWER_CONTROL_SET.find(control_name) != POWER_CONTROL_SET.end()) {
+            check_control_lock("MSR::PKG_POWER_LIMIT:LOCK", rapl_error);
 
             do_check_rapl_lock = false;
         }
 
-        static const std::set<std::string> PLATFORM_POWER_CONTROL_SET {
-            "BOARD_POWER_LIMIT_CONTROL",
-            "MSR::PLATFORM_POWER_LIMIT:PL1_POWER_LIMIT"};
+        static const std::set<std::string> PLATFORM_POWER_CONTROL_SET{
+            "BOARD_POWER_LIMIT_CONTROL", "MSR::PLATFORM_POWER_LIMIT:PL1_POWER_LIMIT"};
         static bool do_check_platform_rapl_lock = true;
         static std::string platform_rapl_error = "Unable to control platform power when PLATFORM RAPL lock bit is set."
                                                  "  Check BIOS settings to ensure RAPL is enabled.";
 
-        if (do_check_platform_rapl_lock &&
-            PLATFORM_POWER_CONTROL_SET.find(control_name) != PLATFORM_POWER_CONTROL_SET.end()) {
-            check_control_lock("MSR::PLATFORM_POWER_LIMIT:LOCK",
-                               platform_rapl_error);
+        if (do_check_platform_rapl_lock
+            && PLATFORM_POWER_CONTROL_SET.find(control_name) != PLATFORM_POWER_CONTROL_SET.end()) {
+            check_control_lock("MSR::PLATFORM_POWER_LIMIT:LOCK", platform_rapl_error);
 
             do_check_platform_rapl_lock = false;
         }
     }
 
-    void MSRIOGroup::check_control_lock(const std::string &lock_name, const std::string &error) {
+    void MSRIOGroup::check_control_lock(const std::string &lock_name, const std::string &error)
+    {
         bool lock = false;
         int domain = signal_domain_type(lock_name);
         int num_domain = m_platform_topo.num_domain(domain);
@@ -1357,33 +1279,32 @@ namespace geopm
             lock |= (bool)read_signal(lock_name, domain, dom_idx);
         }
         if (lock) {
-            throw Exception("MSRIOGroup::" + std::string(__func__) + "(): " +
-                            error, GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("MSRIOGroup::" + std::string(__func__) + "(): " + error, GEOPM_ERROR_RUNTIME,
+                            __FILE__, __LINE__);
         }
     }
 
     /// Used to validate types and values of JSON objects
-    struct json_checker
-    {
-        // base JSON type
-        Json::Type json_type;
-        // additional constraints, assuming base type matches
-        std::function<bool(const Json &obj)> is_valid;
-        // message to use if check fails
-        std::string message;
+    struct json_checker {
+            // base JSON type
+            Json::Type json_type;
+            // additional constraints, assuming base type matches
+            std::function<bool(const Json &obj)> is_valid;
+            // message to use if check fails
+            std::string message;
     };
 
-    void check_expected_key_values(const Json &root,
-                                   const std::map<std::string, json_checker> &required_key_map,
+    void check_expected_key_values(const Json &root, const std::map<std::string, json_checker> &required_key_map,
                                    const std::map<std::string, json_checker> &optional_key_map,
                                    const std::string &loc_message)
     {
         auto items = root.object_items();
         // check for extra keys
         for (const auto &obj : items) {
-            if (required_key_map.find(obj.first) == required_key_map.end() &&
-                optional_key_map.find(obj.first) == optional_key_map.end()) {
-                throw Exception("MSRIOGroup::" + std::string(__func__) + "(): unexpected key \"" + obj.first + "\" found " + loc_message,
+            if (required_key_map.find(obj.first) == required_key_map.end()
+                && optional_key_map.find(obj.first) == optional_key_map.end()) {
+                throw Exception("MSRIOGroup::" + std::string(__func__) + "(): unexpected key \"" + obj.first
+                                    + "\" found " + loc_message,
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
@@ -1392,12 +1313,14 @@ namespace geopm
             std::string key = key_check.first;
             json_checker key_param = key_check.second;
             if (items.find(key) == items.end()) {
-                throw Exception("MSRIOGroup::" + std::string(__func__) + "(): \"" + key + "\" key is required " + loc_message,
+                throw Exception("MSRIOGroup::" + std::string(__func__) + "(): \"" + key
+                                    + "\" key is required " + loc_message,
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             Json obj = root[key];
             if (obj.type() != key_param.json_type || !key_param.is_valid(obj)) {
-                throw Exception("MSRIOGroup::" + std::string(__func__) + "(): \"" + key + "\" " + key_param.message + " " + loc_message,
+                throw Exception("MSRIOGroup::" + std::string(__func__) + "(): \"" + key + "\" "
+                                    + key_param.message + " " + loc_message,
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
@@ -1408,7 +1331,8 @@ namespace geopm
             if (items.find(key) != items.end()) {
                 Json obj = root[key];
                 if (obj.type() != key_param.json_type || !key_param.is_valid(obj)) {
-                    throw Exception("MSRIOGroup::" + std::string(__func__) + "(): \"" + key + "\" " + key_param.message + " " + loc_message,
+                    throw Exception("MSRIOGroup::" + std::string(__func__) + "(): \"" + key + "\" "
+                                        + key_param.message + " " + loc_message,
                                     GEOPM_ERROR_INVALID, __FILE__, __LINE__);
                 }
             }
@@ -1427,8 +1351,7 @@ namespace geopm
 
     bool MSRIOGroup::json_check_is_valid_offset(const Json &obj)
     {
-        return json_check_is_hex_string(obj) &&
-               std::stoull(obj.string_value(), 0, 16) != 0ull;
+        return json_check_is_hex_string(obj) && std::stoull(obj.string_value(), 0, 16) != 0ull;
     };
 
     bool MSRIOGroup::json_check_is_valid_domain(const Json &domain)
@@ -1442,7 +1365,8 @@ namespace geopm
         return true;
     };
 
-    bool MSRIOGroup::json_check_is_integer(const Json &num) {
+    bool MSRIOGroup::json_check_is_integer(const Json &num)
+    {
         return ((double)((int)(num.number_value())) == num.number_value());
     };
 
@@ -1459,9 +1383,8 @@ namespace geopm
 
     void MSRIOGroup::check_top_level(const Json &root)
     {
-        std::map<std::string, json_checker> top_level_keys = {
-            {"msrs", {Json::OBJECT, json_check_null_func, "must be an object"}}
-        };
+        std::map<std::string, json_checker> top_level_keys
+            = {{"msrs", {Json::OBJECT, json_check_null_func, "must be an object"}}};
         check_expected_key_values(root, top_level_keys, {}, "at top level");
     }
 
@@ -1473,24 +1396,22 @@ namespace geopm
         }
         // expected keys for msr
         std::map<std::string, json_checker> msr_keys = {
-                {"offset", {Json::STRING, json_check_is_valid_offset, "must be a hex string and non-zero"}},
-                {"domain", {Json::STRING, json_check_is_valid_domain, "must be a valid domain string"}},
-                {"fields", {Json::OBJECT, json_check_null_func, "must be an object"}}
-        };
+            {"offset", {Json::STRING, json_check_is_valid_offset, "must be a hex string and non-zero"}},
+            {"domain", {Json::STRING, json_check_is_valid_domain, "must be a valid domain string"}},
+            {"fields", {Json::OBJECT, json_check_null_func, "must be an object"}}};
         check_expected_key_values(msr_root, msr_keys, {}, "in msr \"" + msr_name + "\"");
     }
 
-    void MSRIOGroup::check_msr_field(const Json &msr_field,
-                                     const std::string &msr_name,
-                                     const std::string &field_name)
+    void MSRIOGroup::check_msr_field(const Json &msr_field, const std::string &msr_name, const std::string &field_name)
     {
         if (msr_field.type() != Json::OBJECT) {
-            throw Exception("MSRIOGroup::" + std::string(__func__) + "(): \"" + field_name + "\" field within msr \"" + msr_name + "\" must be an object",
+            throw Exception("MSRIOGroup::" + std::string(__func__) + "(): \"" + field_name
+                                + "\" field within msr \"" + msr_name + "\" must be an object",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         // expected keys for bitfield
-        std::map<std::string, json_checker> field_checker {
+        std::map<std::string, json_checker> field_checker{
             {"begin_bit", {Json::NUMBER, json_check_is_integer, "must be an integer"}},
             {"end_bit", {Json::NUMBER, json_check_is_integer, "must be an integer"}},
             {"function", {Json::STRING, json_check_null_func, "must be a valid function string"}},
@@ -1498,34 +1419,30 @@ namespace geopm
             {"scalar", {Json::NUMBER, json_check_null_func, "must be a number"}},
             {"writeable", {Json::BOOL, json_check_null_func, "must be a bool"}},
             {"behavior", {Json::STRING, json_check_null_func, "must be a valid behavior string"}},
-            {"aggregation", {Json::STRING, json_check_is_valid_aggregation, "must be a valid aggregation function name"}}
-        };
-        std::map<std::string, json_checker> optional_field_checker {
-            {"description", {Json::STRING, json_check_null_func, "must be a string"}}
-        };
+            {"aggregation",
+             {Json::STRING, json_check_is_valid_aggregation, "must be a valid aggregation function name"}}};
+        std::map<std::string, json_checker> optional_field_checker{
+            {"description", {Json::STRING, json_check_null_func, "must be a string"}}};
         check_expected_key_values(msr_field, field_checker, optional_field_checker,
                                   "in \"" + msr_name + ":" + field_name + "\"");
     }
 
-    void MSRIOGroup::add_raw_msr_signal(const std::string &msr_name, int domain_type,
-                                        uint64_t msr_offset)
+    void MSRIOGroup::add_raw_msr_signal(const std::string &msr_name, int domain_type, uint64_t msr_offset)
     {
         std::string raw_msr_signal_name = M_NAME_PREFIX + msr_name + "#";
         int num_domain = m_platform_topo.num_domain(domain_type);
 #ifdef GEOPM_DEBUG
         if (num_domain == 0) {
-            std::cerr << "Warning: <geopm> no components in domain for MSR "
-                      << msr_name << "; signals will not be available" << std::endl;
+            std::cerr << "Warning: <geopm> no components in domain for MSR " << msr_name
+                      << "; signals will not be available" << std::endl;
         }
 #endif
         std::vector<std::shared_ptr<Signal> > result;
         for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
             // get index of a single representative CPU for this domain
-            std::set<int> cpus = m_platform_topo.domain_nested(GEOPM_DOMAIN_CPU,
-                                                               domain_type, domain_idx);
+            std::set<int> cpus = m_platform_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
             int cpu_idx = *(cpus.begin());
-            std::shared_ptr<Signal> raw_msr =
-                std::make_shared<RawMSRSignal>(m_msrio, cpu_idx, msr_offset);
+            std::shared_ptr<Signal> raw_msr = std::make_shared<RawMSRSignal>(m_msrio, cpu_idx, msr_offset);
             result.push_back(raw_msr);
         }
         m_signal_available[raw_msr_signal_name] = {
@@ -1539,14 +1456,10 @@ namespace geopm
         };
     }
 
-    void MSRIOGroup::add_msr_field_signal(const std::string &msr_name,
-                                          const std::string &msr_field_name,
-                                          int domain_type,
-                                          int begin_bit, int end_bit,
-                                          int function, double scalar, int units,
-                                          const std::string &agg_function,
-                                          const std::string &description,
-                                          int behavior,
+    void MSRIOGroup::add_msr_field_signal(const std::string &msr_name, const std::string &msr_field_name,
+                                          int domain_type, int begin_bit, int end_bit, int function,
+                                          double scalar, int units, const std::string &agg_function,
+                                          const std::string &description, int behavior,
                                           const std::function<std::string(double)> &format_function)
     {
         std::string raw_msr_signal_name = M_NAME_PREFIX + msr_name + "#";
@@ -1554,9 +1467,8 @@ namespace geopm
         std::vector<std::shared_ptr<Signal> > result_field_signal;
         for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
             auto raw_msr = m_signal_available.at(raw_msr_signal_name).signals[domain_idx];
-            std::shared_ptr<Signal> field_signal =
-                geopm::make_unique<MSRFieldSignal>(raw_msr, begin_bit, end_bit,
-                                                   function, scalar);
+            std::shared_ptr<Signal> field_signal = geopm::make_unique<MSRFieldSignal>(
+                raw_msr, begin_bit, end_bit, function, scalar);
             result_field_signal.push_back(field_signal);
         }
         m_signal_available[msr_field_name] = {
@@ -1570,24 +1482,18 @@ namespace geopm
         };
     }
 
-    void MSRIOGroup::add_msr_field_control(const std::string &msr_field_name,
-                                           int domain_type,
-                                           uint64_t msr_offset,
-                                           int begin_bit, int end_bit,
-                                           int function, double scalar, int units,
-                                           const std::string &description)
+    void MSRIOGroup::add_msr_field_control(const std::string &msr_field_name, int domain_type,
+                                           uint64_t msr_offset, int begin_bit, int end_bit, int function,
+                                           double scalar, int units, const std::string &description)
     {
         int num_domain = m_platform_topo.num_domain(domain_type);
         std::vector<std::shared_ptr<Control> > result_field_control;
         for (int domain_idx = 0; domain_idx < num_domain; ++domain_idx) {
             std::vector<std::shared_ptr<Control> > cpu_controls;
-            std::set<int> cpus = m_platform_topo.domain_nested(GEOPM_DOMAIN_CPU,
-                                                               domain_type, domain_idx);
+            std::set<int> cpus = m_platform_topo.domain_nested(GEOPM_DOMAIN_CPU, domain_type, domain_idx);
             for (auto cpu_idx : cpus) {
-                cpu_controls.push_back(std::make_shared<MSRFieldControl>(
-                    m_msrio, cpu_idx, msr_offset,
-                    begin_bit, end_bit, function,
-                    scalar));
+                cpu_controls.push_back(std::make_shared<MSRFieldControl>(m_msrio, cpu_idx, msr_offset,
+                                                                         begin_bit, end_bit, function, scalar));
             }
             result_field_control.push_back(std::make_shared<DomainControl>(cpu_controls));
         }
@@ -1598,7 +1504,6 @@ namespace geopm
             .description = description,
         };
     }
-
 
     void MSRIOGroup::parse_json_msrs(const std::string &str)
     {
@@ -1619,8 +1524,7 @@ namespace geopm
         catch (const Exception &ex) {
 #ifdef GEOPM_DEBUG
             std::cerr << "Warning: <geopm> MSRIOGroup::" << std::string(__func__)
-                      << "(): Unable to check TRL via PLATFORM_INFO: "
-                      << ex.what() << std::endl;
+                      << "(): Unable to check TRL via PLATFORM_INFO: " << ex.what() << std::endl;
 #endif
         }
 
@@ -1661,14 +1565,14 @@ namespace geopm
                     description = field_data["description"].string_value();
                 }
 
-                if (m_rdt_info.rdt_support && (msr_field_name == "QM_EVTSEL:RMID" || msr_field_name == "PQR_ASSOC:RMID")) {
-                    if((int)m_rdt_info.rmid_bit_width > (end_bit - begin_bit + 1)) {
+                if (m_rdt_info.rdt_support
+                    && (msr_field_name == "QM_EVTSEL:RMID" || msr_field_name == "PQR_ASSOC:RMID")) {
+                    if ((int)m_rdt_info.rmid_bit_width > (end_bit - begin_bit + 1)) {
                         std::ostringstream except;
                         except << "MSRIOGroup::" << __func__ << "(): CPUID RMID bit width "
                                << m_rdt_info.rmid_bit_width << " is greater than the MSR provided RMID bit width "
                                << (end_bit - begin_bit + 1);
-                        throw Exception(except.str(), GEOPM_ERROR_INVALID, __FILE__,
-                                        __LINE__);
+                        throw Exception(except.str(), GEOPM_ERROR_INVALID, __FILE__, __LINE__);
                     }
                 }
 
@@ -1677,34 +1581,28 @@ namespace geopm
                     format_function = string_format_integer;
                 }
 
-                if (string_begins_with(msr_field_name, "IA32_PMC") &&
-                    string_ends_with(msr_field_name, ":PERFCTR")) {
+                if (string_begins_with(msr_field_name, "IA32_PMC") && string_ends_with(msr_field_name, ":PERFCTR")) {
                     if (m_pmc_bit_width > 0) {
                         end_bit = begin_bit + m_pmc_bit_width - 1;
                     }
 #ifdef GEOPM_DEBUG
                     else {
-                        std::cerr << "Warning: <geopm> CPUID specified 0 bits for "
-                                  << msr_field_name << "; using the default width: "
-                                  << (end_bit - begin_bit + 1) << std::endl;
+                        std::cerr << "Warning: <geopm> CPUID specified 0 bits for " << msr_field_name
+                                  << "; using the default width: " << (end_bit - begin_bit + 1) << std::endl;
                     }
 #endif
                 }
 
-                if (is_trl_writable &&
-                    string_begins_with(msr_field_name,
-                                       "TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_")) {
+                if (is_trl_writable && string_begins_with(msr_field_name, "TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_")) {
                     is_control = true;
                     behavior = IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE;
                 }
 
-                add_msr_field_signal(msr_name, sig_ctl_name, domain_type,
-                                     begin_bit, end_bit, function, scalar, units,
-                                     agg_function, description, behavior, format_function);
+                add_msr_field_signal(msr_name, sig_ctl_name, domain_type, begin_bit, end_bit, function,
+                                     scalar, units, agg_function, description, behavior, format_function);
                 if (is_control) {
-                    add_msr_field_control(sig_ctl_name, domain_type, msr_offset,
-                                          begin_bit, end_bit, function, scalar, units,
-                                          description);
+                    add_msr_field_control(sig_ctl_name, domain_type, msr_offset, begin_bit, end_bit, function,
+                                          scalar, units, description);
                 }
             }
         }
@@ -1748,8 +1646,7 @@ namespace geopm
                     combined_write_mask |= (((1ULL << (end_bit - begin_bit + 1)) - 1) << begin_bit);
                 }
             }
-            allowlist_data[msr_offset] =
-                std::pair<uint64_t, std::string>(combined_write_mask, msr_name);
+            allowlist_data[msr_offset] = std::pair<uint64_t, std::string>(combined_write_mask, msr_name);
         }
     }
 
@@ -1761,10 +1658,9 @@ namespace geopm
             uint64_t write_mask = kv.second.first;
             std::string msr_name = kv.second.second;
             std::ostringstream line;
-            line << std::setfill('0') << std::hex
-                 << "0x" << std::setw(8) << msr_offset << "   "
+            line << std::setfill('0') << std::hex << "0x" << std::setw(8) << msr_offset << "   "
                  << "0x" << std::setw(16) << write_mask << "   # "
-                 <<  "\"" << msr_name << "\"\n";
+                 << "\"" << msr_name << "\"\n";
             offset_result_map[msr_offset] = line.str();
         }
         std::ostringstream result;

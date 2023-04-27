@@ -13,14 +13,12 @@
 
 namespace geopm
 {
-    DifferenceSignal::DifferenceSignal(std::shared_ptr<Signal> minuend,
-                                       std::shared_ptr<Signal> subtrahend)
+    DifferenceSignal::DifferenceSignal(std::shared_ptr<Signal> minuend, std::shared_ptr<Signal> subtrahend)
         : m_minuend(minuend)
         , m_subtrahend(subtrahend)
         , m_is_batch_ready(false)
     {
-        GEOPM_DEBUG_ASSERT(m_minuend && m_subtrahend,
-                           "Signal pointers for minuend and subtrahend cannot be null.");
+        GEOPM_DEBUG_ASSERT(m_minuend && m_subtrahend, "Signal pointers for minuend and subtrahend cannot be null.");
     }
 
     void DifferenceSignal::setup_batch(void)
@@ -35,8 +33,7 @@ namespace geopm
     double DifferenceSignal::sample(void)
     {
         if (!m_is_batch_ready) {
-            throw Exception("setup_batch() must be called before sample().",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("setup_batch() must be called before sample().", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         return m_minuend->sample() - m_subtrahend->sample();
     }

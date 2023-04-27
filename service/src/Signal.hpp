@@ -29,7 +29,7 @@ namespace geopm
             ///        affecting any pushed batch signals.
             virtual double read(void) const = 0;
             /// @brief Set the value to be returned by sample()
-            virtual void set_sample(double) {};
+            virtual void set_sample(double){};
     };
 }
 

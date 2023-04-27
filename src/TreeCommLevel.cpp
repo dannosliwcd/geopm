@@ -84,10 +84,9 @@ namespace geopm
         }
 #endif
         size_t num_down = m_num_send_down;
-        if (m_size != (int)policy.size() ||
-            std::any_of(policy.begin(), policy.end(),
-                        [num_down](std::vector<double> it)
-                        {return it.size() != num_down;})) {
+        if (m_size != (int)policy.size()
+            || std::any_of(policy.begin(), policy.end(),
+                           [num_down](std::vector<double> it) { return it.size() != num_down; })) {
             throw Exception("TreeCommLevelImp::send_down(): policy vector is not sized correctly.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
@@ -118,10 +117,9 @@ namespace geopm
         }
 #endif
         size_t num_up = m_num_send_up;
-        if (m_size != (int)sample.size() ||
-            std::any_of(sample.begin(), sample.end(),
-                        [num_up](std::vector<double> it)
-                        {return it.size() != num_up;})) {
+        if (m_size != (int)sample.size()
+            || std::any_of(sample.begin(), sample.end(),
+                           [num_up](std::vector<double> it) { return it.size() != num_up; })) {
             throw Exception("TreeCommLevelImp::send_down(): policy vector is not sized correctly.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
@@ -137,21 +135,16 @@ namespace geopm
         if (is_complete) {
             m_comm->window_lock(m_sample_window, true, 0, 0);
             for (int child_rank = 0; child_rank != m_size; ++child_rank) {
-                memcpy(sample[child_rank].data(),
-                       m_sample_mailbox + child_rank * (m_num_send_up + 1) + 1,
+                memcpy(sample[child_rank].data(), m_sample_mailbox + child_rank * (m_num_send_up + 1) + 1,
                        sizeof(double) * m_num_send_up);
                 m_sample_mailbox[child_rank * (m_num_send_up + 1)] = 0.0;
             }
             m_comm->window_unlock(m_sample_window, 0);
         }
 
-        is_complete = is_complete &&
-                      std::none_of(sample.begin(), sample.end(),
-                                   [](const std::vector<double> &vec)
-                                   {
-                                       return std::any_of(vec.begin(), vec.end(),
-                                                          [](double val){return std::isnan(val);});
-                                   });
+        is_complete = is_complete && std::none_of(sample.begin(), sample.end(), [](const std::vector<double> &vec) {
+                          return std::any_of(vec.begin(), vec.end(), [](double val) { return std::isnan(val); });
+                      });
         return is_complete;
     }
 
@@ -169,9 +162,8 @@ namespace geopm
         if (m_rank) {
             m_comm->window_unlock(m_policy_window, m_rank);
         }
-        is_complete = is_complete &&
-                      std::none_of(policy.begin(), policy.end(),
-                                   [](double val){return std::isnan(val);});
+        is_complete = is_complete
+                      && std::none_of(policy.begin(), policy.end(), [](double val) { return std::isnan(val); });
         return is_complete;
     }
 

@@ -13,8 +13,7 @@
 
 namespace geopm
 {
-    MultiplicationSignal::MultiplicationSignal(std::shared_ptr<Signal> multiplier,
-                                   double multiplicand)
+    MultiplicationSignal::MultiplicationSignal(std::shared_ptr<Signal> multiplier, double multiplicand)
         : m_multiplier(multiplier)
         , m_multiplicand(multiplicand)
         , m_is_batch_ready(false)
@@ -34,8 +33,7 @@ namespace geopm
     double MultiplicationSignal::sample(void)
     {
         if (!m_is_batch_ready) {
-            throw Exception("setup_batch() must be called before sample().",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("setup_batch() must be called before sample().", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         return m_multiplier->sample() * m_multiplicand;
     }

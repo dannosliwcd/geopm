@@ -22,6 +22,7 @@ namespace geopm
                              const std::vector<double> &big_o, int verbosity, int rank);
             virtual ~ModelApplication() = default;
             void run(void);
+
         protected:
             uint64_t m_repeat;
             int m_rank;

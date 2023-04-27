@@ -38,34 +38,24 @@ namespace geopm
 
     AgentFactory::AgentFactory()
     {
-        register_plugin(MonitorAgent::plugin_name(),
-                        MonitorAgent::make_plugin,
-                        Agent::make_dictionary(MonitorAgent::policy_names(),
-                                               MonitorAgent::sample_names()));
-        register_plugin(PowerBalancerAgent::plugin_name(),
-                        PowerBalancerAgent::make_plugin,
-                        Agent::make_dictionary(PowerBalancerAgent::policy_names(),
-                                               PowerBalancerAgent::sample_names()));
-        register_plugin(PowerGovernorAgent::plugin_name(),
-                        PowerGovernorAgent::make_plugin,
-                        Agent::make_dictionary(PowerGovernorAgent::policy_names(),
-                                               PowerGovernorAgent::sample_names()));
-        register_plugin(FrequencyMapAgent::plugin_name(),
-                        FrequencyMapAgent::make_plugin,
-                        Agent::make_dictionary(FrequencyMapAgent::policy_names(),
-                                               FrequencyMapAgent::sample_names()));
+        register_plugin(MonitorAgent::plugin_name(), MonitorAgent::make_plugin,
+                        Agent::make_dictionary(MonitorAgent::policy_names(), MonitorAgent::sample_names()));
+        register_plugin(
+            PowerBalancerAgent::plugin_name(), PowerBalancerAgent::make_plugin,
+            Agent::make_dictionary(PowerBalancerAgent::policy_names(), PowerBalancerAgent::sample_names()));
+        register_plugin(
+            PowerGovernorAgent::plugin_name(), PowerGovernorAgent::make_plugin,
+            Agent::make_dictionary(PowerGovernorAgent::policy_names(), PowerGovernorAgent::sample_names()));
+        register_plugin(
+            FrequencyMapAgent::plugin_name(), FrequencyMapAgent::make_plugin,
+            Agent::make_dictionary(FrequencyMapAgent::policy_names(), FrequencyMapAgent::sample_names()));
 #ifdef GEOPM_ENABLE_BETA
-        register_plugin(CPUActivityAgent::plugin_name(),
-                        CPUActivityAgent::make_plugin,
-                        Agent::make_dictionary(CPUActivityAgent::policy_names(),
-                                               CPUActivityAgent::sample_names()));
-        register_plugin(GPUActivityAgent::plugin_name(),
-                        GPUActivityAgent::make_plugin,
-                        Agent::make_dictionary(GPUActivityAgent::policy_names(),
-                                               GPUActivityAgent::sample_names()));
+        register_plugin(CPUActivityAgent::plugin_name(), CPUActivityAgent::make_plugin,
+                        Agent::make_dictionary(CPUActivityAgent::policy_names(), CPUActivityAgent::sample_names()));
+        register_plugin(GPUActivityAgent::plugin_name(), GPUActivityAgent::make_plugin,
+                        Agent::make_dictionary(GPUActivityAgent::policy_names(), GPUActivityAgent::sample_names()));
 #endif
     }
-
 
     AgentFactory &agent_factory(void)
     {
@@ -207,7 +197,7 @@ namespace geopm
     }
 
     void Agent::aggregate_sample(const std::vector<std::vector<double> > &in_sample,
-                                 const std::vector<std::function<double(const std::vector<double>&)> > &agg_func,
+                                 const std::vector<std::function<double(const std::vector<double> &)> > &agg_func,
                                  std::vector<double> &out_sample)
     {
         size_t num_children = in_sample.size();
@@ -240,8 +230,7 @@ int geopm_agent_supported(const char *agent_name)
     }
     return err;
 }
-int geopm_agent_num_policy(const char *agent_name,
-                           int *num_policy)
+int geopm_agent_num_policy(const char *agent_name, int *num_policy)
 {
     int err = 0;
     try {
@@ -261,8 +250,7 @@ int geopm_agent_num_policy(const char *agent_name,
     return err;
 }
 
-int geopm_agent_num_sample(const char *agent_name,
-                           int *num_sample)
+int geopm_agent_num_sample(const char *agent_name, int *num_sample)
 {
     int err = 0;
     try {
@@ -282,10 +270,7 @@ int geopm_agent_num_sample(const char *agent_name,
     return err;
 }
 
-int geopm_agent_policy_name(const char *agent_name,
-                            int policy_idx,
-                            size_t policy_name_max,
-                            char *policy_name)
+int geopm_agent_policy_name(const char *agent_name, int policy_idx, size_t policy_name_max, char *policy_name)
 {
     int num_policy;
     int err = geopm_agent_num_policy(agent_name, &num_policy);
@@ -318,10 +303,7 @@ int geopm_agent_policy_name(const char *agent_name,
     return err;
 }
 
-int geopm_agent_sample_name(const char *agent_name,
-                            int sample_idx,
-                            size_t sample_name_max,
-                            char *sample_name)
+int geopm_agent_sample_name(const char *agent_name, int sample_idx, size_t sample_name_max, char *sample_name)
 {
     int num_sample;
     int err = geopm_agent_num_sample(agent_name, &num_sample);
@@ -352,28 +334,20 @@ int geopm_agent_sample_name(const char *agent_name,
         }
     }
     return err;
-
 }
 
-int geopm_agent_policy_json(const char *agent_name,
-                            const double *policy_array,
-                            size_t json_string_max,
-                            char *json_string)
+int geopm_agent_policy_json(const char *agent_name, const double *policy_array, size_t json_string_max, char *json_string)
 {
     int num_policy = 0;
     int err = geopm_agent_num_policy(agent_name, &num_policy);
     if (!err) {
-        err = geopm_agent_policy_json_partial(agent_name, num_policy, policy_array,
-                                              json_string_max, json_string);
+        err = geopm_agent_policy_json_partial(agent_name, num_policy, policy_array, json_string_max, json_string);
     }
     return err;
 }
 
-int geopm_agent_policy_json_partial(const char *agent_name,
-                                    size_t policy_array_size,
-                                    const double *policy_array,
-                                    size_t json_string_max,
-                                    char *json_string)
+int geopm_agent_policy_json_partial(const char *agent_name, size_t policy_array_size,
+                                    const double *policy_array, size_t json_string_max, char *json_string)
 {
     std::stringstream output_str;
     char policy_name[json_string_max];
@@ -418,9 +392,7 @@ int geopm_agent_policy_json_partial(const char *agent_name,
     return err;
 }
 
-int geopm_agent_name(int agent_idx,
-                     size_t agent_name_max,
-                     char *agent_name)
+int geopm_agent_name(int agent_idx, size_t agent_name_max, char *agent_name)
 {
     int err = 0;
     try {
@@ -439,7 +411,7 @@ int geopm_agent_name(int agent_idx,
     return err;
 }
 
-int geopm_agent_num_avail(int* num_agent)
+int geopm_agent_num_avail(int *num_agent)
 {
     int err = 0;
     try {

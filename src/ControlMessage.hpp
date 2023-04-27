@@ -8,21 +8,19 @@
 
 #include <cstdint>
 
-enum geopm_ctl_message_e {
-    GEOPM_MAX_NUM_CPU = 768
-};
+enum geopm_ctl_message_e { GEOPM_MAX_NUM_CPU = 768 };
 
 /// @brief Structure intended to be shared between
 /// the GEOPM runtime and the application in
 /// order to convey status and control information.
 struct geopm_ctl_message_s {
-    /// @brief Status of the GEOPM runtime.
-    volatile uint32_t ctl_status;
-    /// @brief Status of the application.
-    volatile uint32_t app_status;
-    /// @brief Holds affinities of all application ranks
-    /// on the local compute node.
-    int cpu_rank[GEOPM_MAX_NUM_CPU];
+        /// @brief Status of the GEOPM runtime.
+        volatile uint32_t ctl_status;
+        /// @brief Status of the application.
+        volatile uint32_t app_status;
+        /// @brief Holds affinities of all application ranks
+        /// on the local compute node.
+        int cpu_rank[GEOPM_MAX_NUM_CPU];
 };
 
 namespace geopm
@@ -135,6 +133,7 @@ namespace geopm
                 M_STATUS_SHUTDOWN,
                 M_STATUS_ABORT = 9999,
             };
+
         private:
             int this_status() const;
             const double M_WAIT_SEC;
@@ -142,7 +141,6 @@ namespace geopm
             bool m_is_ctl;
             bool m_is_writer;
             int m_last_status;
-
     };
 
 }

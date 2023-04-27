@@ -42,14 +42,14 @@ namespace geopm
             /// @brief Structure that holds the parameters passed to
             ///        the IOGroup::write_control() method.
             struct m_setting_s {
-                /// @brief Name of the control
-                std::string name;
-                /// @brief Domain to apply the setting
-                int domain_type;
-                /// @brief Index of the domain to apply the setting
-                int domain_idx;
-                /// @brief Value for restoring the control
-                double setting;
+                    /// @brief Name of the control
+                    std::string name;
+                    /// @brief Domain to apply the setting
+                    int domain_type;
+                    /// @brief Index of the domain to apply the setting
+                    int domain_idx;
+                    /// @brief Value for restoring the control
+                    double setting;
             };
             SaveControl() = default;
             virtual ~SaveControl() = default;
@@ -133,8 +133,8 @@ namespace geopm
 
             static std::string json(const std::vector<m_setting_s> &settings);
             static std::vector<m_setting_s> settings(const std::string &json_string);
-            static std::vector<m_setting_s> settings(IOGroup &io_group,
-                                                     const PlatformTopo &topo);
+            static std::vector<m_setting_s> settings(IOGroup &io_group, const PlatformTopo &topo);
+
         private:
             const std::vector<m_setting_s> m_settings;
             const std::string m_json;

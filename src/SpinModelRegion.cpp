@@ -13,11 +13,7 @@
 
 namespace geopm
 {
-   SpinModelRegion::SpinModelRegion(double big_o_in,
-                                    int verbosity,
-                                    bool do_imbalance,
-                                    bool do_progress,
-                                    bool do_unmarked)
+    SpinModelRegion::SpinModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress, bool do_unmarked)
         : ModelRegion(verbosity)
     {
         m_name = "spin";
@@ -26,16 +22,12 @@ namespace geopm
         m_do_unmarked = do_unmarked;
         int err = ModelRegion::region();
         if (err) {
-            throw Exception("SpinModelRegion::SpinModelRegion()",
-                            err, __FILE__, __LINE__);
+            throw Exception("SpinModelRegion::SpinModelRegion()", err, __FILE__, __LINE__);
         }
         big_o(big_o_in);
     }
 
-    SpinModelRegion::~SpinModelRegion()
-    {
-
-    }
+    SpinModelRegion::~SpinModelRegion() {}
 
     void SpinModelRegion::big_o(double big_o_in)
     {
@@ -44,23 +36,20 @@ namespace geopm
         m_big_o = big_o_in;
     }
 
-    void SpinModelRegion::run_atom(void)
-    {
-
-    }
+    void SpinModelRegion::run_atom(void) {}
 
     void SpinModelRegion::run(void)
     {
         if (m_big_o != 0.0) {
             if (m_verbosity) {
-                std::cout << "Executing " << m_big_o << " second spin."  << std::endl << std::flush;
+                std::cout << "Executing " << m_big_o << " second spin." << std::endl << std::flush;
             }
             ModelRegion::region_enter();
-            for (uint64_t i = 0 ; i < m_num_progress_updates; ++i) {
+            for (uint64_t i = 0; i < m_num_progress_updates; ++i) {
                 ModelRegion::loop_enter(i);
                 double timeout = 0.0;
-                struct geopm_time_s start = {{0,0}};
-                struct geopm_time_s curr = {{0,0}};
+                struct geopm_time_s start = {{0, 0}};
+                struct geopm_time_s curr = {{0, 0}};
                 (void)geopm_time(&start);
                 while (timeout < m_delay) {
                     run_atom();

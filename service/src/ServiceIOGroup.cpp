@@ -25,15 +25,11 @@ namespace geopm
     const std::string ServiceIOGroup::M_PLUGIN_NAME = "SERVICE";
 
     ServiceIOGroup::ServiceIOGroup()
-        : ServiceIOGroup(platform_topo(),
-                         ServiceProxy::make_unique(),
-                         nullptr)
+        : ServiceIOGroup(platform_topo(), ServiceProxy::make_unique(), nullptr)
     {
-
     }
 
-    ServiceIOGroup::ServiceIOGroup(const PlatformTopo &platform_topo,
-                                   std::shared_ptr<ServiceProxy> service_proxy,
+    ServiceIOGroup::ServiceIOGroup(const PlatformTopo &platform_topo, std::shared_ptr<ServiceProxy> service_proxy,
                                    std::shared_ptr<BatchClient> batch_client_mock)
         : m_platform_topo(platform_topo)
         , m_service_proxy(service_proxy)
@@ -56,7 +52,6 @@ namespace geopm
             m_service_proxy->platform_close_session();
         }
     }
-
 
     std::map<std::string, signal_info_s> ServiceIOGroup::service_signal_info(std::shared_ptr<ServiceProxy> service_proxy)
     {
@@ -140,22 +135,20 @@ namespace geopm
         return result;
     }
 
-    int ServiceIOGroup::push_signal(const std::string &signal_name,
-                                    int domain_type,
-                                    int domain_idx)
+    int ServiceIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("ServiceIOGroup::push_signal(): signal name \"" +
-                            signal_name + "\" not found",
+            throw Exception("ServiceIOGroup::push_signal(): signal name \"" + signal_name + "\" not found",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != signal_domain_type(signal_name)) {
-            throw Exception("ServiceIOGroup::push_signal(): domain_type requested does not match the domain of the signal (" + signal_name + ").",
+            throw Exception("ServiceIOGroup::push_signal(): domain_type requested does not match the domain of the signal ("
+                                + signal_name + ").",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("ServiceIOGroup::push_signal(): domain_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("ServiceIOGroup::push_signal(): domain_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         std::string signal_name_strip = strip_plugin_name(signal_name);
         if (signal_name_strip.size() >= NAME_MAX) {
@@ -171,22 +164,20 @@ namespace geopm
         return m_signal_requests.size() - 1;
     }
 
-    int ServiceIOGroup::push_control(const std::string &control_name,
-                                     int domain_type,
-                                     int domain_idx)
+    int ServiceIOGroup::push_control(const std::string &control_name, int domain_type, int domain_idx)
     {
         if (!is_valid_control(control_name)) {
-            throw Exception("ServiceIOGroup::push_control(): control name \"" +
-                            control_name + "\" not found",
+            throw Exception("ServiceIOGroup::push_control(): control name \"" + control_name + "\" not found",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != control_domain_type(control_name)) {
-            throw Exception("ServiceIOGroup::push_control(): domain_type requested does not match the domain of the control (" + control_name + ").",
+            throw Exception("ServiceIOGroup::push_control(): domain_type requested does not match the domain of the control ("
+                                + control_name + ").",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("ServiceIOGroup::push_control(): domain_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("ServiceIOGroup::push_control(): domain_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         std::string control_name_strip = strip_plugin_name(control_name);
         if (control_name_strip.size() >= NAME_MAX) {
@@ -205,16 +196,14 @@ namespace geopm
     void ServiceIOGroup::read_batch(void)
     {
         init_batch_server();
-        if (m_is_batch_active &&
-            m_signal_requests.size() != 0) {
+        if (m_is_batch_active && m_signal_requests.size() != 0) {
             m_batch_samples = m_batch_client->read_batch();
         }
     }
 
     void ServiceIOGroup::write_batch(void)
     {
-        if (m_is_batch_active &&
-            m_control_requests.size() != 0) {
+        if (m_is_batch_active && m_control_requests.size() != 0) {
             m_batch_client->write_batch(m_batch_settings);
         }
     }
@@ -236,8 +225,7 @@ namespace geopm
         return m_batch_samples[sample_idx];
     }
 
-    void ServiceIOGroup::adjust(int control_idx,
-                                double setting)
+    void ServiceIOGroup::adjust(int control_idx, double setting)
     {
         if (m_control_requests.size() == 0) {
             throw Exception("ServiceIOGroup::adjust() called prior to any calls to push_control()",
@@ -251,35 +239,29 @@ namespace geopm
         m_batch_settings[control_idx] = setting;
     }
 
-    double ServiceIOGroup::read_signal(const std::string &signal_name,
-                                       int domain_type,
-                                       int domain_idx)
+    double ServiceIOGroup::read_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("ServiceIOGroup::read_signal(): signal name \"" +
-                            signal_name + "\" not found",
+            throw Exception("ServiceIOGroup::read_signal(): signal name \"" + signal_name + "\" not found",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != signal_domain_type(signal_name)) {
-            throw Exception("ServiceIOGroup::read_signal(): domain_type requested does not match the domain of the signal (" + signal_name + ").",
+            throw Exception("ServiceIOGroup::read_signal(): domain_type requested does not match the domain of the signal ("
+                                + signal_name + ").",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("ServiceIOGroup::read_signal(): domain_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("ServiceIOGroup::read_signal(): domain_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         std::string signal_name_strip = strip_plugin_name(signal_name);
         return m_service_proxy->platform_read_signal(signal_name_strip, domain_type, domain_idx);
     }
 
-    void ServiceIOGroup::write_control(const std::string &control_name,
-                                       int domain_type,
-                                       int domain_idx,
-                                       double setting)
+    void ServiceIOGroup::write_control(const std::string &control_name, int domain_type, int domain_idx, double setting)
     {
         if (!is_valid_control(control_name)) {
-            throw Exception("ServiceIOGroup::write_control(): control name \"" +
-                            control_name + "\" not found",
+            throw Exception("ServiceIOGroup::write_control(): control name \"" + control_name + "\" not found",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != control_domain_type(control_name)) {
@@ -287,8 +269,8 @@ namespace geopm
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("ServiceIOGroup::write_control(): domain_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("ServiceIOGroup::write_control(): domain_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         std::string control_name_strip = strip_plugin_name(control_name);
         m_service_proxy->platform_write_control(control_name_strip, domain_type, domain_idx, setting);
@@ -308,8 +290,7 @@ namespace geopm
     {
         auto it = m_signal_info.find(signal_name);
         if (it == m_signal_info.end()) {
-            throw Exception("ServiceIOGroup::signal_behavior(): signal_name " + signal_name +
-                            " not valid for ServiceIOGroup",
+            throw Exception("ServiceIOGroup::signal_behavior(): signal_name " + signal_name + " not valid for ServiceIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return Agg::type_to_function(it->second.aggregation);
@@ -319,8 +300,7 @@ namespace geopm
     {
         auto it = m_signal_info.find(signal_name);
         if (it == m_signal_info.end()) {
-            throw Exception("ServiceIOGroup::signal_behavior(): signal_name " + signal_name +
-                            " not valid for ServiceIOGroup",
+            throw Exception("ServiceIOGroup::signal_behavior(): signal_name " + signal_name + " not valid for ServiceIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return string_format_type_to_function(it->second.string_format);
@@ -330,8 +310,7 @@ namespace geopm
     {
         auto it = m_signal_info.find(signal_name);
         if (it == m_signal_info.end()) {
-            throw Exception("ServiceIOGroup::signal_behavior(): signal_name " + signal_name +
-                            " not valid for ServiceIOGroup",
+            throw Exception("ServiceIOGroup::signal_behavior(): signal_name " + signal_name + " not valid for ServiceIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.description;
@@ -341,8 +320,8 @@ namespace geopm
     {
         auto it = m_control_info.find(control_name);
         if (it == m_control_info.end()) {
-            throw Exception("ServiceIOGroup::control_behavior(): control_name " + control_name +
-                            " not valid for ServiceIOGroup",
+            throw Exception("ServiceIOGroup::control_behavior(): control_name " + control_name
+                                + " not valid for ServiceIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.description;
@@ -352,8 +331,7 @@ namespace geopm
     {
         auto it = m_signal_info.find(signal_name);
         if (it == m_signal_info.end()) {
-            throw Exception("ServiceIOGroup::signal_behavior(): signal_name " + signal_name +
-                            " not valid for ServiceIOGroup",
+            throw Exception("ServiceIOGroup::signal_behavior(): signal_name " + signal_name + " not valid for ServiceIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.behavior;
@@ -371,20 +349,13 @@ namespace geopm
 
     void ServiceIOGroup::init_batch_server(void)
     {
-        if (!m_is_batch_active &&
-            (m_signal_requests.size() != 0 ||
-             m_control_requests.size() != 0)) {
+        if (!m_is_batch_active && (m_signal_requests.size() != 0 || m_control_requests.size() != 0)) {
             int server_pid = 0;
             std::string server_key;
-            m_service_proxy->platform_start_batch(m_signal_requests,
-                                                  m_control_requests,
-                                                  server_pid,
-                                                  server_key);
+            m_service_proxy->platform_start_batch(m_signal_requests, m_control_requests, server_pid, server_key);
             if (m_batch_client == nullptr) {
                 // Not a unit test
-                m_batch_client = BatchClient::make_unique(server_key,
-                                                          1.0,
-                                                          m_signal_requests.size(),
+                m_batch_client = BatchClient::make_unique(server_key, 1.0, m_signal_requests.size(),
                                                           m_control_requests.size());
             }
             m_is_batch_active = true;

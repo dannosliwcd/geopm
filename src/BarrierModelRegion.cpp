@@ -13,20 +13,13 @@
 
 namespace geopm
 {
-    BarrierModelRegion::BarrierModelRegion(double big_o_in,
-                                           int verbosity,
-                                           bool do_imbalance,
-                                           bool do_progress,
-                                           bool do_unmarked)
+    BarrierModelRegion::BarrierModelRegion(double big_o_in, int verbosity, bool do_imbalance,
+                                           bool do_progress, bool do_unmarked)
         : ModelRegion(verbosity)
     {
-
     }
 
-    void BarrierModelRegion::big_o(double big_o)
-    {
-
-    }
+    void BarrierModelRegion::big_o(double big_o) {}
 
     void BarrierModelRegion::run(void)
     {

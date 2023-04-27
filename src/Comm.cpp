@@ -27,11 +27,9 @@ namespace geopm
     CommFactory::CommFactory()
     {
 #ifdef GEOPM_ENABLE_MPI
-        register_plugin(geopm::MPIComm::plugin_name(),
-                        geopm::MPIComm::make_plugin);
+        register_plugin(geopm::MPIComm::plugin_name(), geopm::MPIComm::make_plugin);
 #endif
     }
-
 
     CommFactory &comm_factory(void)
     {
@@ -45,18 +43,15 @@ namespace geopm
         return instance;
     }
 
-
     std::vector<std::string> Comm::comm_names(void)
     {
         return comm_factory().plugin_names();
     }
 
-
     std::unique_ptr<Comm> Comm::make_unique(const std::string &comm_name)
     {
         return comm_factory().make_plugin(comm_name);
     }
-
 
     std::unique_ptr<Comm> Comm::make_unique(void)
     {

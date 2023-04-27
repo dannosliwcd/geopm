@@ -15,14 +15,11 @@ namespace geopm
     class ReduceModelRegion : public ModelRegion
     {
         public:
-            ReduceModelRegion(double big_o_in,
-                              int verbosity,
-                              bool do_imbalance,
-                              bool do_progress,
-                              bool do_unmarked);
+            ReduceModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress, bool do_unmarked);
             virtual ~ReduceModelRegion() = default;
             void big_o(double big_o);
             void run(void);
+
         private:
             int m_num_elem;
             std::vector<double> m_send_buffer;

@@ -24,7 +24,6 @@ namespace geopm
     PowerGovernorAgent::PowerGovernorAgent()
         : PowerGovernorAgent(PlatformIOProf::platform_io(), nullptr)
     {
-
     }
 
     PowerGovernorAgent::PowerGovernorAgent(PlatformIO &platform_io, std::unique_ptr<PowerGovernor> power_gov)
@@ -92,7 +91,8 @@ namespace geopm
         // Setup controls
         int pkg_pwr_domain_type = m_platform_io.control_domain_type("CPU_POWER_LIMIT_CONTROL");
         if (pkg_pwr_domain_type == GEOPM_DOMAIN_INVALID) {
-            throw Exception("PowerGovernorAgent::" + std::string(__func__) + "(): Platform does not support package power control",
+            throw Exception("PowerGovernorAgent::" + std::string(__func__)
+                                + "(): Platform does not support package power control",
                             GEOPM_ERROR_AGENT_UNSUPPORTED, __FILE__, __LINE__);
         }
     }
@@ -117,7 +117,8 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (in_policy.size() != M_NUM_POLICY) {
-            throw Exception("PowerGovernorAgent::" + std::string(__func__) + "(): number of policies was different from expected.",
+            throw Exception("PowerGovernorAgent::" + std::string(__func__)
+                                + "(): number of policies was different from expected.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
         if (m_level == 0) {
@@ -131,16 +132,15 @@ namespace geopm
 #endif
         double power_budget_in = in_policy[M_POLICY_POWER];
 
-        if (power_budget_in > m_max_power_setting ||
-            power_budget_in < m_min_power_setting) {
+        if (power_budget_in > m_max_power_setting || power_budget_in < m_min_power_setting) {
             throw Exception("PowerGovernorAgent::split_policy(): "
                             "invalid power budget.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         // Send down if this is the first budget, or if the budget changed
-        if ((std::isnan(m_last_power_budget) && !std::isnan(power_budget_in)) ||
-            m_last_power_budget != power_budget_in) {
+        if ((std::isnan(m_last_power_budget) && !std::isnan(power_budget_in))
+            || m_last_power_budget != power_budget_in) {
 
             m_last_power_budget = power_budget_in;
             // Convert power budget vector into a vector of policy vectors
@@ -178,11 +178,9 @@ namespace geopm
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
-        m_is_sample_stable = std::all_of(in_sample.begin(), in_sample.end(),
-            [](const std::vector<double> &val)
-            {
-                return val[M_SAMPLE_IS_CONVERGED];
-            });
+        m_is_sample_stable = std::all_of(in_sample.begin(), in_sample.end(), [](const std::vector<double> &val) {
+            return val[M_SAMPLE_IS_CONVERGED];
+        });
 
         // If all children report that they are converged for the last
         // ascend period times, then aggregate the samples and send
@@ -199,10 +197,9 @@ namespace geopm
         if (m_is_sample_stable) {
             ++m_ascend_count;
             if (m_ascend_count == m_ascend_period) {
-               m_ascend_count = 0;
+                m_ascend_count = 0;
             }
         }
-
     }
 
     bool PowerGovernorAgent::do_send_sample(void) const
@@ -232,7 +229,7 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (out_sample.size() != M_NUM_SAMPLE) {
-            throw Exception("PowerGovernorAgent::" + std::string(__func__)  + "(): out_sample vector not correctly sized.",
+            throw Exception("PowerGovernorAgent::" + std::string(__func__) + "(): out_sample vector not correctly sized.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
@@ -262,8 +259,7 @@ namespace geopm
 
     void PowerGovernorAgent::wait()
     {
-        while(geopm_time_since(&m_last_wait) < M_WAIT_SEC) {
-
+        while (geopm_time_since(&m_last_wait) < M_WAIT_SEC) {
         }
         geopm_time(&m_last_wait);
     }
@@ -296,7 +292,8 @@ namespace geopm
     void PowerGovernorAgent::trace_values(std::vector<double> &values)
     {
 #ifdef GEOPM_DEBUG
-        if (values.size() != M_TRACE_NUM_SAMPLE) { // Everything sampled from the platform plus convergence (and the power budget soon...)
+        if (values.size() != M_TRACE_NUM_SAMPLE) { // Everything sampled from the platform plus convergence
+                                                   // (and the power budget soon...)
             throw Exception("PowerGovernorAgent::" + std::string(__func__) + "(): values vector not correctly sized.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }

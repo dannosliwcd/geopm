@@ -21,8 +21,7 @@
 #include <mpi.h>
 #endif
 
-extern "C"
-{
+extern "C" {
 #ifndef GEOPM_TEST
 #include "geopm_ctl.h"
 #endif
@@ -32,13 +31,12 @@ extern "C"
 #include "geopm_pmpi.h"
 #include "geopm_sched.h"
 #include "geopm_mpi_comm_split.h"
-    /**
-     * Helper that creates the DefaultProfile signleton (if not already created)
-     * and catches all exceptions.
-     */
-    int geopm_prof_init(void);
+/**
+ * Helper that creates the DefaultProfile signleton (if not already created)
+ * and catches all exceptions.
+ */
+int geopm_prof_init(void);
 }
-
 
 static int g_is_geopm_pmpi_ctl_enabled = 0;
 static MPI_Comm g_geopm_comm_world_swap = MPI_COMM_WORLD;
@@ -51,63 +49,63 @@ static pthread_t g_ctl_thread;
 #endif
 
 extern "C" {
-    static int geopm_env_pmpi_ctl(int *pmpi_ctl)
-    {
-        int err = 0;
-        try {
-            if (!pmpi_ctl) {
-                err = GEOPM_ERROR_INVALID;
-            }
-            else {
-                *pmpi_ctl = geopm::environment().pmpi_ctl();
-            }
+static int geopm_env_pmpi_ctl(int *pmpi_ctl)
+{
+    int err = 0;
+    try {
+        if (!pmpi_ctl) {
+            err = GEOPM_ERROR_INVALID;
         }
-        catch (...) {
-            err = geopm::exception_handler(std::current_exception(), false);
+        else {
+            *pmpi_ctl = geopm::environment().pmpi_ctl();
         }
-        return err;
     }
+    catch (...) {
+        err = geopm::exception_handler(std::current_exception(), false);
+    }
+    return err;
+}
 
-    static int geopm_env_do_profile(int *do_profile)
-    {
-        int err = 0;
-        try {
-            if (!do_profile) {
-                err = GEOPM_ERROR_INVALID;
-            }
-            else {
-                *do_profile = geopm::environment().do_profile();
-            }
+static int geopm_env_do_profile(int *do_profile)
+{
+    int err = 0;
+    try {
+        if (!do_profile) {
+            err = GEOPM_ERROR_INVALID;
         }
-        catch (...) {
-            err = geopm::exception_handler(std::current_exception(), false);
+        else {
+            *do_profile = geopm::environment().do_profile();
         }
-        return err;
     }
+    catch (...) {
+        err = geopm::exception_handler(std::current_exception(), false);
+    }
+    return err;
+}
 
-    void geopm_mpi_region_enter(uint64_t func_rid)
-    {
-        if (func_rid) {
-            geopm_prof_enter(func_rid);
-        }
+void geopm_mpi_region_enter(uint64_t func_rid)
+{
+    if (func_rid) {
+        geopm_prof_enter(func_rid);
     }
+}
 
-    void geopm_mpi_region_exit(uint64_t func_rid)
-    {
-        if (func_rid) {
-            geopm_prof_exit(func_rid);
-        }
+void geopm_mpi_region_exit(uint64_t func_rid)
+{
+    if (func_rid) {
+        geopm_prof_exit(func_rid);
     }
+}
 
-    uint64_t geopm_mpi_func_rid(const char *func_name)
-    {
-        uint64_t result = 0;
-        int err = geopm_prof_region(func_name, GEOPM_REGION_HINT_NETWORK, &result);
-        if (err) {
-            result = 0;
-        }
-        return result;
+uint64_t geopm_mpi_func_rid(const char *func_name)
+{
+    uint64_t result = 0;
+    int err = geopm_prof_region(func_name, GEOPM_REGION_HINT_NETWORK, &result);
+    if (err) {
+        result = 0;
     }
+    return result;
+}
 }
 
 #ifndef GEOPM_TEST
@@ -121,21 +119,20 @@ static int geopm_pmpi_init(const char *exec_name)
     g_geopm_comm_world_f = PMPI_Comm_c2f(MPI_COMM_WORLD);
     PMPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #ifdef GEOPM_DEBUG
-    if (geopm::environment().do_debug_attach_all() ||
-        (geopm::environment().do_debug_attach_one() &&
-         geopm::environment().debug_attach_process() == rank)) {
+    if (geopm::environment().do_debug_attach_all()
+        || (geopm::environment().do_debug_attach_one() && geopm::environment().debug_attach_process() == rank)) {
         char hostname[NAME_MAX];
         gethostname(hostname, sizeof(hostname));
         printf("PID %d on %s ready for attach\n", getpid(), hostname);
         fflush(stdout);
         volatile int cont = 0;
-        while (!cont) {}
+        while (!cont) {
+        }
     }
 #endif
     if (!err) {
         err = geopm_env_pmpi_ctl(&pmpi_ctl);
-        if (!err &&
-            pmpi_ctl == geopm::Environment::M_CTL_PROCESS) {
+        if (!err && pmpi_ctl == geopm::Environment::M_CTL_PROCESS) {
             g_is_geopm_pmpi_ctl_enabled = 1;
             int is_ctl;
             MPI_Comm tmp_comm;
@@ -157,8 +154,7 @@ static int geopm_pmpi_init(const char *exec_name)
                 exit(err);
             }
         }
-        else if (!err &&
-                 pmpi_ctl == geopm::Environment::M_CTL_PTHREAD) {
+        else if (!err && pmpi_ctl == geopm::Environment::M_CTL_PTHREAD) {
             g_is_geopm_pmpi_ctl_enabled = 1;
 
             int mpi_thread_level = 0;
@@ -221,109 +217,101 @@ static int geopm_pmpi_init(const char *exec_name)
 
 extern "C" {
 #ifndef GEOPM_PORTABLE_MPI_COMM_COMPARE_ENABLE
-    /*
-     * Since MPI_COMM_WORLD should not be accessed or modified in this use
-     * case, a simple == comparison will do and will be much more
-     * performant than MPI_Comm_compare().
-     */
-    MPI_Comm geopm_swap_comm_world(MPI_Comm comm)
-    {
-        return comm != MPI_COMM_WORLD ?
-               comm : g_geopm_comm_world_swap;
-    }
+/*
+ * Since MPI_COMM_WORLD should not be accessed or modified in this use
+ * case, a simple == comparison will do and will be much more
+ * performant than MPI_Comm_compare().
+ */
+MPI_Comm geopm_swap_comm_world(MPI_Comm comm)
+{
+    return comm != MPI_COMM_WORLD ? comm : g_geopm_comm_world_swap;
+}
 #else
-    /*
-     * The code below is more portable, but slower.  Define
-     * GEOPM_ENABLE_PORTABLE_MPI_COMM_COMPARE if there are issues with the
-     * direct comparison code above.
-     */
-    MPI_Comm geopm_swap_comm_world(MPI_Comm comm)
-    {
-        int is_comm_world = 0;
-        (void)PMPI_Comm_compare(MPI_COMM_WORLD, comm, &is_comm_world);
-        if (is_comm_world != MPI_UNEQUAL) {
-            comm = g_geopm_comm_world_swap;
-        }
-        return comm;
+/*
+ * The code below is more portable, but slower.  Define
+ * GEOPM_ENABLE_PORTABLE_MPI_COMM_COMPARE if there are issues with the
+ * direct comparison code above.
+ */
+MPI_Comm geopm_swap_comm_world(MPI_Comm comm)
+{
+    int is_comm_world = 0;
+    (void)PMPI_Comm_compare(MPI_COMM_WORLD, comm, &is_comm_world);
+    if (is_comm_world != MPI_UNEQUAL) {
+        comm = g_geopm_comm_world_swap;
     }
+    return comm;
+}
 #endif
 
-    MPI_Fint geopm_swap_comm_world_f(MPI_Fint comm)
-    {
-        return comm != g_geopm_comm_world_f ?
-               comm : g_geopm_comm_world_swap_f;
+MPI_Fint geopm_swap_comm_world_f(MPI_Fint comm)
+{
+    return comm != g_geopm_comm_world_f ? comm : g_geopm_comm_world_swap_f;
+}
+
+int geopm_pmpi_init_thread(int *argc, char **argv[], int required, int *provided)
+{
+    int err = 0;
+    int pmpi_ctl = 0;
+
+    err = geopm_env_pmpi_ctl(&pmpi_ctl);
+    if (!err && pmpi_ctl == geopm::Environment::M_CTL_PTHREAD && required < MPI_THREAD_MULTIPLE) {
+        required = MPI_THREAD_MULTIPLE;
+    }
+    err = PMPI_Init_thread(argc, argv, required, provided);
+    if (!err && pmpi_ctl == geopm::Environment::M_CTL_PTHREAD && *provided < MPI_THREAD_MULTIPLE) {
+        err = GEOPM_ERROR_RUNTIME;
+    }
+    if (!err) {
+        err = PMPI_Barrier(MPI_COMM_WORLD);
+    }
+    if (!err) {
+        if (argv && *argv && **argv && strlen(**argv)) {
+            err = geopm_pmpi_init(**argv);
+        }
+        else {
+            err = geopm_pmpi_init("Fortran");
+        }
+    }
+    return err;
+}
+
+int geopm_pmpi_finalize(void)
+{
+    int err = 0;
+    int tmp_err = 0;
+    int pmpi_ctl = 0;
+    int do_profile = 0;
+
+    err = geopm_env_pmpi_ctl(&pmpi_ctl);
+    if (!err) {
+        err = geopm_env_do_profile(&do_profile);
+    }
+    if (!err && do_profile && (!g_ctl || pmpi_ctl == geopm::Environment::M_CTL_PTHREAD)) {
+        PMPI_Barrier(g_geopm_comm_world_swap);
+        err = geopm_prof_shutdown();
     }
 
-    int geopm_pmpi_init_thread(int *argc, char **argv[], int required, int *provided)
-    {
-        int err = 0;
-        int pmpi_ctl = 0;
-
-        err = geopm_env_pmpi_ctl(&pmpi_ctl);
-        if (!err &&
-            pmpi_ctl == geopm::Environment::M_CTL_PTHREAD &&
-            required < MPI_THREAD_MULTIPLE) {
-            required = MPI_THREAD_MULTIPLE;
-        }
-        err = PMPI_Init_thread(argc, argv, required, provided);
-        if (!err &&
-            pmpi_ctl == geopm::Environment::M_CTL_PTHREAD &&
-            *provided < MPI_THREAD_MULTIPLE) {
-            err = GEOPM_ERROR_RUNTIME;
-        }
-        if (!err) {
-            err = PMPI_Barrier(MPI_COMM_WORLD);
-        }
-        if (!err) {
-            if (argv && *argv && **argv && strlen(**argv)) {
-                err = geopm_pmpi_init(**argv);
-            }
-            else {
-                err = geopm_pmpi_init("Fortran");
-            }
-        }
-        return err;
+    if (!err && g_ctl && pmpi_ctl == geopm::Environment::M_CTL_PTHREAD) {
+        void *return_val;
+        err = pthread_join(g_ctl_thread, &return_val);
+        err = err ? err : ((long)return_val);
     }
 
-    int geopm_pmpi_finalize(void)
-    {
-        int err = 0;
-        int tmp_err = 0;
-        int pmpi_ctl = 0;
-        int do_profile = 0;
-
-        err = geopm_env_pmpi_ctl(&pmpi_ctl);
-        if (!err) {
-            err = geopm_env_do_profile(&do_profile);
-        }
-        if (!err && do_profile &&
-            (!g_ctl || pmpi_ctl == geopm::Environment::M_CTL_PTHREAD))
-        {
-            PMPI_Barrier(g_geopm_comm_world_swap);
-            err = geopm_prof_shutdown();
-        }
-
-        if (!err && g_ctl && pmpi_ctl == geopm::Environment::M_CTL_PTHREAD) {
-            void *return_val;
-            err = pthread_join(g_ctl_thread, &return_val);
-            err = err ? err : ((long)return_val);
-        }
-
-        if (!err && g_ctl) {
-            err = geopm_ctl_destroy(g_ctl);
-        }
-
-        PMPI_Barrier(MPI_COMM_WORLD);
-
-        if (g_geopm_comm_world_swap != MPI_COMM_WORLD) {
-            tmp_err = PMPI_Comm_free(&g_geopm_comm_world_swap);
-            err = err ? err : tmp_err;
-        }
-        if (g_ppn1_comm != MPI_COMM_NULL) {
-            tmp_err = PMPI_Comm_free(&g_ppn1_comm);
-            err = err ? err : tmp_err;
-        }
-        return err;
+    if (!err && g_ctl) {
+        err = geopm_ctl_destroy(g_ctl);
     }
+
+    PMPI_Barrier(MPI_COMM_WORLD);
+
+    if (g_geopm_comm_world_swap != MPI_COMM_WORLD) {
+        tmp_err = PMPI_Comm_free(&g_geopm_comm_world_swap);
+        err = err ? err : tmp_err;
+    }
+    if (g_ppn1_comm != MPI_COMM_NULL) {
+        tmp_err = PMPI_Comm_free(&g_ppn1_comm);
+        err = err ? err : tmp_err;
+    }
+    return err;
+}
 }
 #endif

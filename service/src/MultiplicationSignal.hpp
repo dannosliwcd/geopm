@@ -17,14 +17,14 @@ namespace geopm
     class MultiplicationSignal : public Signal
     {
         public:
-            MultiplicationSignal(std::shared_ptr<Signal> multiplier,
-                           double multiplicand);
+            MultiplicationSignal(std::shared_ptr<Signal> multiplier, double multiplicand);
             MultiplicationSignal(const MultiplicationSignal &other) = delete;
             MultiplicationSignal &operator=(const MultiplicationSignal &other) = delete;
             virtual ~MultiplicationSignal() = default;
             void setup_batch(void) override;
             double sample(void) override;
             double read(void) const override;
+
         private:
             std::shared_ptr<Signal> m_multiplier;
             double m_multiplicand;

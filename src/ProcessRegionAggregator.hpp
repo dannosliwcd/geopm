@@ -47,6 +47,7 @@ namespace geopm
             void update(void) override;
             double get_runtime_average(uint64_t region_hash) const override;
             double get_count_average(uint64_t region_hash) const override;
+
         private:
             ApplicationSampler &m_app_sampler;
             int m_num_process;
@@ -58,9 +59,9 @@ namespace geopm
             // iteration over all the process maps.  Build a cache and
             // invalidate it if update() is called.
             struct region_info_s {
-                double total_runtime;
-                int total_count;
-                double last_entry_time;
+                    double total_runtime;
+                    int total_count;
+                    double last_entry_time;
             };
             std::map<int, std::map<uint64_t, region_info_s> > m_region_info;
     };

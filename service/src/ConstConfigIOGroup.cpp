@@ -25,27 +25,19 @@ namespace geopm
 {
     const std::string ConstConfigIOGroup::M_PLUGIN_NAME = "CONST_CONFIG";
     const std::string ConstConfigIOGroup::M_SIGNAL_PREFIX = M_PLUGIN_NAME + "::";
-    const std::map<std::string, ConstConfigIOGroup::m_signal_desc_s>
-        ConstConfigIOGroup::M_SIGNAL_FIELDS = {
-            {"description", {Json::STRING, true}},
-            {"units", {Json::STRING, true}},
-            {"domain", {Json::STRING, true}},
-            {"aggregation", {Json::STRING, true}},
-            {"values", {Json::ARRAY, false}},
-            {"common_value", {Json::NUMBER, false}}
-        };
-    const std::string ConstConfigIOGroup::M_CONFIG_PATH_ENV =
-        "GEOPM_CONST_CONFIG_PATH";
-    const std::string ConstConfigIOGroup::M_DEFAULT_CONFIG_FILE_PATH =
-        GEOPM_CONFIG_PATH "/const_config_io.json";
+    const std::map<std::string, ConstConfigIOGroup::m_signal_desc_s> ConstConfigIOGroup::M_SIGNAL_FIELDS = {
+        {"description", {Json::STRING, true}}, {"units", {Json::STRING, true}},
+        {"domain", {Json::STRING, true}},      {"aggregation", {Json::STRING, true}},
+        {"values", {Json::ARRAY, false}},      {"common_value", {Json::NUMBER, false}}};
+    const std::string ConstConfigIOGroup::M_CONFIG_PATH_ENV = "GEOPM_CONST_CONFIG_PATH";
+    const std::string ConstConfigIOGroup::M_DEFAULT_CONFIG_FILE_PATH = GEOPM_CONFIG_PATH "/const_config_io.json";
 
     ConstConfigIOGroup::ConstConfigIOGroup()
         : ConstConfigIOGroup(platform_topo(), geopm::get_env(M_CONFIG_PATH_ENV), M_DEFAULT_CONFIG_FILE_PATH)
     {
     }
 
-    ConstConfigIOGroup::ConstConfigIOGroup(const PlatformTopo &topo,
-                                           const std::string &user_file_path,
+    ConstConfigIOGroup::ConstConfigIOGroup(const PlatformTopo &topo, const std::string &user_file_path,
                                            const std::string &default_file_path)
         : m_platform_topo(topo)
     {
@@ -59,10 +51,8 @@ namespace geopm
             catch (const Exception &ex) {
 #ifdef GEOPM_DEBUG
                 std::cerr << "Warning: <geopm> Failed to load "
-                          << "ConstConfigIOGroup configuration file \""
-                          << user_file_path << "\": " << ex.what()
-                          << ". Proceeding with default configuration file..."
-                          << std::endl;
+                          << "ConstConfigIOGroup configuration file \"" << user_file_path << "\": " << ex.what()
+                          << ". Proceeding with default configuration file..." << std::endl;
 #endif
             }
         }
@@ -114,32 +104,26 @@ namespace geopm
         return GEOPM_DOMAIN_INVALID;
     }
 
-    int ConstConfigIOGroup::push_signal(const std::string &signal_name,
-                                        int domain_type, int domain_idx)
+    int ConstConfigIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
-            throw Exception("ConstConfigIOGroup::push_signal(): " +
-                            signal_name + " not valid for ConstConfigIOGroup",
+            throw Exception("ConstConfigIOGroup::push_signal(): " + signal_name + " not valid for ConstConfigIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         else if (domain_type != it->second->domain) {
-            throw Exception("ConstConfigIOGroup::push_signal(): domain_type " +
-                            std::to_string(domain_type) +
-                            " not valid for ConstConfigIOGroup",
+            throw Exception("ConstConfigIOGroup::push_signal(): domain_type " + std::to_string(domain_type)
+                                + " not valid for ConstConfigIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
-        else if (domain_idx < 0 ||
-                 domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("ConstConfigIOGroup::push_signal(): domain_idx " +
-                            std::to_string(domain_idx) + " out of range.",
+        else if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
+            throw Exception("ConstConfigIOGroup::push_signal(): domain_idx " + std::to_string(domain_idx) + " out of range.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         for (std::size_t i = 0; i < m_pushed_signals.size(); i++) {
             const m_signal_ref_s &signal = m_pushed_signals[i];
-            if (it->second == signal.signal_info &&
-                domain_idx == signal.domain_idx) {
+            if (it->second == signal.signal_info && domain_idx == signal.domain_idx) {
                 return static_cast<int>(i);
             }
         }
@@ -148,36 +132,28 @@ namespace geopm
             domain_idx = 0;
         }
 
-        m_pushed_signals.push_back({.signal_info = it->second,
-                                    .domain_idx = domain_idx});
-        
+        m_pushed_signals.push_back({.signal_info = it->second, .domain_idx = domain_idx});
+
         return m_pushed_signals.size() - 1;
     }
 
-    int ConstConfigIOGroup::push_control(const std::string &control_name,
-                                         int domain_type, int domain_idx)
+    int ConstConfigIOGroup::push_control(const std::string &control_name, int domain_type, int domain_idx)
     {
         throw Exception("ConstConfigIOGroup::push_control(): there are no "
                         "controls supported by the ConstConfigIOGroup",
                         GEOPM_ERROR_INVALID, __FILE__, __LINE__);
     }
 
-    void ConstConfigIOGroup::read_batch(void)
-    {
-    }
+    void ConstConfigIOGroup::read_batch(void) {}
 
-    void ConstConfigIOGroup::write_batch(void)
-    {
-    }
+    void ConstConfigIOGroup::write_batch(void) {}
 
     double ConstConfigIOGroup::sample(int batch_idx)
     {
         double result = NAN;
-        
-        if (batch_idx < 0 ||
-            static_cast<std::size_t>(batch_idx) >= m_pushed_signals.size()) {
-            throw Exception("ConstConfigIOGroup::sample(): batch_idx " +
-                            std::to_string(batch_idx) + " out of range.",
+
+        if (batch_idx < 0 || static_cast<std::size_t>(batch_idx) >= m_pushed_signals.size()) {
+            throw Exception("ConstConfigIOGroup::sample(): batch_idx " + std::to_string(batch_idx) + " out of range.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         const m_signal_ref_s &signal = m_pushed_signals[batch_idx];
@@ -193,25 +169,20 @@ namespace geopm
                         GEOPM_ERROR_INVALID, __FILE__, __LINE__);
     }
 
-    double ConstConfigIOGroup::read_signal(const std::string &signal_name,
-                                           int domain_type, int domain_idx)
+    double ConstConfigIOGroup::read_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
-            throw Exception("ConstConfigIOGroup::read_signal(): " +
-                            signal_name + " not valid for ConstConfigIOGroup",
+            throw Exception("ConstConfigIOGroup::read_signal(): " + signal_name + " not valid for ConstConfigIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         else if (domain_type != it->second->domain) {
-            throw Exception("ConstConfigIOGroup::read_signal(): domain_type " +
-                            std::to_string(domain_type) +
-                            " not valid for ConstConfigIOGroup",
+            throw Exception("ConstConfigIOGroup::read_signal(): domain_type " + std::to_string(domain_type)
+                                + " not valid for ConstConfigIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
-        else if (domain_idx < 0 ||
-                 domain_idx >= m_platform_topo.num_domain(domain_type)) {
-            throw Exception("ConstConfigIOGroup::read_signal(): domain_idx " +
-                            std::to_string(domain_idx) + " out of range.",
+        else if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
+            throw Exception("ConstConfigIOGroup::read_signal(): domain_idx " + std::to_string(domain_idx) + " out of range.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -226,8 +197,7 @@ namespace geopm
         return value;
     }
 
-    void ConstConfigIOGroup::write_control(const std::string &control_name,
-                                           int domain_type, int domain_idx,
+    void ConstConfigIOGroup::write_control(const std::string &control_name, int domain_type, int domain_idx,
                                            double setting)
     {
         throw Exception("ConstConfigIOGroup::write_control(): there are no "
@@ -235,32 +205,28 @@ namespace geopm
                         GEOPM_ERROR_INVALID, __FILE__, __LINE__);
     }
 
-    void ConstConfigIOGroup::save_control(void)
-    {
-    }
+    void ConstConfigIOGroup::save_control(void) {}
 
-    void ConstConfigIOGroup::restore_control(void)
-    {
-    }
+    void ConstConfigIOGroup::restore_control(void) {}
 
-    std::function<double(const std::vector<double> &)>
-    ConstConfigIOGroup::agg_function(const std::string &signal_name) const
+    std::function<double(const std::vector<double> &)> ConstConfigIOGroup::agg_function(const std::string &signal_name) const
     {
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
             throw Exception("ConstConfigIOGroup::agg_function(): unknown how "
-                            "to aggregate \"" + signal_name + "\"",
+                            "to aggregate \""
+                                + signal_name + "\"",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second->agg_function;
     }
 
-    std::function<std::string(double)>
-    ConstConfigIOGroup::format_function(const std::string &signal_name) const
+    std::function<std::string(double)> ConstConfigIOGroup::format_function(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
             throw Exception("ConstConfigIOGroup::format_function(): unknown "
-                            "how to format \"" + signal_name + "\"",
+                            "how to format \""
+                                + signal_name + "\"",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return string_format_double;
@@ -271,13 +237,13 @@ namespace geopm
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
             throw Exception("ConstConfigIOGroup::signal_description(): "
-                            "signal_name " + signal_name +
-                            " not valid for ConstConfigIOGroup",
+                            "signal_name "
+                                + signal_name + " not valid for ConstConfigIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         std::string result;
-        result =  "    description: " + it->second->description + '\n'; // Includes alias_for if applicable
+        result = "    description: " + it->second->description + '\n'; // Includes alias_for if applicable
         result += "    units: " + IOGroup::units_to_string(it->second->units) + '\n';
         result += "    aggregation: " + Agg::function_to_name(it->second->agg_function) + '\n';
         result += "    domain: " + platform_topo().domain_type_to_name(it->second->domain) + '\n';
@@ -285,8 +251,7 @@ namespace geopm
         return result;
     }
 
-    std::string ConstConfigIOGroup::control_description(
-        const std::string &control_name) const
+    std::string ConstConfigIOGroup::control_description(const std::string &control_name) const
     {
         throw Exception("ConstConfigIOGroup::control_description: there are "
                         "no controls supported by the ConstConfigIOGroup",
@@ -297,8 +262,8 @@ namespace geopm
     {
         if (!is_valid_signal(signal_name)) {
             throw Exception("ConstConfigIOGroup::signal_behavior(): "
-                            "signal_name " + signal_name +
-                            " not valid for ConstConfigIOGroup",
+                            "signal_name "
+                                + signal_name + " not valid for ConstConfigIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT;
@@ -319,14 +284,9 @@ namespace geopm
         return geopm::make_unique<ConstConfigIOGroup>();
     }
 
-    void ConstConfigIOGroup::save_control(const std::string &save_path)
-    {
-    }
+    void ConstConfigIOGroup::save_control(const std::string &save_path) {}
 
-    void ConstConfigIOGroup::restore_control(const std::string &save_path)
-    {
-    }
-
+    void ConstConfigIOGroup::restore_control(const std::string &save_path) {}
 
     void ConstConfigIOGroup::parse_config_json(const std::string &config)
     {
@@ -339,12 +299,9 @@ namespace geopm
             const std::string FULL_NAME = M_SIGNAL_PREFIX + NAME;
 
             auto properties = signal.second.object_items();
-            int units = IOGroup::string_to_units(
-                    properties["units"].string_value());
-            int domain_type = PlatformTopo::domain_name_to_type(
-                    properties["domain"].string_value());
-            auto agg_func = Agg::name_to_function(
-                    properties["aggregation"].string_value());
+            int units = IOGroup::string_to_units(properties["units"].string_value());
+            int domain_type = PlatformTopo::domain_name_to_type(properties["domain"].string_value());
+            auto agg_func = Agg::name_to_function(properties["aggregation"].string_value());
 
             std::vector<double> values;
             bool values_provided = properties.find("values") != properties.end();
@@ -353,15 +310,17 @@ namespace geopm
                 // Only one field is required
                 throw Exception("ConstConfigIOGroup::parse_config_json(): "
                                 "\"values\" and \"common_value\" provided for "
-                                "signal \"" + NAME + "\"", GEOPM_ERROR_INVALID,
-                                 __FILE__, __LINE__);
+                                "signal \""
+                                    + NAME + "\"",
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             else if (!values_provided && !is_common_value_provided) {
                 // One of the two fields is required
                 throw Exception("ConstConfigIOGroup::parse_config_json(): "
                                 "missing \"values\" and \"common_value\" for "
-                                "signal \"" + NAME + "\"", GEOPM_ERROR_INVALID,
-                                 __FILE__, __LINE__);
+                                "signal \""
+                                    + NAME + "\"",
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
 
             if (values_provided) {
@@ -369,21 +328,24 @@ namespace geopm
                 if (json_values.empty()) {
                     throw Exception("ConstConfigIOGroup::parse_config_json(): "
                                     "empty array of values provided for "
-                                    "signal \"" + NAME + "\"", GEOPM_ERROR_INVALID,
-                                    __FILE__, __LINE__);
+                                    "signal \""
+                                        + NAME + "\"",
+                                    GEOPM_ERROR_INVALID, __FILE__, __LINE__);
                 }
                 if (static_cast<int>(json_values.size()) != m_platform_topo.num_domain(domain_type)) {
                     throw Exception("ConstConfigIOGroup::parse_config_json(): "
-                                    "number of values for signal \"" + NAME +
-                                    "\" does not match domain size",
+                                    "number of values for signal \""
+                                        + NAME + "\" does not match domain size",
                                     GEOPM_ERROR_INVALID, __FILE__, __LINE__);
                 }
 
                 for (const auto &val : json_values) {
                     if (!val.is_number()) {
                         throw Exception("ConstConfigIOGroup::parse_config_json():"
-                                        " for signal \"" + NAME + "\", incorrect "
-                                        "type for property: \"values\"",
+                                        " for signal \""
+                                            + NAME
+                                            + "\", incorrect "
+                                              "type for property: \"values\"",
                                         GEOPM_ERROR_INVALID, __FILE__, __LINE__);
                     }
                     values.push_back(val.number_value());
@@ -396,22 +358,20 @@ namespace geopm
             std::string description = properties["description"].string_value();
             if (description.empty()) {
                 throw Exception("ConstConfigIOGroup::parse_config_json(): "
-                                "empty description provided for signal \"" +
-                                NAME + "\"", GEOPM_ERROR_INVALID,
-                                __FILE__, __LINE__);
+                                "empty description provided for signal \""
+                                    + NAME + "\"",
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             // TODO: check for duplicate signals. At the moment, we're using
             // json11 to parse JSON strings, which handles duplicate entries
             // by taking the latest entry encountered.
-            m_signal_available[FULL_NAME] =
-                std::make_shared<m_signal_info_s>(
-                    m_signal_info_s {
-                        .units = units,
-                        .domain = domain_type,
-                        .agg_function = agg_func,
-                        .description = description,
-                        .is_common_value_provided = is_common_value_provided,
-                        .values = values});
+            m_signal_available[FULL_NAME] = std::make_shared<m_signal_info_s>(
+                m_signal_info_s{.units = units,
+                                .domain = domain_type,
+                                .agg_function = agg_func,
+                                .description = description,
+                                .is_common_value_provided = is_common_value_provided,
+                                .values = values});
         }
     }
 
@@ -438,9 +398,11 @@ namespace geopm
     {
         if (!signal.second.is_object()) {
             throw Exception("ConstConfigIOGroup::parse_config_json(): "
-                            "invalid signal: \"" + signal.first + "\" ("
-                            "object expected)", GEOPM_ERROR_INVALID,
-                            __FILE__, __LINE__);
+                            "invalid signal: \""
+                                + signal.first
+                                + "\" ("
+                                  "object expected)",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         const std::string &signal_name = signal.first;
@@ -457,17 +419,21 @@ namespace geopm
             auto it = M_SIGNAL_FIELDS.find(prop.first);
             if (it == M_SIGNAL_FIELDS.end()) {
                 throw Exception("ConstConfigIOGroup::parse_config_json(): "
-                                "for signal \"" + signal.first + "\", "
-                                "unexpected property: \"" + prop.first +
-                                "\"", GEOPM_ERROR_INVALID, __FILE__,
-                                __LINE__);
+                                "for signal \""
+                                    + signal.first
+                                    + "\", "
+                                      "unexpected property: \""
+                                    + prop.first + "\"",
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             else if (prop.second.type() != it->second.type) {
                 throw Exception("ConstConfigIOGroup::parse_config_json(): "
-                                "for signal \"" + signal.first + "\", "
-                                "incorrect type for property: \"" +
-                                prop.first + "\"", GEOPM_ERROR_INVALID,
-                                __FILE__, __LINE__);
+                                "for signal \""
+                                    + signal.first
+                                    + "\", "
+                                      "incorrect type for property: \""
+                                    + prop.first + "\"",
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             else {
                 properties_found++;
@@ -478,8 +444,7 @@ namespace geopm
         if (missing > 0) {
             std::ostringstream err_msg;
             size_t added = 0;
-            err_msg << "missing properties for signal \"" << signal_name
-                    << "\": ";
+            err_msg << "missing properties for signal \"" << signal_name << "\": ";
             for (const auto &prop : required_keys) {
                 if (!prop.second) {
                     err_msg << prop.first;
@@ -488,8 +453,7 @@ namespace geopm
                         err_msg << ", ";
                 }
             }
-            throw Exception("ConstConfigIOGroup::parse_config_json(): " +
-                            err_msg.str(), GEOPM_ERROR_INVALID,
+            throw Exception("ConstConfigIOGroup::parse_config_json(): " + err_msg.str(), GEOPM_ERROR_INVALID,
                             __FILE__, __LINE__);
         }
     }

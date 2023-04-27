@@ -44,14 +44,10 @@ namespace geopm
     EndpointImp::EndpointImp(const std::string &data_path)
         : EndpointImp(data_path, nullptr, nullptr, 0, 0)
     {
-
     }
 
-    EndpointImp::EndpointImp(const std::string &path,
-                             std::shared_ptr<SharedMemory> policy_shmem,
-                             std::shared_ptr<SharedMemory> sample_shmem,
-                             size_t num_policy,
-                             size_t num_sample)
+    EndpointImp::EndpointImp(const std::string &path, std::shared_ptr<SharedMemory> policy_shmem,
+                             std::shared_ptr<SharedMemory> sample_shmem, size_t num_policy, size_t num_sample)
         : m_path(path)
         , m_policy_shmem(policy_shmem)
         , m_sample_shmem(sample_shmem)
@@ -60,13 +56,9 @@ namespace geopm
         , m_is_open(false)
         , m_continue_loop(true)
     {
-
     }
 
-    EndpointImp::~EndpointImp()
-    {
-
-    }
+    EndpointImp::~EndpointImp() {}
 
     void EndpointImp::open(void)
     {
@@ -79,11 +71,13 @@ namespace geopm
             m_sample_shmem = SharedMemory::make_unique_owner(m_path + shm_sample_postfix(), shmem_size);
         }
         auto lock_p = m_policy_shmem->get_scoped_lock();
-        struct geopm_endpoint_policy_shmem_s *data_p = (struct geopm_endpoint_policy_shmem_s*)m_policy_shmem->pointer();
+        struct geopm_endpoint_policy_shmem_s *data_p
+            = (struct geopm_endpoint_policy_shmem_s *)m_policy_shmem->pointer();
         *data_p = {};
 
         auto lock_s = m_sample_shmem->get_scoped_lock();
-        struct geopm_endpoint_sample_shmem_s *data_s = (struct geopm_endpoint_sample_shmem_s*)m_sample_shmem->pointer();
+        struct geopm_endpoint_sample_shmem_s *data_s
+            = (struct geopm_endpoint_sample_shmem_s *)m_sample_shmem->pointer();
         *data_s = {};
         m_is_open = true;
     }
@@ -129,13 +123,15 @@ namespace geopm
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto lock = m_sample_shmem->get_scoped_lock();
-        struct geopm_endpoint_sample_shmem_s *data = (struct geopm_endpoint_sample_shmem_s *) m_sample_shmem->pointer(); // Managed by shmem subsystem.
+        struct geopm_endpoint_sample_shmem_s *data
+            = (struct geopm_endpoint_sample_shmem_s *)m_sample_shmem->pointer(); // Managed by shmem subsystem.
 
         int num_sample = data->count;
         std::copy(data->values, data->values + data->count, sample.begin());
         geopm_time_s ts = data->timestamp;
         if (sample.size() != (size_t)num_sample) {
-            throw Exception("EndpointImpUser::" + std::string(__func__) + "(): Data read from shmem does not match number of samples.",
+            throw Exception("EndpointImpUser::" + std::string(__func__)
+                                + "(): Data read from shmem does not match number of samples.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return geopm_time_since(&ts);
@@ -148,7 +144,8 @@ namespace geopm
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         auto lock = m_sample_shmem->get_scoped_lock();
-        struct geopm_endpoint_sample_shmem_s *data = (struct geopm_endpoint_sample_shmem_s *) m_sample_shmem->pointer(); // Managed by shmem subsystem.
+        struct geopm_endpoint_sample_shmem_s *data
+            = (struct geopm_endpoint_sample_shmem_s *)m_sample_shmem->pointer(); // Managed by shmem subsystem.
 
         char agent_name[GEOPM_ENDPOINT_AGENT_NAME_MAX];
         std::copy(data->agent, data->agent + GEOPM_ENDPOINT_AGENT_NAME_MAX, agent_name);
@@ -169,8 +166,7 @@ namespace geopm
             agent = get_agent();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             if (timeout >= 0 && geopm_time_since(&start) >= timeout) {
-                throw Exception("EndpointImp::" + std::string(__func__) +
-                                "(): timed out waiting for controller.",
+                throw Exception("EndpointImp::" + std::string(__func__) + "(): timed out waiting for controller.",
                                 GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
         }
@@ -185,8 +181,7 @@ namespace geopm
             agent = get_agent();
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             if (timeout >= 0 && geopm_time_since(&start) >= timeout) {
-                throw Exception("EndpointImp::" + std::string(__func__) +
-                                "(): timed out waiting for controller.",
+                throw Exception("EndpointImp::" + std::string(__func__) + "(): timed out waiting for controller.",
                                 GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
         }
@@ -209,7 +204,8 @@ namespace geopm
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         auto lock = m_sample_shmem->get_scoped_lock();
-        struct geopm_endpoint_sample_shmem_s *data = (struct geopm_endpoint_sample_shmem_s *) m_sample_shmem->pointer(); // Managed by shmem subsystem.
+        struct geopm_endpoint_sample_shmem_s *data
+            = (struct geopm_endpoint_sample_shmem_s *)m_sample_shmem->pointer(); // Managed by shmem subsystem.
 
         char profile_name[GEOPM_ENDPOINT_PROFILE_NAME_MAX];
         std::copy(data->profile_name, data->profile_name + GEOPM_ENDPOINT_PROFILE_NAME_MAX, profile_name);
@@ -224,7 +220,8 @@ namespace geopm
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         auto lock = m_sample_shmem->get_scoped_lock();
-        struct geopm_endpoint_sample_shmem_s *data = (struct geopm_endpoint_sample_shmem_s *) m_sample_shmem->pointer(); // Managed by shmem subsystem.
+        struct geopm_endpoint_sample_shmem_s *data
+            = (struct geopm_endpoint_sample_shmem_s *)m_sample_shmem->pointer(); // Managed by shmem subsystem.
 
         // check for agent
         char agent_name[GEOPM_ENDPOINT_AGENT_NAME_MAX];
@@ -244,12 +241,11 @@ namespace geopm
     }
 }
 
-int geopm_endpoint_create(const char *endpoint_name,
-                          geopm_endpoint_c **endpoint)
+int geopm_endpoint_create(const char *endpoint_name, geopm_endpoint_c **endpoint)
 {
     int err = 0;
     try {
-        *endpoint = (struct geopm_endpoint_c*)(new geopm::EndpointImp(endpoint_name));
+        *endpoint = (struct geopm_endpoint_c *)(new geopm::EndpointImp(endpoint_name));
     }
     catch (...) {
         err = geopm::exception_handler(std::current_exception(), true);
@@ -261,7 +257,7 @@ int geopm_endpoint_destroy(struct geopm_endpoint_c *endpoint)
 {
     int err = 0;
     try {
-        delete (geopm::EndpointImp*)endpoint;
+        delete (geopm::EndpointImp *)endpoint;
     }
     catch (...) {
         err = geopm::exception_handler(std::current_exception(), true);
@@ -272,7 +268,7 @@ int geopm_endpoint_destroy(struct geopm_endpoint_c *endpoint)
 int geopm_endpoint_open(struct geopm_endpoint_c *endpoint)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         end->open();
     }
@@ -285,7 +281,7 @@ int geopm_endpoint_open(struct geopm_endpoint_c *endpoint)
 int geopm_endpoint_close(struct geopm_endpoint_c *endpoint)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         end->close();
     }
@@ -295,12 +291,10 @@ int geopm_endpoint_close(struct geopm_endpoint_c *endpoint)
     return err;
 }
 
-int geopm_endpoint_agent(struct geopm_endpoint_c *endpoint,
-                         size_t agent_name_max,
-                         char *agent_name)
+int geopm_endpoint_agent(struct geopm_endpoint_c *endpoint, size_t agent_name_max, char *agent_name)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         std::string agent = end->get_agent();
         strncpy(agent_name, agent.c_str(), agent_name_max);
@@ -311,11 +305,10 @@ int geopm_endpoint_agent(struct geopm_endpoint_c *endpoint,
     return err;
 }
 
-int geopm_endpoint_wait_for_agent_attach(struct geopm_endpoint_c *endpoint,
-                                         double timeout)
+int geopm_endpoint_wait_for_agent_attach(struct geopm_endpoint_c *endpoint, double timeout)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         end->wait_for_agent_attach(timeout);
     }
@@ -328,7 +321,7 @@ int geopm_endpoint_wait_for_agent_attach(struct geopm_endpoint_c *endpoint,
 int geopm_endpoint_stop_wait_loop(struct geopm_endpoint_c *endpoint)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         end->stop_wait_loop();
     }
@@ -341,7 +334,7 @@ int geopm_endpoint_stop_wait_loop(struct geopm_endpoint_c *endpoint)
 int geopm_endpoint_reset_wait_loop(struct geopm_endpoint_c *endpoint)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         end->reset_wait_loop();
     }
@@ -351,13 +344,10 @@ int geopm_endpoint_reset_wait_loop(struct geopm_endpoint_c *endpoint)
     return err;
 }
 
-
-int geopm_endpoint_profile_name(struct geopm_endpoint_c *endpoint,
-                                size_t profile_name_max,
-                                char *profile_name)
+int geopm_endpoint_profile_name(struct geopm_endpoint_c *endpoint, size_t profile_name_max, char *profile_name)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         std::string profile = end->get_profile_name();
         strncpy(profile_name, profile.c_str(), profile_name_max);
@@ -368,11 +358,10 @@ int geopm_endpoint_profile_name(struct geopm_endpoint_c *endpoint,
     return err;
 }
 
-int geopm_endpoint_num_node(struct geopm_endpoint_c *endpoint,
-                            int *num_node)
+int geopm_endpoint_num_node(struct geopm_endpoint_c *endpoint, int *num_node)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         std::set<std::string> hostlist = end->get_hostnames();
         *num_node = hostlist.size();
@@ -383,14 +372,11 @@ int geopm_endpoint_num_node(struct geopm_endpoint_c *endpoint,
     return err;
 }
 
-int geopm_endpoint_node_name(struct geopm_endpoint_c *endpoint,
-                             int node_idx,
-                             size_t node_name_max,
-                             char *node_name)
+int geopm_endpoint_node_name(struct geopm_endpoint_c *endpoint, int node_idx, size_t node_name_max, char *node_name)
 {
     int err = 0;
     try {
-        geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+        geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
         std::set<std::string> temp = end->get_hostnames();
         std::vector<std::string> hostlist{temp.begin(), temp.end()};
         try {
@@ -398,7 +384,7 @@ int geopm_endpoint_node_name(struct geopm_endpoint_c *endpoint,
             strncpy(node_name, host.c_str(), node_name_max - 1);
             node_name[node_name_max - 1] = '\0';
         }
-        catch (const std::out_of_range& ex) {
+        catch (const std::out_of_range &ex) {
             throw geopm::Exception("Parameter node_idx is out of range: " + std::to_string(node_idx),
                                    GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
@@ -409,12 +395,10 @@ int geopm_endpoint_node_name(struct geopm_endpoint_c *endpoint,
     return err;
 }
 
-int geopm_endpoint_write_policy(struct geopm_endpoint_c *endpoint,
-                                size_t agent_num_policy,
-                                const double *policy_array)
+int geopm_endpoint_write_policy(struct geopm_endpoint_c *endpoint, size_t agent_num_policy, const double *policy_array)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         std::vector<double> policy(policy_array, policy_array + agent_num_policy);
         end->write_policy(policy);
@@ -425,13 +409,11 @@ int geopm_endpoint_write_policy(struct geopm_endpoint_c *endpoint,
     return err;
 }
 
-int geopm_endpoint_read_sample(struct geopm_endpoint_c *endpoint,
-                               size_t agent_num_sample,
-                               double *sample_array,
-                               double *sample_age_sec)
+int geopm_endpoint_read_sample(struct geopm_endpoint_c *endpoint, size_t agent_num_sample,
+                               double *sample_array, double *sample_age_sec)
 {
     int err = 0;
-    geopm::EndpointImp *end = (geopm::EndpointImp*)endpoint;
+    geopm::EndpointImp *end = (geopm::EndpointImp *)endpoint;
     try {
         std::vector<double> sample(agent_num_sample);
         *sample_age_sec = end->read_sample(sample);

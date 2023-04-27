@@ -11,13 +11,11 @@ namespace geopm
     CombinedControl::CombinedControl()
         : CombinedControl(1.0)
     {
-
     }
 
     CombinedControl::CombinedControl(double factor)
         : m_factor(factor)
     {
-
     }
 
     double CombinedControl::adjust(double setting)

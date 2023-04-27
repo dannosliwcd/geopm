@@ -34,71 +34,53 @@ namespace geopm
         : m_platform_topo(platform_topo)
         , m_dcgm_device_pool(device_pool)
         , m_is_batch_read(false)
-        , m_signal_available({{"DCGM::SM_ACTIVE", {
-                                  "Streaming Multiprocessor activity expressed as a ratio of cycles",
-                                  {},
-                                  [this](unsigned int domain_idx) -> double
-                                  {
-                                      return this->m_dcgm_device_pool.sample(
-                                                   domain_idx, geopm::DCGMDevicePool::M_FIELD_ID_SM_ACTIVE);
-                                  },
-                                  Agg::average,
-                                  string_format_double
-                                  }},
-                              {"DCGM::SM_OCCUPANCY", {
-                                  "Warp residency expressed as a ratio of maximum warps",
-                                  {},
-                                  [this](unsigned int domain_idx) -> double
-                                  {
-                                      return this->m_dcgm_device_pool.sample(
-                                                   domain_idx, geopm::DCGMDevicePool::M_FIELD_ID_SM_OCCUPANCY);
-                                  },
-                                  Agg::average,
-                                  string_format_double
-                                  }},
-                              {"DCGM::DRAM_ACTIVE", {
-                                  "DRAM send & receive expressed as a ratio of cycles",
-                                  {},
-                                  [this](unsigned int domain_idx) -> double
-                                  {
-                                      return this->m_dcgm_device_pool.sample(
-                                                   domain_idx, geopm::DCGMDevicePool::M_FIELD_ID_DRAM_ACTIVE);
-                                  },
-                                  Agg::average,
-                                  string_format_double
-                                  }},
-                             })
-        , m_control_available({{"DCGM::FIELD_UPDATE_RATE", {
-                                    "Rate at which field data is polled in seconds",
-                                    {},
-                                    Agg::expect_same,
-                                    string_format_double
-                                    }},
-                               {"DCGM::MAX_STORAGE_TIME", {
-                                    "Maximum time field data is stored in seconds",
-                                    {},
-                                    Agg::expect_same,
-                                    string_format_double
-                                    }},
-                               {"DCGM::MAX_SAMPLES", {
-                                    "Maximum number of samples.  0=no limit",
-                                    {},
-                                    Agg::expect_same,
-                                    string_format_integer
-                                    }}
-                              })
+        , m_signal_available({
+              {"DCGM::SM_ACTIVE",
+               {"Streaming Multiprocessor activity expressed as a ratio of cycles",
+                {},
+                [this](unsigned int domain_idx) -> double {
+                    return this->m_dcgm_device_pool.sample(domain_idx, geopm::DCGMDevicePool::M_FIELD_ID_SM_ACTIVE);
+                },
+                Agg::average,
+                string_format_double}},
+              {"DCGM::SM_OCCUPANCY",
+               {"Warp residency expressed as a ratio of maximum warps",
+                {},
+                [this](unsigned int domain_idx) -> double {
+                    return this->m_dcgm_device_pool.sample(domain_idx, geopm::DCGMDevicePool::M_FIELD_ID_SM_OCCUPANCY);
+                },
+                Agg::average,
+                string_format_double}},
+              {"DCGM::DRAM_ACTIVE",
+               {"DRAM send & receive expressed as a ratio of cycles",
+                {},
+                [this](unsigned int domain_idx) -> double {
+                    return this->m_dcgm_device_pool.sample(domain_idx, geopm::DCGMDevicePool::M_FIELD_ID_DRAM_ACTIVE);
+                },
+                Agg::average,
+                string_format_double}},
+          })
+        , m_control_available(
+              {{"DCGM::FIELD_UPDATE_RATE",
+                {"Rate at which field data is polled in seconds", {}, Agg::expect_same, string_format_double}},
+               {"DCGM::MAX_STORAGE_TIME",
+                {"Maximum time field data is stored in seconds", {}, Agg::expect_same, string_format_double}},
+               {"DCGM::MAX_SAMPLES",
+                {"Maximum number of samples.  0=no limit", {}, Agg::expect_same, string_format_integer}}})
     {
         // confirm all DCGM devices correspond to a GPU
         if (m_dcgm_device_pool.num_device() != m_platform_topo.num_domain(GEOPM_DOMAIN_GPU)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": "
-                            "DCGM enabled device count does not match GPU count",
+            throw Exception("DCGMIOGroup::" + std::string(__func__)
+                                + ": "
+                                  "DCGM enabled device count does not match GPU count",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         // populate signals for each domain
         for (auto &sv : m_signal_available) {
             std::vector<std::shared_ptr<signal_s> > result;
-            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(signal_domain_type(sv.first)); ++domain_idx) {
+            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(signal_domain_type(sv.first));
+                 ++domain_idx) {
                 std::shared_ptr<signal_s> sgnl = std::make_shared<signal_s>(signal_s{0, false});
                 result.push_back(sgnl);
             }
@@ -110,7 +92,8 @@ namespace geopm
         // populate controls for each domain
         for (auto &sv : m_control_available) {
             std::vector<std::shared_ptr<control_s> > result;
-            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(control_domain_type(sv.first)); ++domain_idx) {
+            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(control_domain_type(sv.first));
+                 ++domain_idx) {
                 std::shared_ptr<control_s> ctrl = std::make_shared<control_s>(control_s{0, false});
                 result.push_back(ctrl);
             }
@@ -118,9 +101,7 @@ namespace geopm
         }
     }
 
-    DCGMIOGroup::~DCGMIOGroup(void)
-    {
-    }
+    DCGMIOGroup::~DCGMIOGroup(void) {}
 
     // Extract the set of all signal names from the index map
     std::set<std::string> DCGMIOGroup::signal_names(void) const
@@ -170,13 +151,13 @@ namespace geopm
     int DCGMIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": signal_name " + signal_name +
-                            " not valid for DCGMIOGroup.",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": signal_name " + signal_name
+                                + " not valid for DCGMIOGroup.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != signal_domain_type(signal_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name + ": domain_type must be " +
-                            std::to_string(signal_domain_type(signal_name)),
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name
+                                + ": domain_type must be " + std::to_string(signal_domain_type(signal_name)),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(signal_domain_type(signal_name))) {
@@ -214,13 +195,13 @@ namespace geopm
     int DCGMIOGroup::push_control(const std::string &control_name, int domain_type, int domain_idx)
     {
         if (!is_valid_control(control_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": control_name " + control_name +
-                            " not valid for DCGMIOGroup",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": control_name " + control_name
+                                + " not valid for DCGMIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != control_domain_type(control_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + control_name + ": domain_type must be " +
-                            std::to_string(control_domain_type(control_name)),
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + control_name
+                                + ": domain_type must be " + std::to_string(control_domain_type(control_name)),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(domain_type)) {
@@ -253,20 +234,18 @@ namespace geopm
     void DCGMIOGroup::read_batch(void)
     {
         m_is_batch_read = true;
-        if(!m_signal_pushed.empty()) {
+        if (!m_signal_pushed.empty()) {
             // NOTE: Doing this requires all signals to operate at the
             //       GEOPM_GPU domain, but it means
             //       dcgmGetLatestValuesForFields only has to be called
             //       once per GEOPM_GPU domain.
-            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(
-                 GEOPM_DOMAIN_GPU); ++domain_idx) {
+            for (int domain_idx = 0; domain_idx < m_platform_topo.num_domain(GEOPM_DOMAIN_GPU); ++domain_idx) {
 
                 m_dcgm_device_pool.update(domain_idx);
 
                 for (auto &sv : m_signal_available) {
                     if (sv.second.m_signals.at(domain_idx)->m_do_read) {
-                        sv.second.m_signals.at(domain_idx)->m_value =
-                            sv.second.m_devpool_func(domain_idx);
+                        sv.second.m_signals.at(domain_idx)->m_value = sv.second.m_devpool_func(domain_idx);
                     }
                 }
             }
@@ -291,7 +270,8 @@ namespace geopm
     {
         // Do conversion of signal values stored in read batch
         if (batch_idx < 0 || batch_idx >= (int)m_signal_pushed.size()) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": batch_idx " +std::to_string(batch_idx)+ " out of range",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": batch_idx "
+                                + std::to_string(batch_idx) + " out of range",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (!m_is_batch_read) {
@@ -306,7 +286,8 @@ namespace geopm
     void DCGMIOGroup::adjust(int batch_idx, double setting)
     {
         if (batch_idx < 0 || (unsigned)batch_idx >= m_control_pushed.size()) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + "(): batch_idx " +std::to_string(batch_idx)+ " out of range",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + "(): batch_idx "
+                                + std::to_string(batch_idx) + " out of range",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -318,13 +299,12 @@ namespace geopm
     double DCGMIOGroup::read_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name +
-                            " not valid for DCGMIOGroup",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name + " not valid for DCGMIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != signal_domain_type(signal_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name + ": domain_type must be " +
-                            std::to_string(signal_domain_type(signal_name)),
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name
+                                + ": domain_type must be " + std::to_string(signal_domain_type(signal_name)),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(signal_domain_type(signal_name))) {
@@ -340,10 +320,10 @@ namespace geopm
             result = it->second.m_devpool_func(domain_idx);
         }
         else {
-    #ifdef GEOPM_DEBUG
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": Handling not defined for " +
-                            signal_name, GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
-    #endif
+#ifdef GEOPM_DEBUG
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": Handling not defined for " + signal_name,
+                            GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+#endif
         }
         return result;
     }
@@ -352,13 +332,12 @@ namespace geopm
     void DCGMIOGroup::write_control(const std::string &control_name, int domain_type, int domain_idx, double setting)
     {
         if (!is_valid_control(control_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + control_name +
-                            " not valid for DCGMIOGroup",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + control_name + " not valid for DCGMIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != control_domain_type(control_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + control_name + ": domain_type must be " +
-                            std::to_string(control_domain_type(control_name)),
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + control_name
+                                + ": domain_type must be " + std::to_string(control_domain_type(control_name)),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_platform_topo.num_domain(GEOPM_DOMAIN_BOARD)) {
@@ -367,7 +346,7 @@ namespace geopm
         }
 
         if (control_name == "DCGM::FIELD_UPDATE_RATE") {
-            m_dcgm_device_pool.update_rate(setting*1e6);
+            m_dcgm_device_pool.update_rate(setting * 1e6);
         }
         else if (control_name == "DCGM::MAX_STORAGE_TIME") {
             m_dcgm_device_pool.max_storage_time(setting);
@@ -376,10 +355,10 @@ namespace geopm
             m_dcgm_device_pool.max_samples(setting);
         }
         else {
-    #ifdef GEOPM_DEBUG
-                throw Exception("DCGMIOGroup::" + std::string(__func__) + "Handling not defined for "
-                                + control_name, GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
-    #endif
+#ifdef GEOPM_DEBUG
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + "Handling not defined for " + control_name,
+                            GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+#endif
         }
     }
 
@@ -401,9 +380,7 @@ namespace geopm
         m_dcgm_device_pool.polling_disable();
     }
 
-    void DCGMIOGroup::save_control(const std::string &save_path)
-    {
-    }
+    void DCGMIOGroup::save_control(const std::string &save_path) {}
 
     void DCGMIOGroup::restore_control(const std::string &save_path)
     {
@@ -415,8 +392,7 @@ namespace geopm
     {
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name +
-                            "not valid for DCGMIOGroup",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name + "not valid for DCGMIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.m_agg_function;
@@ -427,8 +403,7 @@ namespace geopm
     {
         auto it = m_signal_available.find(signal_name);
         if (it == m_signal_available.end()) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name +
-                            "not valid for DCGMIOGroup",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + signal_name + "not valid for DCGMIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.m_format_function;
@@ -438,8 +413,8 @@ namespace geopm
     std::string DCGMIOGroup::signal_description(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": signal_name " + signal_name +
-                            " not valid for DCGMIOGroup.",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": signal_name " + signal_name
+                                + " not valid for DCGMIOGroup.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return m_signal_available.at(signal_name).m_description;
@@ -449,8 +424,7 @@ namespace geopm
     std::string DCGMIOGroup::control_description(const std::string &control_name) const
     {
         if (!is_valid_control(control_name)) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + control_name +
-                            "not valid for DCGMIOGroup",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": " + control_name + "not valid for DCGMIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -479,12 +453,11 @@ namespace geopm
         return geopm::make_unique<DCGMIOGroup>();
     }
 
-    void DCGMIOGroup::register_signal_alias(const std::string &alias_name,
-                                            const std::string &signal_name)
+    void DCGMIOGroup::register_signal_alias(const std::string &alias_name, const std::string &signal_name)
     {
         if (m_signal_available.find(alias_name) != m_signal_available.end()) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": signal_name " + alias_name +
-                            " was previously registered.",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": signal_name " + alias_name
+                                + " was previously registered.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto it = m_signal_available.find(signal_name);
@@ -494,16 +467,15 @@ namespace geopm
         }
         // copy signal info but append to description
         m_signal_available[alias_name] = it->second;
-        m_signal_available[alias_name].m_description =
-            m_signal_available[signal_name].m_description + '\n' + "    alias_for: " + signal_name;
+        m_signal_available[alias_name].m_description = m_signal_available[signal_name].m_description + '\n'
+                                                       + "    alias_for: " + signal_name;
     }
 
-    void DCGMIOGroup::register_control_alias(const std::string &alias_name,
-                                           const std::string &control_name)
+    void DCGMIOGroup::register_control_alias(const std::string &alias_name, const std::string &control_name)
     {
         if (m_control_available.find(alias_name) != m_control_available.end()) {
-            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": contro1_name " + alias_name +
-                            " was previously registered.",
+            throw Exception("DCGMIOGroup::" + std::string(__func__) + ": contro1_name " + alias_name
+                                + " was previously registered.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto it = m_control_available.find(control_name);
@@ -513,7 +485,7 @@ namespace geopm
         }
         // copy control info but append to description
         m_control_available[alias_name] = it->second;
-        m_control_available[alias_name].m_description =
-        m_control_available[control_name].m_description + '\n' + "    alias_for: " + control_name;
+        m_control_available[alias_name].m_description = m_control_available[control_name].m_description + '\n'
+                                                        + "    alias_for: " + control_name;
     }
 }

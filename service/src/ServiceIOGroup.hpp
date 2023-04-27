@@ -27,8 +27,7 @@ namespace geopm
     {
         public:
             ServiceIOGroup();
-            ServiceIOGroup(const PlatformTopo &platform_topo,
-                           std::shared_ptr<ServiceProxy> service_proxy,
+            ServiceIOGroup(const PlatformTopo &platform_topo, std::shared_ptr<ServiceProxy> service_proxy,
                            std::shared_ptr<BatchClient> batch_client_mock);
             virtual ~ServiceIOGroup();
             std::set<std::string> signal_names(void) const override;
@@ -37,24 +36,14 @@ namespace geopm
             bool is_valid_control(const std::string &control_name) const override;
             int signal_domain_type(const std::string &signal_name) const override;
             int control_domain_type(const std::string &control_name) const override;
-            int push_signal(const std::string &signal_name,
-                            int domain_type,
-                            int domain_idx) override;
-            int push_control(const std::string &control_name,
-                             int domain_type,
-                             int domain_idx) override;
+            int push_signal(const std::string &signal_name, int domain_type, int domain_idx) override;
+            int push_control(const std::string &control_name, int domain_type, int domain_idx) override;
             void read_batch(void) override;
             void write_batch(void) override;
             double sample(int sample_idx) override;
-            void adjust(int control_idx,
-                        double setting) override;
-            double read_signal(const std::string &signal_name,
-                               int domain_type,
-                               int domain_idx) override;
-            void write_control(const std::string &control_name,
-                               int domain_type,
-                               int domain_idx,
-                               double setting) override;
+            void adjust(int control_idx, double setting) override;
+            double read_signal(const std::string &signal_name, int domain_type, int domain_idx) override;
+            void write_control(const std::string &control_name, int domain_type, int domain_idx, double setting) override;
             // NOTE: This IOGroup will not directlly implement a
             //       save/restore since it is a proxy.  Creating this
             //       IOGroup will start a session with the service,
@@ -72,6 +61,7 @@ namespace geopm
             std::string name(void) const override;
             static std::string plugin_name(void);
             static std::unique_ptr<IOGroup> make_plugin(void);
+
         private:
             void init_batch_server(void);
             static const std::string M_PLUGIN_NAME;

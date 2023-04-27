@@ -13,7 +13,6 @@
 #include <set>
 #include <memory>
 
-
 namespace geopm
 {
     /// @brief Environment class encapsulates all functionality related to
@@ -71,8 +70,7 @@ namespace geopm
         public:
             EnvironmentImp();
             EnvironmentImp(const std::string &default_settings_path,
-                           const std::string &override_settings_path,
-                           const PlatformIO *platform_io);
+                           const std::string &override_settings_path, const PlatformIO *platform_io);
             virtual ~EnvironmentImp() = default;
             std::string report(void) const override;
             std::string comm(void) const override;
@@ -100,8 +98,7 @@ namespace geopm
             bool do_ompt(void) const override;
             std::string default_config_path(void) const override;
             std::string override_config_path(void) const override;
-            static void parse_environment_file(const std::string &settings_path,
-                                               const std::set<std::string> &all_names,
+            static void parse_environment_file(const std::string &settings_path, const std::set<std::string> &all_names,
                                                const std::set<std::string> &user_defined_names,
                                                std::map<std::string, std::string> &name_value_map);
             std::string record_filter(void) const override;
@@ -109,6 +106,7 @@ namespace geopm
             bool do_debug_attach_all(void) const override;
             bool do_debug_attach_one(void) const override;
             int debug_attach_process(void) const override;
+
         protected:
             void parse_environment(void);
             bool is_set(const std::string &env_var) const;

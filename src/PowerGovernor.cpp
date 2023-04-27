@@ -18,7 +18,6 @@
 #include "geopm/PlatformTopo.hpp"
 #include "geopm/Exception.hpp"
 
-
 namespace geopm
 {
     std::unique_ptr<PowerGovernor> PowerGovernor::make_unique(void)
@@ -34,7 +33,6 @@ namespace geopm
     PowerGovernorImp::PowerGovernorImp()
         : PowerGovernorImp(PlatformIOProf::platform_io(), platform_topo())
     {
-
     }
 
     PowerGovernorImp::PowerGovernorImp(PlatformIO &platform_io, const PlatformTopo &platform_topo)
@@ -50,27 +48,21 @@ namespace geopm
         , m_last_pkg_power_setting(NAN)
         , m_do_write_batch(false)
     {
-
     }
 
-    PowerGovernorImp::~PowerGovernorImp()
-    {
-
-    }
+    PowerGovernorImp::~PowerGovernorImp() {}
 
     void PowerGovernorImp::init_platform_io(void)
     {
-        for(int domain_idx = 0; domain_idx < m_num_pkg; ++domain_idx) {
+        for (int domain_idx = 0; domain_idx < m_num_pkg; ++domain_idx) {
             int control_idx = m_platform_io.push_control("CPU_POWER_LIMIT_CONTROL", m_pkg_pwr_domain_type, domain_idx);
             m_control_idx.push_back(control_idx);
-            m_platform_io.write_control("CPU_POWER_TIME_WINDOW", m_pkg_pwr_domain_type, domain_idx, M_CPU_POWER_TIME_WINDOW);
+            m_platform_io.write_control("CPU_POWER_TIME_WINDOW", m_pkg_pwr_domain_type, domain_idx,
+                                        M_CPU_POWER_TIME_WINDOW);
         }
     }
 
-    void PowerGovernorImp::sample_platform(void)
-    {
-
-    }
+    void PowerGovernorImp::sample_platform(void) {}
 
     void PowerGovernorImp::adjust_platform(double node_power_request, double &node_power_actual)
     {

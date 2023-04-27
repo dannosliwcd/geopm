@@ -31,12 +31,11 @@ namespace geopm
     FrequencyMapAgent::FrequencyMapAgent()
         : FrequencyMapAgent(PlatformIOProf::platform_io(), platform_topo())
     {
-
     }
 
-    FrequencyMapAgent::FrequencyMapAgent(const std::map<uint64_t, double>& hash_freq_map,
-                                         const std::set<uint64_t>& default_freq_hash,
-                                         PlatformIO &plat_io, const PlatformTopo &topo)
+    FrequencyMapAgent::FrequencyMapAgent(const std::map<uint64_t, double> &hash_freq_map,
+                                         const std::set<uint64_t> &default_freq_hash, PlatformIO &plat_io,
+                                         const PlatformTopo &topo)
         : FrequencyMapAgent(plat_io, topo)
     {
         m_hash_freq_map = hash_freq_map;
@@ -72,7 +71,6 @@ namespace geopm
         , m_uncore_freq(NAN)
         , m_default_gpu_freq(NAN)
     {
-
     }
 
     std::string FrequencyMapAgent::plugin_name(void)
@@ -98,9 +96,8 @@ namespace geopm
 
     void FrequencyMapAgent::validate_policy(std::vector<double> &policy) const
     {
-        GEOPM_DEBUG_ASSERT(policy.size() == M_NUM_POLICY,
-                           "FrequencyMapAgent::" + std::string(__func__) +
-                           "(): policy vector not correctly sized.");
+        GEOPM_DEBUG_ASSERT(policy.size() == M_NUM_POLICY, "FrequencyMapAgent::" + std::string(__func__)
+                                                              + "(): policy vector not correctly sized.");
 
         if (is_all_nan(policy)) {
             // All-NAN policy may be received before the first policy
@@ -109,29 +106,26 @@ namespace geopm
         }
 
         if (std::isnan(policy[M_POLICY_FREQ_CPU_DEFAULT])) {
-            throw Exception("FrequencyMapAgent::" + std::string(__func__) +
-                            "(): default CPU frequency must be provided in policy.",
+            throw Exception("FrequencyMapAgent::" + std::string(__func__)
+                                + "(): default CPU frequency must be provided in policy.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
-        if (policy[M_POLICY_FREQ_CPU_DEFAULT] > m_core_freq_max ||
-            policy[M_POLICY_FREQ_CPU_DEFAULT] < m_core_freq_min) {
-            throw Exception("FrequencyMapAgent::" + std::string(__func__) +
-                            "(): default CPU frequency out of range: " +
-                            std::to_string(policy[M_POLICY_FREQ_CPU_DEFAULT]) + ".",
+        if (policy[M_POLICY_FREQ_CPU_DEFAULT] > m_core_freq_max || policy[M_POLICY_FREQ_CPU_DEFAULT] < m_core_freq_min) {
+            throw Exception("FrequencyMapAgent::" + std::string(__func__) + "(): default CPU frequency out of range: "
+                                + std::to_string(policy[M_POLICY_FREQ_CPU_DEFAULT]) + ".",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         if (!std::isnan(policy[M_POLICY_FREQ_GPU_DEFAULT])) {
             if (!m_do_gpu_ctl) {
-                throw Exception("FrequencyMapAgent::" + std::string(__func__) +
-                                "(): default GPU frequency specified on a system with no GPUs.",
+                throw Exception("FrequencyMapAgent::" + std::string(__func__)
+                                    + "(): default GPU frequency specified on a system with no GPUs.",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
-            else if (policy[M_POLICY_FREQ_GPU_DEFAULT] > m_gpu_init_freq_max ||
-                     policy[M_POLICY_FREQ_GPU_DEFAULT] < m_gpu_init_freq_min) {
-                throw Exception("FrequencyMapAgent::" + std::string(__func__) +
-                                "(): default GPU frequency " +
-                                " is out of range. (",
+            else if (policy[M_POLICY_FREQ_GPU_DEFAULT] > m_gpu_init_freq_max
+                     || policy[M_POLICY_FREQ_GPU_DEFAULT] < m_gpu_init_freq_min) {
+                throw Exception("FrequencyMapAgent::" + std::string(__func__) + "(): default GPU frequency "
+                                    + " is out of range. (",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
@@ -148,23 +142,23 @@ namespace geopm
                 // same form they are output from a report.
                 auto region = static_cast<uint64_t>(*it);
                 if (std::isnan(mapped_freq)) {
-                    throw Exception("FrequencyMapAgent::" + std::string(__func__) +
-                                    "(): mapped region with no frequency assigned.",
+                    throw Exception("FrequencyMapAgent::" + std::string(__func__)
+                                        + "(): mapped region with no frequency assigned.",
                                     GEOPM_ERROR_INVALID, __FILE__, __LINE__);
                 }
                 // A valid region will either set or clear its mapped frequency.
                 // Just make sure it does not have multiple definitions.
                 if (!policy_regions.insert(region).second) {
-                    throw Exception("FrequencyMapAgent policy has multiple entries for region: " +
-                                        std::to_string(region),
-                                    GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+                    throw Exception(
+                        "FrequencyMapAgent policy has multiple entries for region: " + std::to_string(region),
+                        GEOPM_ERROR_INVALID, __FILE__, __LINE__);
                 }
             }
             else if (!std::isnan(mapped_freq)) {
                 // An invalid region is only a problem if we are trying to map
                 // a frequency to it. Otherwise (NaN, NaN) just ignore it.
-                throw Exception("FrequencyMapAgent policy maps a NaN region with frequency: " +
-                                    std::to_string(mapped_freq),
+                throw Exception("FrequencyMapAgent policy maps a NaN region with frequency: "
+                                    + std::to_string(mapped_freq),
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
@@ -172,8 +166,7 @@ namespace geopm
 
     bool FrequencyMapAgent::is_all_nan(const std::vector<double> &vec)
     {
-        return std::all_of(vec.begin(), vec.end(),
-                           [](double x) -> bool { return std::isnan(x); });
+        return std::all_of(vec.begin(), vec.end(), [](double x) -> bool { return std::isnan(x); });
     }
 
     void FrequencyMapAgent::update_policy(const std::vector<double> &policy)
@@ -192,8 +185,7 @@ namespace geopm
         std::map<uint64_t, double> old_freq_map = m_hash_freq_map;
         m_hash_freq_map.clear();
         for (auto it = policy.begin() + M_POLICY_FIRST_HASH;
-             it != policy.end() && std::next(it) != policy.end();
-             std::advance(it, 2)) {
+             it != policy.end() && std::next(it) != policy.end(); std::advance(it, 2)) {
             if (!std::isnan(*it)) {
                 auto hash = static_cast<uint64_t>(*it);
                 auto freq = *(it + 1);
@@ -202,8 +194,7 @@ namespace geopm
                 // This is a logic error because it is checked by
                 // validate policy, which the controller should
                 // call before this function.
-                GEOPM_DEBUG_ASSERT(!std::isnan(freq),
-                                   "mapped region with no frequency assigned.");
+                GEOPM_DEBUG_ASSERT(!std::isnan(freq), "mapped region with no frequency assigned.");
                 m_hash_freq_map[hash] = freq;
             }
         }
@@ -216,12 +207,11 @@ namespace geopm
         if (m_hash_freq_map != old_freq_map) {
             m_is_policy_updated = true;
         }
-        if (!std::isnan(policy[M_POLICY_FREQ_CPU_UNCORE]) &&
-            m_uncore_freq != policy[M_POLICY_FREQ_CPU_UNCORE]) {
+        if (!std::isnan(policy[M_POLICY_FREQ_CPU_UNCORE]) && m_uncore_freq != policy[M_POLICY_FREQ_CPU_UNCORE]) {
             m_is_policy_updated = true;
         }
-        if (!std::isnan(policy[M_POLICY_FREQ_GPU_DEFAULT]) &&
-            m_default_gpu_freq != policy[M_POLICY_FREQ_GPU_DEFAULT]) {
+        if (!std::isnan(policy[M_POLICY_FREQ_GPU_DEFAULT])
+            && m_default_gpu_freq != policy[M_POLICY_FREQ_GPU_DEFAULT]) {
             m_is_policy_updated = true;
         }
 
@@ -234,7 +224,7 @@ namespace geopm
                                          std::vector<std::vector<double> > &out_policy)
     {
 #ifdef GEOPM_DEBUG
-        if (out_policy.size() != (size_t) m_num_children) {
+        if (out_policy.size() != (size_t)m_num_children) {
             throw Exception("FrequencyMapAgent::" + std::string(__func__) + "(): out_policy vector not correctly sized.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
@@ -260,7 +250,6 @@ namespace geopm
     void FrequencyMapAgent::aggregate_sample(const std::vector<std::vector<double> > &in_sample,
                                              std::vector<double> &out_sample)
     {
-
     }
 
     bool FrequencyMapAgent::do_send_sample(void) const
@@ -276,7 +265,7 @@ namespace geopm
 
         if (!m_is_adjust_initialized) {
             // adjust all controls once in case not applied by policy
-            for (size_t ctl_idx = 0; ctl_idx < (size_t) m_num_freq_ctl_domain; ++ctl_idx) {
+            for (size_t ctl_idx = 0; ctl_idx < (size_t)m_num_freq_ctl_domain; ++ctl_idx) {
                 double val = m_platform_io.read_signal("CPU_FREQUENCY_MAX_CONTROL", m_freq_ctl_domain_type, ctl_idx);
                 m_platform_io.adjust(m_freq_control_idx[ctl_idx], val);
             }
@@ -297,7 +286,7 @@ namespace geopm
         }
 
         double freq = NAN;
-        for (size_t ctl_idx = 0; ctl_idx < (size_t) m_num_freq_ctl_domain; ++ctl_idx) {
+        for (size_t ctl_idx = 0; ctl_idx < (size_t)m_num_freq_ctl_domain; ++ctl_idx) {
             const uint64_t curr_hash = m_last_hash[ctl_idx];
             auto it = m_hash_freq_map.find(curr_hash);
             if (it != m_hash_freq_map.end()) {
@@ -347,15 +336,14 @@ namespace geopm
 
     void FrequencyMapAgent::sample_platform(std::vector<double> &out_sample)
     {
-        for (size_t ctl_idx = 0; ctl_idx < (size_t) m_num_freq_ctl_domain; ++ctl_idx) {
+        for (size_t ctl_idx = 0; ctl_idx < (size_t)m_num_freq_ctl_domain; ++ctl_idx) {
             m_last_hash[ctl_idx] = m_platform_io.sample(m_hash_signal_idx[ctl_idx]);
         }
     }
 
     void FrequencyMapAgent::wait(void)
     {
-        while(geopm_time_since(&m_wait_time) < M_WAIT_SEC) {
-
+        while (geopm_time_since(&m_wait_time) < M_WAIT_SEC) {
         }
         geopm_time(&m_wait_time);
     }
@@ -394,8 +382,7 @@ namespace geopm
         }
 
         std::map<std::string, Json> temp_map;
-        for (const auto &region : full_map)
-        {
+        for (const auto &region : full_map) {
             std::ostringstream key_ss;
             key_ss << "0x" << std::hex << std::setfill('0') << std::setw(16) << std::fixed;
             key_ss << region.first;
@@ -405,7 +392,8 @@ namespace geopm
         Json my_json = Json(temp_map);
 
         std::string frequency_map_data = my_json.dump();
-        frequency_map_data.erase(std::remove(frequency_map_data.begin(), frequency_map_data.end(), '"'), frequency_map_data.end());
+        frequency_map_data.erase(std::remove(frequency_map_data.begin(), frequency_map_data.end(), '"'),
+                                 frequency_map_data.end());
         result.push_back(std::make_pair("Frequency map", frequency_map_data));
 
         return result;
@@ -433,10 +421,7 @@ namespace geopm
         return {};
     }
 
-    void FrequencyMapAgent::trace_values(std::vector<double> &values)
-    {
-
-    }
+    void FrequencyMapAgent::trace_values(std::vector<double> &values) {}
 
     void FrequencyMapAgent::enforce_policy(const std::vector<double> &policy) const
     {
@@ -455,16 +440,17 @@ namespace geopm
         m_platform_io.write_control("CPU_FREQUENCY_MAX_CONTROL", GEOPM_DOMAIN_BOARD, 0,
                                     policy[M_POLICY_FREQ_CPU_DEFAULT]);
         if (!std::isnan(policy[M_POLICY_FREQ_CPU_UNCORE])) {
-                m_platform_io.write_control("CPU_UNCORE_FREQUENCY_MIN_CONTROL", GEOPM_DOMAIN_BOARD, 0,
-                                            policy[M_POLICY_FREQ_CPU_UNCORE]);
-                m_platform_io.write_control("CPU_UNCORE_FREQUENCY_MAX_CONTROL", GEOPM_DOMAIN_BOARD, 0,
-                                            policy[M_POLICY_FREQ_CPU_UNCORE]);
+            m_platform_io.write_control("CPU_UNCORE_FREQUENCY_MIN_CONTROL", GEOPM_DOMAIN_BOARD, 0,
+                                        policy[M_POLICY_FREQ_CPU_UNCORE]);
+            m_platform_io.write_control("CPU_UNCORE_FREQUENCY_MAX_CONTROL", GEOPM_DOMAIN_BOARD, 0,
+                                        policy[M_POLICY_FREQ_CPU_UNCORE]);
         }
 
-        //Apply GPU default frequency settings
-        //Ensuring that MIN_CONTROL <= MAX CONTROL at all times to avoid issues
+        // Apply GPU default frequency settings
+        // Ensuring that MIN_CONTROL <= MAX CONTROL at all times to avoid issues
         if (!std::isnan(policy[M_POLICY_FREQ_GPU_DEFAULT]) && m_do_gpu_ctl) {
-            double gpu_min_control = m_platform_io.read_signal("GPU_CORE_FREQUENCY_MIN_CONTROL", GEOPM_DOMAIN_BOARD, 0);
+            double gpu_min_control = m_platform_io.read_signal("GPU_CORE_FREQUENCY_MIN_CONTROL",
+                                                               GEOPM_DOMAIN_BOARD, 0);
             if (policy[M_POLICY_FREQ_GPU_DEFAULT] >= gpu_min_control) {
                 m_platform_io.write_control("GPU_CORE_FREQUENCY_MAX_CONTROL", GEOPM_DOMAIN_BOARD, 0,
                                             policy[M_POLICY_FREQ_GPU_DEFAULT]);
@@ -484,16 +470,12 @@ namespace geopm
     {
         m_freq_ctl_domain_type = m_platform_io.control_domain_type("CPU_FREQUENCY_MAX_CONTROL");
         m_num_freq_ctl_domain = m_platform_topo.num_domain(m_freq_ctl_domain_type);
-        m_last_hash = std::vector<uint64_t>(m_num_freq_ctl_domain,
-                                            GEOPM_REGION_HASH_UNMARKED);
+        m_last_hash = std::vector<uint64_t>(m_num_freq_ctl_domain, GEOPM_REGION_HASH_UNMARKED);
         m_last_freq = std::vector<double>(m_num_freq_ctl_domain, NAN);
-        for (size_t ctl_idx = 0; ctl_idx < (size_t) m_num_freq_ctl_domain; ++ctl_idx) {
-            m_hash_signal_idx.push_back(m_platform_io.push_signal("REGION_HASH",
-                                                                  m_freq_ctl_domain_type,
-                                                                  ctl_idx));
-            m_freq_control_idx.push_back(m_platform_io.push_control("CPU_FREQUENCY_MAX_CONTROL",
-                                                                    m_freq_ctl_domain_type,
-                                                                    ctl_idx));
+        for (size_t ctl_idx = 0; ctl_idx < (size_t)m_num_freq_ctl_domain; ++ctl_idx) {
+            m_hash_signal_idx.push_back(m_platform_io.push_signal("REGION_HASH", m_freq_ctl_domain_type, ctl_idx));
+            m_freq_control_idx.push_back(
+                m_platform_io.push_control("CPU_FREQUENCY_MAX_CONTROL", m_freq_ctl_domain_type, ctl_idx));
         }
         m_uncore_min_ctl_idx = m_platform_io.push_control("CPU_UNCORE_FREQUENCY_MIN_CONTROL", GEOPM_DOMAIN_BOARD, 0);
         m_uncore_max_ctl_idx = m_platform_io.push_control("CPU_UNCORE_FREQUENCY_MAX_CONTROL", GEOPM_DOMAIN_BOARD, 0);
@@ -509,8 +491,10 @@ namespace geopm
             m_gpu_init_freq_min = m_platform_io.read_signal("GPU_CORE_FREQUENCY_MIN_AVAIL", GEOPM_DOMAIN_BOARD, 0);
             m_gpu_init_freq_max = m_platform_io.read_signal("GPU_CORE_FREQUENCY_MAX_AVAIL", GEOPM_DOMAIN_BOARD, 0);
 
-            m_gpu_min_control_idx = m_platform_io.push_control("GPU_CORE_FREQUENCY_MIN_CONTROL", GEOPM_DOMAIN_BOARD, 0);
-            m_gpu_max_control_idx = m_platform_io.push_control("GPU_CORE_FREQUENCY_MAX_CONTROL", GEOPM_DOMAIN_BOARD, 0);
+            m_gpu_min_control_idx = m_platform_io.push_control("GPU_CORE_FREQUENCY_MIN_CONTROL",
+                                                               GEOPM_DOMAIN_BOARD, 0);
+            m_gpu_max_control_idx = m_platform_io.push_control("GPU_CORE_FREQUENCY_MAX_CONTROL",
+                                                               GEOPM_DOMAIN_BOARD, 0);
         }
     }
 }

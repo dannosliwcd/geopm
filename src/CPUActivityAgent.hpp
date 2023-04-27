@@ -22,9 +22,7 @@ namespace geopm
     {
         public:
             CPUActivityAgent();
-            CPUActivityAgent(PlatformIO &plat_io,
-                             const PlatformTopo &topo,
-                             std::shared_ptr<FrequencyGovernor> gov);
+            CPUActivityAgent(PlatformIO &plat_io, const PlatformTopo &topo, std::shared_ptr<FrequencyGovernor> gov);
             virtual ~CPUActivityAgent() = default;
             void init(int level, const std::vector<int> &fan_in, bool is_level_root) override;
             void validate_policy(std::vector<double> &in_policy) const override;
@@ -50,6 +48,7 @@ namespace geopm
             static std::unique_ptr<Agent> make_plugin(void);
             static std::vector<std::string> policy_names(void);
             static std::vector<std::string> sample_names(void);
+
         private:
             PlatformIO &m_platform_io;
             const PlatformTopo &m_platform_topo;
@@ -76,16 +75,14 @@ namespace geopm
             double m_freq_core_max;
             double m_freq_core_efficient;
 
-            struct signal
-            {
-                int batch_idx;
-                double value;
+            struct signal {
+                    int batch_idx;
+                    double value;
             };
 
-            struct control
-            {
-                int batch_idx;
-                double last_setting;
+            struct control {
+                    int batch_idx;
+                    double last_setting;
             };
 
             // Policy indices; must match policy_names()
@@ -95,9 +92,7 @@ namespace geopm
             };
 
             // Sample indices; must match sample_names()
-            enum m_sample_e {
-                M_NUM_SAMPLE
-            };
+            enum m_sample_e { M_NUM_SAMPLE };
 
             std::map<std::string, double> m_policy_available;
             // Maps uncore frequency -> maximum memory bandwidth achieved by

@@ -37,13 +37,13 @@ namespace geopm
                 result = 1e3 * std::stod(line);
             }
             catch (const std::invalid_argument &ex) {
-                throw Exception("Invalid frequency: " + std::string(ex.what()),
-                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+                throw Exception("Invalid frequency: " + std::string(ex.what()), GEOPM_ERROR_INVALID, __FILE__,
+                                __LINE__);
             }
         }
         else {
-            throw Exception("Failed to open " + read_str + ": " + strerror(errno),
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("Failed to open " + read_str + ": " + strerror(errno), GEOPM_ERROR_RUNTIME,
+                            __FILE__, __LINE__);
         }
         return result;
     }
@@ -51,7 +51,7 @@ namespace geopm
     static double read_cpuid_freq_sticker(void)
     {
         double result = NAN;
-        uint32_t leaf = 0x16; //processor frequency info
+        uint32_t leaf = 0x16; // processor frequency info
         uint32_t eax = 0, ebx = 0, ecx = 0, edx = 0;
         const uint32_t sticker_mask = 0xFFFF;
         const uint32_t unit_factor = 1e6;
@@ -67,54 +67,41 @@ namespace geopm
     {
         double result = read_cpuid_freq_sticker();
         if (result == 0) {
-            throw Exception("Sticker frequency not supported by CPUID",
-                            GEOPM_ERROR_PLATFORM_UNSUPPORTED, __FILE__, __LINE__);
+            throw Exception("Sticker frequency not supported by CPUID", GEOPM_ERROR_PLATFORM_UNSUPPORTED,
+                            __FILE__, __LINE__);
         }
         return result;
     }
 
     CpuinfoIOGroup::CpuinfoIOGroup()
-        :CpuinfoIOGroup("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq",
-                        "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")
+        : CpuinfoIOGroup("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq",
+                         "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")
     {
-
     }
 
-    CpuinfoIOGroup::CpuinfoIOGroup(const std::string &cpu_freq_min_path,
-                                   const std::string &cpu_freq_max_path)
-        : m_signal_available({{"CPUINFO::FREQ_MIN", {
-                                   read_cpu_freq(cpu_freq_min_path),
-                                   M_UNITS_HERTZ,
-                                   Agg::expect_same,
-                                   "Minimum processor frequency"}},
-                              {"CPUINFO::FREQ_STICKER", {
-                                   read_cpu_freq_sticker(),
-                                   M_UNITS_HERTZ,
-                                   Agg::expect_same,
-                                   "Processor base frequency"}},
-                              {"CPUINFO::FREQ_MAX", {
-                                   read_cpu_freq(cpu_freq_max_path),
-                                   M_UNITS_HERTZ,
-                                   Agg::expect_same,
-                                   "Maximum processor frequency"}},
-                              {"CPUINFO::FREQ_STEP", {
-                                   100e6,
-                                   M_UNITS_HERTZ,
-                                   Agg::expect_same,
-                                   "Step size between processor frequency settings"}}})
+    CpuinfoIOGroup::CpuinfoIOGroup(const std::string &cpu_freq_min_path, const std::string &cpu_freq_max_path)
+        : m_signal_available(
+            {{"CPUINFO::FREQ_MIN",
+              {read_cpu_freq(cpu_freq_min_path), M_UNITS_HERTZ, Agg::expect_same, "Minimum processor frequency"}},
+             {"CPUINFO::FREQ_STICKER",
+              {read_cpu_freq_sticker(), M_UNITS_HERTZ, Agg::expect_same, "Processor base frequency"}},
+             {"CPUINFO::FREQ_MAX",
+              {read_cpu_freq(cpu_freq_max_path), M_UNITS_HERTZ, Agg::expect_same, "Maximum processor frequency"}},
+             {"CPUINFO::FREQ_STEP",
+              {100e6, M_UNITS_HERTZ, Agg::expect_same, "Step size between processor frequency settings"}}})
     {
-        if (read_signal("CPUINFO::FREQ_MAX", GEOPM_DOMAIN_BOARD, 0) <=
-            read_signal("CPUINFO::FREQ_MIN", GEOPM_DOMAIN_BOARD, 0)) {
+        if (read_signal("CPUINFO::FREQ_MAX", GEOPM_DOMAIN_BOARD, 0)
+            <= read_signal("CPUINFO::FREQ_MIN", GEOPM_DOMAIN_BOARD, 0)) {
             throw Exception("CpuinfoIOGroup::CpuinfoIOGroup(): Max frequency less than min",
                             GEOPM_ERROR_PLATFORM_UNSUPPORTED, __FILE__, __LINE__);
         }
-        else if (read_signal("CPUINFO::FREQ_STICKER", GEOPM_DOMAIN_BOARD, 0) <
-                 read_signal("CPUINFO::FREQ_MIN", GEOPM_DOMAIN_BOARD, 0)) {
+        else if (read_signal("CPUINFO::FREQ_STICKER", GEOPM_DOMAIN_BOARD, 0)
+                 < read_signal("CPUINFO::FREQ_MIN", GEOPM_DOMAIN_BOARD, 0)) {
             throw Exception("CpuinfoIOGroup::CpuinfoIOGroup(): Sticker frequency less than min",
                             GEOPM_ERROR_PLATFORM_UNSUPPORTED, __FILE__, __LINE__);
         }
-        else if (read_signal("CPUINFO::FREQ_STICKER", GEOPM_DOMAIN_BOARD, 0) >
-                 read_signal("CPUINFO::FREQ_MAX", GEOPM_DOMAIN_BOARD, 0)) {
+        else if (read_signal("CPUINFO::FREQ_STICKER", GEOPM_DOMAIN_BOARD, 0)
+                 > read_signal("CPUINFO::FREQ_MAX", GEOPM_DOMAIN_BOARD, 0)) {
             throw Exception("CpuinfoIOGroup::CpuinfoIOGroup(): Sticker frequency greater than max",
                             GEOPM_ERROR_PLATFORM_UNSUPPORTED, __FILE__, __LINE__);
         }
@@ -124,12 +111,11 @@ namespace geopm
         register_signal_alias("CPU_FREQUENCY_STEP", "CPUINFO::FREQ_STEP");
     }
 
-    void CpuinfoIOGroup::register_signal_alias(const std::string &alias_name,
-                                               const std::string &signal_name)
+    void CpuinfoIOGroup::register_signal_alias(const std::string &alias_name, const std::string &signal_name)
     {
         if (m_signal_available.find(alias_name) != m_signal_available.end()) {
-            throw Exception("CpuinfoIOGroup::register_signal_alias(): signal_name " + alias_name +
-                            " was previously registered.",
+            throw Exception("CpuinfoIOGroup::register_signal_alias(): signal_name " + alias_name
+                                + " was previously registered.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto it = m_signal_available.find(signal_name);
@@ -139,8 +125,8 @@ namespace geopm
         }
         // copy signal info but append to description
         m_signal_available[alias_name] = it->second;
-        m_signal_available[alias_name].description =
-            m_signal_available[signal_name].description + '\n' + "    alias_for: " + signal_name;
+        m_signal_available[alias_name].description = m_signal_available[signal_name].description + '\n'
+                                                     + "    alias_for: " + signal_name;
     }
 
     std::set<std::string> CpuinfoIOGroup::signal_names(void) const
@@ -172,8 +158,8 @@ namespace geopm
         int result = GEOPM_DOMAIN_INVALID;
         if (is_valid_signal(signal_name)) {
             if (std::isnan(m_signal_available.find(signal_name)->second.value)) {
-                throw Exception("CpuinfoIOGroup::signal_domain_type(): signal name " + signal_name +
-                                " is valid but the value read is NaN.",
+                throw Exception("CpuinfoIOGroup::signal_domain_type(): signal name " + signal_name
+                                    + " is valid but the value read is NaN.",
                                 GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
             else {
@@ -191,13 +177,12 @@ namespace geopm
     int CpuinfoIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("CpuinfoIOGroup::push_signal(): " + signal_name +
-                            "not valid for CpuinfoIOGroup",
+            throw Exception("CpuinfoIOGroup::push_signal(): " + signal_name + "not valid for CpuinfoIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         else if (domain_type != GEOPM_DOMAIN_BOARD) {
-            throw Exception("CpuinfoIOGroup::push_signal(): domain_type " + std::to_string(domain_type) +
-                            "not valid for CpuinfoIOGroup",
+            throw Exception("CpuinfoIOGroup::push_signal(): domain_type " + std::to_string(domain_type)
+                                + "not valid for CpuinfoIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return std::distance(m_signal_available.begin(), m_signal_available.find(signal_name));
@@ -209,25 +194,21 @@ namespace geopm
                         GEOPM_ERROR_INVALID, __FILE__, __LINE__);
     }
 
-    void CpuinfoIOGroup::read_batch(void)
-    {
-    }
+    void CpuinfoIOGroup::read_batch(void) {}
 
-    void CpuinfoIOGroup::write_batch(void)
-    {
-    }
+    void CpuinfoIOGroup::write_batch(void) {}
 
     double CpuinfoIOGroup::sample(int batch_idx)
     {
         double result = NAN;
         auto res_it = m_signal_available.begin();
-        if (batch_idx >= 0 && batch_idx < (int) m_signal_available.size()) {
+        if (batch_idx >= 0 && batch_idx < (int)m_signal_available.size()) {
             std::advance(res_it, batch_idx);
             result = res_it->second.value;
         }
         else {
-            throw Exception("CpuinfoIOGroup::sample(): batch_idx " + std::to_string(batch_idx) +
-                            "not valid for CpuinfoIOGroup",
+            throw Exception("CpuinfoIOGroup::sample(): batch_idx " + std::to_string(batch_idx)
+                                + "not valid for CpuinfoIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return result;
@@ -242,13 +223,12 @@ namespace geopm
     double CpuinfoIOGroup::read_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("CpuinfoIOGroup::read_signal(): " + signal_name +
-                            "not valid for CpuinfoIOGroup",
+            throw Exception("CpuinfoIOGroup::read_signal(): " + signal_name + "not valid for CpuinfoIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         else if (domain_type != GEOPM_DOMAIN_BOARD) {
-            throw Exception("CpuinfoIOGroup:read_signal(): domain_type " + std::to_string(domain_type) +
-                            "not valid for CpuinfoIOGroup",
+            throw Exception("CpuinfoIOGroup:read_signal(): domain_type " + std::to_string(domain_type)
+                                + "not valid for CpuinfoIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return m_signal_available.find(signal_name)->second.value;
@@ -260,15 +240,9 @@ namespace geopm
                         GEOPM_ERROR_INVALID, __FILE__, __LINE__);
     }
 
-    void CpuinfoIOGroup::save_control(void)
-    {
+    void CpuinfoIOGroup::save_control(void) {}
 
-    }
-
-    void CpuinfoIOGroup::restore_control(void)
-    {
-
-    }
+    void CpuinfoIOGroup::restore_control(void) {}
 
     std::function<double(const std::vector<double> &)> CpuinfoIOGroup::agg_function(const std::string &signal_name) const
     {
@@ -293,15 +267,15 @@ namespace geopm
     std::string CpuinfoIOGroup::signal_description(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("CpuinfoIOGroup::signal_description(): signal_name " + signal_name +
-                            " not valid for CpuinfoIOGroup",
+            throw Exception("CpuinfoIOGroup::signal_description(): signal_name " + signal_name
+                                + " not valid for CpuinfoIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
         std::string result = "Invalid signal description: no description found.";
         auto it = m_signal_available.find(signal_name);
         if (it != m_signal_available.end()) {
-            result =  "    description: " + it->second.description + '\n'; // Includes alias_for if applicable
+            result = "    description: " + it->second.description + '\n'; // Includes alias_for if applicable
             result += "    units: " + IOGroup::units_to_string(it->second.units) + '\n';
             result += "    aggregation: " + Agg::function_to_name(it->second.agg_function) + '\n';
             result += "    domain: " + platform_topo().domain_type_to_name(GEOPM_DOMAIN_BOARD) + '\n';
@@ -324,8 +298,7 @@ namespace geopm
     int CpuinfoIOGroup::signal_behavior(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("CpuinfoIOGroup::signal_behavior(): signal_name " + signal_name +
-                            " not valid for CpuinfoIOGroup",
+            throw Exception("CpuinfoIOGroup::signal_behavior(): signal_name " + signal_name + " not valid for CpuinfoIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT;
@@ -346,13 +319,7 @@ namespace geopm
         return std::unique_ptr<IOGroup>(new CpuinfoIOGroup);
     }
 
-    void CpuinfoIOGroup::save_control(const std::string &save_path)
-    {
+    void CpuinfoIOGroup::save_control(const std::string &save_path) {}
 
-    }
-
-    void CpuinfoIOGroup::restore_control(const std::string &save_path)
-    {
-
-    }
+    void CpuinfoIOGroup::restore_control(const std::string &save_path) {}
 }

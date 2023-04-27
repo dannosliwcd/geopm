@@ -33,96 +33,92 @@
 
 #include "ProfileIOGroup.hpp"
 
-extern "C"
+extern "C" {
+static int geopm_run_imp(struct geopm_ctl_c *ctl);
+/// forward declaration instead of include geopm_ctl.h to avoid mpi.h inclusion
+int geopm_ctl_run(struct geopm_ctl_c *ctl);
+
+int geopm_ctl_pthread(struct geopm_ctl_c *ctl, const pthread_attr_t *attr, pthread_t *thread)
 {
-    static int geopm_run_imp(struct geopm_ctl_c *ctl);
-    /// forward declaration instead of include geopm_ctl.h to avoid mpi.h inclusion
-    int geopm_ctl_run(struct geopm_ctl_c *ctl);
-
-    int geopm_ctl_pthread(struct geopm_ctl_c *ctl,
-                          const pthread_attr_t *attr,
-                          pthread_t *thread)
-    {
-        long err = 0;
-        geopm::Controller *ctl_obj = (geopm::Controller *)ctl;
-        try {
-            ctl_obj->pthread(attr, thread);
-        }
-        catch (...) {
-            ctl_obj->abort();
-            err = geopm::exception_handler(std::current_exception(), true);
-        }
-        return err;
+    long err = 0;
+    geopm::Controller *ctl_obj = (geopm::Controller *)ctl;
+    try {
+        ctl_obj->pthread(attr, thread);
     }
-
-    static void *geopm_threaded_run(void *args)
-    {
-        return (void *) (long) geopm_run_imp((struct geopm_ctl_c *)args);
+    catch (...) {
+        ctl_obj->abort();
+        err = geopm::exception_handler(std::current_exception(), true);
     }
+    return err;
+}
 
-    int geopmctl_main(void)
-    {
-        int err = 0;
-        try {
-            geopm::Controller ctl;
-            err = geopm_ctl_run((struct geopm_ctl_c *)&ctl);
-        }
-        catch (...) {
-            err = geopm::exception_handler(std::current_exception(), true);
-        }
-        return err;
-    }
+static void *geopm_threaded_run(void *args)
+{
+    return (void *)(long)geopm_run_imp((struct geopm_ctl_c *)args);
+}
 
-    int geopm_ctl_destroy(struct geopm_ctl_c *ctl)
-    {
-        int err = 0;
-        geopm::Controller *ctl_obj = (geopm::Controller *)ctl;
-        try {
-            delete ctl_obj;
-        }
-        catch (...) {
-            err = geopm::exception_handler(std::current_exception(), true);
-        }
-        return err;
+int geopmctl_main(void)
+{
+    int err = 0;
+    try {
+        geopm::Controller ctl;
+        err = geopm_ctl_run((struct geopm_ctl_c *)&ctl);
     }
+    catch (...) {
+        err = geopm::exception_handler(std::current_exception(), true);
+    }
+    return err;
+}
 
-    static int geopm_run_imp(struct geopm_ctl_c *ctl)
-    {
-        int err = 0;
-        geopm::Controller *ctl_obj = (geopm::Controller *)ctl;
-        try {
-            ctl_obj->run();
-        }
-        catch (...) {
-            err = geopm::exception_handler(std::current_exception(), true);
-        }
-        return err;
+int geopm_ctl_destroy(struct geopm_ctl_c *ctl)
+{
+    int err = 0;
+    geopm::Controller *ctl_obj = (geopm::Controller *)ctl;
+    try {
+        delete ctl_obj;
     }
+    catch (...) {
+        err = geopm::exception_handler(std::current_exception(), true);
+    }
+    return err;
+}
 
-    int geopm_ctl_run(struct geopm_ctl_c *ctl)
-    {
-        return geopm_run_imp(ctl);
+static int geopm_run_imp(struct geopm_ctl_c *ctl)
+{
+    int err = 0;
+    geopm::Controller *ctl_obj = (geopm::Controller *)ctl;
+    try {
+        ctl_obj->run();
     }
+    catch (...) {
+        err = geopm::exception_handler(std::current_exception(), true);
+    }
+    return err;
+}
 
-    int geopm_agent_enforce_policy(void)
-    {
-        int err = 0;
-        try {
-            std::string agent_name = geopm::environment().agent();
-            std::shared_ptr<geopm::Agent> agent(geopm::Agent::make_unique(agent_name));
-            std::vector<double> policy(geopm::Agent::num_policy(agent_name));
-            std::string policy_path = geopm::environment().policy();
-            geopm::FilePolicy file_policy(policy_path,
-                                          geopm::Agent::policy_names(agent_name));
-            policy = file_policy.get_policy();
-            agent->validate_policy(policy);
-            agent->enforce_policy(policy);
-        }
-        catch (...) {
-            err = geopm::exception_handler(std::current_exception(), false);
-        }
-        return err;
+int geopm_ctl_run(struct geopm_ctl_c *ctl)
+{
+    return geopm_run_imp(ctl);
+}
+
+int geopm_agent_enforce_policy(void)
+{
+    int err = 0;
+    try {
+        std::string agent_name = geopm::environment().agent();
+        std::shared_ptr<geopm::Agent> agent(geopm::Agent::make_unique(agent_name));
+        std::vector<double> policy(geopm::Agent::num_policy(agent_name));
+        std::string policy_path = geopm::environment().policy();
+        geopm::FilePolicy file_policy(policy_path, geopm::Agent::policy_names(agent_name));
+        policy = file_policy.get_policy();
+        agent->validate_policy(policy);
+        agent->enforce_policy(policy);
     }
+    catch (...) {
+        err = geopm::exception_handler(std::current_exception(), false);
+    }
+    return err;
+}
 }
 
 namespace geopm
@@ -147,59 +143,33 @@ namespace geopm
     Controller::Controller()
         : Controller(Comm::make_unique())
     {
-
     }
 
     Controller::Controller(std::shared_ptr<Comm> ppn1_comm)
-        : Controller(ppn1_comm,
-                     PlatformIOProf::platform_io(),
-                     environment().agent(),
-                     Agent::num_policy(environment().agent()),
-                     Agent::num_sample(environment().agent()),
-                     std::unique_ptr<TreeComm>(new TreeCommImp(ppn1_comm,
-                         Agent::num_policy(environment().agent()),
-                         Agent::num_sample(environment().agent()))),
-                     ApplicationSampler::application_sampler(),
-                     std::shared_ptr<ApplicationIO>(new ApplicationIOImp()),
-                     std::unique_ptr<Reporter>(new ReporterImp(get_start_time(),
-                                                               environment().report(),
-                                                               PlatformIOProf::platform_io(),
-                                                               platform_topo(),
-                                                               ppn1_comm->rank())),
-                     nullptr,
-                     std::unique_ptr<EndpointPolicyTracer>(nullptr),
-                     ProfileTracer::make_unique(get_start_time()),
-                     std::vector<std::unique_ptr<Agent> >{},
-                     Agent::policy_names(environment().agent()),
-                     environment().policy(),
-                     environment().do_policy(),
-                     nullptr,
-                     environment().endpoint(),
-                     environment().do_endpoint(),
-                     ApplicationSampler::default_shmkey())
+        : Controller(
+            ppn1_comm, PlatformIOProf::platform_io(), environment().agent(),
+            Agent::num_policy(environment().agent()), Agent::num_sample(environment().agent()),
+            std::unique_ptr<TreeComm>(new TreeCommImp(ppn1_comm, Agent::num_policy(environment().agent()),
+                                                      Agent::num_sample(environment().agent()))),
+            ApplicationSampler::application_sampler(), std::shared_ptr<ApplicationIO>(new ApplicationIOImp()),
+            std::unique_ptr<Reporter>(new ReporterImp(get_start_time(), environment().report(),
+                                                      PlatformIOProf::platform_io(), platform_topo(),
+                                                      ppn1_comm->rank())),
+            nullptr, std::unique_ptr<EndpointPolicyTracer>(nullptr),
+            ProfileTracer::make_unique(get_start_time()), std::vector<std::unique_ptr<Agent> >{},
+            Agent::policy_names(environment().agent()), environment().policy(), environment().do_policy(),
+            nullptr, environment().endpoint(), environment().do_endpoint(), ApplicationSampler::default_shmkey())
     {
-
     }
-    Controller::Controller(std::shared_ptr<Comm> comm,
-                           PlatformIO &plat_io,
-                           const std::string &agent_name,
-                           int num_send_down,
-                           int num_send_up,
-                           std::unique_ptr<TreeComm> tree_comm,
+    Controller::Controller(std::shared_ptr<Comm> comm, PlatformIO &plat_io, const std::string &agent_name,
+                           int num_send_down, int num_send_up, std::unique_ptr<TreeComm> tree_comm,
                            ApplicationSampler &application_sampler,
-                           std::shared_ptr<ApplicationIO> application_io,
-                           std::unique_ptr<Reporter> reporter,
-                           std::unique_ptr<Tracer> tracer,
-                           std::unique_ptr<EndpointPolicyTracer> policy_tracer,
+                           std::shared_ptr<ApplicationIO> application_io, std::unique_ptr<Reporter> reporter,
+                           std::unique_ptr<Tracer> tracer, std::unique_ptr<EndpointPolicyTracer> policy_tracer,
                            std::shared_ptr<ProfileTracer> profile_tracer,
-                           std::vector<std::unique_ptr<Agent> > level_agent,
-                           std::vector<std::string> policy_names,
-                           const std::string &policy_path,
-                           bool do_policy,
-                           std::unique_ptr<EndpointUser> endpoint,
-                           const std::string &endpoint_path,
-                           bool do_endpoint,
-                           const std::string &shm_key)
+                           std::vector<std::unique_ptr<Agent> > level_agent, std::vector<std::string> policy_names,
+                           const std::string &policy_path, bool do_policy, std::unique_ptr<EndpointUser> endpoint,
+                           const std::string &endpoint_path, bool do_endpoint, const std::string &shm_key)
         : m_comm(comm)
         , m_platform_io(plat_io)
         , m_agent_name(agent_name)
@@ -229,8 +199,8 @@ namespace geopm
     {
         if (m_num_send_down > 0 && !(m_do_policy || m_do_endpoint)) {
             throw Exception("Controller(): at least one of policy or endpoint path"
-                            " must be provided.", GEOPM_ERROR_INVALID,
-                            __FILE__, __LINE__);
+                            " must be provided.",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         // Three dimensional vector over levels, children, and message
         // index.  These are used as temporary storage when passing
@@ -268,12 +238,10 @@ namespace geopm
         }
 #ifdef GEOPM_DEBUG
         if (m_agent.size() == 0) {
-            throw Exception("Controller requires at least one Agent",
-                            GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+            throw Exception("Controller requires at least one Agent", GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
         if (m_max_level != (int)m_agent.size()) {
-            throw Exception("Controller number of agents is incorrect",
-                            GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+            throw Exception("Controller number of agents is incorrect", GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
     }
@@ -282,8 +250,8 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (m_agent.size() != (size_t)m_max_level) {
-            throw Exception("Controller must call create_agents() before init_agents().",
-                            GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+            throw Exception("Controller must call create_agents() before init_agents().", GEOPM_ERROR_LOGIC,
+                            __FILE__, __LINE__);
         }
 #endif
         std::vector<int> fan_in(m_tree_comm->root_level());
@@ -306,8 +274,7 @@ namespace geopm
         std::string temp = hostname;
         temp.resize(NAME_MAX, 0);
         std::vector<char> name_buffer(num_rank * NAME_MAX, 0);
-        m_comm->gather((void*)temp.c_str(), NAME_MAX,
-                     (void*)name_buffer.data(), NAME_MAX, 0);
+        m_comm->gather((void *)temp.c_str(), NAME_MAX, (void *)name_buffer.data(), NAME_MAX, 0);
         if (rank == 0) {
             auto ind = name_buffer.begin();
             for (int rr = 0; rr < num_rank; ++rr) {
@@ -361,13 +328,8 @@ namespace geopm
 
         auto agent_host_report = m_agent[0]->report_host();
 
-        m_reporter->generate(m_agent_name,
-                             agent_report_header,
-                             agent_host_report,
-                             m_agent[0]->report_region(),
-                             *m_application_io,
-                             m_comm,
-                             *m_tree_comm);
+        m_reporter->generate(m_agent_name, agent_report_header, agent_host_report,
+                             m_agent[0]->report_region(), *m_application_io, m_comm, *m_tree_comm);
         m_tracer->flush();
     }
 
@@ -383,10 +345,9 @@ namespace geopm
         bool do_send = false;
         if (m_is_root) {
             if (m_do_endpoint) {
-                (void) m_endpoint->read_policy(m_in_policy);
-                bool equal = std::equal(m_in_policy.begin(), m_in_policy.end(),
-                                        m_last_policy.begin(),
-                                        [] (double a, double b) -> bool {
+                (void)m_endpoint->read_policy(m_in_policy);
+                bool equal = std::equal(m_in_policy.begin(), m_in_policy.end(), m_last_policy.begin(),
+                                        [](double a, double b) -> bool {
                                             if (std::isnan(a) && std::isnan(b)) {
                                                 return true;
                                             }
@@ -466,8 +427,7 @@ namespace geopm
     {
         int err = pthread_create(thread, attr, geopm_threaded_run, (void *)this);
         if (err) {
-            throw Exception("Controller::pthread(): pthread_create() failed",
-                            err, __FILE__, __LINE__);
+            throw Exception("Controller::pthread(): pthread_create() failed", err, __FILE__, __LINE__);
         }
     }
 

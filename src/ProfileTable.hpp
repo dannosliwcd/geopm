@@ -18,22 +18,22 @@
  * messages obtained from the application.
  */
 struct geopm_prof_message_s {
-    /*!
-     * @brief Rank identifier.
-     */
-    int rank;
-    /*!
-     * @brief 64-bit unique application region identifier.
-     */
-    uint64_t region_id;
-    /*!
-     * @brief Time stamp of when the sample was taken.
-     */
-    struct geopm_time_s timestamp;
-    /*!
-     * @brief Progress of the rank within the current region.
-     */
-    double progress;
+        /*!
+         * @brief Rank identifier.
+         */
+        int rank;
+        /*!
+         * @brief 64-bit unique application region identifier.
+         */
+        uint64_t region_id;
+        /*!
+         * @brief Time stamp of when the sample was taken.
+         */
+        struct geopm_time_s timestamp;
+        /*!
+         * @brief Progress of the rank within the current region.
+         */
+        double progress;
 };
 
 namespace geopm
@@ -123,7 +123,9 @@ namespace geopm
             ///
             /// @param [out] length The number of entries copied into
             ///        the content vector.
-            virtual void dump(std::vector<std::pair<uint64_t, struct geopm_prof_message_s> >::iterator content, size_t &length) = 0;
+            virtual void dump(std::vector<std::pair<uint64_t, struct geopm_prof_message_s> >::iterator content,
+                              size_t &length)
+                = 0;
             /// @brief Called by the producer to pass names to the
             ///        consumer.
             ///
@@ -187,16 +189,18 @@ namespace geopm
             void insert(const struct geopm_prof_message_s &value) override;
             size_t capacity(void) const override;
             size_t size(void) const override;
-            void dump(std::vector<std::pair<uint64_t, struct geopm_prof_message_s> >::iterator content, size_t &length) override;
+            void dump(std::vector<std::pair<uint64_t, struct geopm_prof_message_s> >::iterator content,
+                      size_t &length) override;
             bool name_fill(size_t header_offset) override;
             bool name_set(size_t header_offset, std::set<std::string> &name) override;
+
         private:
-             /// @brief structure to hold state for a single table entry.
+            /// @brief structure to hold state for a single table entry.
             struct table_s {
-                pthread_mutex_t lock;
-                size_t max_size;
-                size_t curr_size;
-                struct geopm_prof_message_s *value;
+                    pthread_mutex_t lock;
+                    size_t max_size;
+                    size_t curr_size;
+                    struct geopm_prof_message_s *value;
             };
             struct geopm_prof_message_s *m_table_value;
             const size_t m_buffer_size;

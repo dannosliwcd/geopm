@@ -10,7 +10,6 @@
 
 #include <pthread.h>
 
-
 namespace geopm
 {
     class SharedMemoryImp : public SharedMemory

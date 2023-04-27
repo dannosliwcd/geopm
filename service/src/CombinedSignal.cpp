@@ -18,13 +18,11 @@ namespace geopm
     CombinedSignal::CombinedSignal()
         : CombinedSignal(Agg::sum)
     {
-
     }
 
     CombinedSignal::CombinedSignal(std::function<double(const std::vector<double> &)> func)
         : m_agg_function(func)
     {
-
     }
 
     double CombinedSignal::sample(const std::vector<double> &values)

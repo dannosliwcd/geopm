@@ -17,8 +17,8 @@ namespace geopm
     {
         for (const auto &ctl : m_controls) {
             if (ctl == nullptr) {
-                throw Exception("DomainControl: internal controls cannot be null",
-                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+                throw Exception("DomainControl: internal controls cannot be null", GEOPM_ERROR_INVALID,
+                                __FILE__, __LINE__);
             }
         }
     }
@@ -32,7 +32,6 @@ namespace geopm
             }
             m_is_batch_ready = true;
         }
-
     }
 
     void DomainControl::adjust(double value)

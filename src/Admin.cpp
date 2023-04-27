@@ -19,25 +19,19 @@
 #include "geopm/MSRIOGroup.hpp"
 #include "OptionParser.hpp"
 
-
 namespace geopm
 {
     Admin::Admin()
-        : Admin(geopm::environment().default_config_path(),
-                geopm::environment().override_config_path(),
+        : Admin(geopm::environment().default_config_path(), geopm::environment().override_config_path(),
                 MSRIOGroup::cpuid())
     {
-
     }
 
-    Admin::Admin(const std::string &default_config_path,
-                 const std::string &override_config_path,
-                 int cpuid_local)
+    Admin::Admin(const std::string &default_config_path, const std::string &override_config_path, int cpuid_local)
         : m_default_config_path(default_config_path)
         , m_override_config_path(override_config_path)
         , m_cpuid_local(cpuid_local)
     {
-
     }
 
     void Admin::main(int argc, const char **argv, std::ostream &std_out, std::ostream &std_err)
@@ -47,29 +41,23 @@ namespace geopm
         if (!early_exit) {
             auto pos_args = par.get_positional_args();
             if (!pos_args.empty()) {
-                throw geopm::Exception("The following positional argument(s) are in error: " +
-                                       geopm::string_join(pos_args, " "),
-                                       EINVAL, __FILE__, __LINE__);
+                throw geopm::Exception(
+                    "The following positional argument(s) are in error: " + geopm::string_join(pos_args, " "),
+                    EINVAL, __FILE__, __LINE__);
             }
-            std_out << run(par.is_set("default"),
-                           par.is_set("override"),
-                           par.is_set("allowlist"),
+            std_out << run(par.is_set("default"), par.is_set("override"), par.is_set("allowlist"),
                            std::stoi(par.get_value("cpuid"), NULL, 16));
         }
     }
 
-    std::string Admin::run(bool do_default,
-                           bool do_override,
-                           bool do_allowlist,
-                           int cpuid)
+    std::string Admin::run(bool do_default, bool do_override, bool do_allowlist, int cpuid)
     {
         int action_count = 0;
         action_count += do_default;
         action_count += do_override;
         action_count += do_allowlist;
         if (action_count > 1) {
-            throw geopm::Exception("geopmadmin: -d, -o and -a must be used exclusively",
-                                   EINVAL, __FILE__, __LINE__);
+            throw geopm::Exception("geopmadmin: -d, -o and -a must be used exclusively", EINVAL, __FILE__, __LINE__);
         }
 
         std::string result;
@@ -146,17 +134,15 @@ namespace geopm
 
     std::string Admin::check_node(void)
     {
-        std::map<std::string, std::string> default_map =
-            Environment::parse_environment_file(m_default_config_path);
-        std::map<std::string, std::string> override_map =
-            Environment::parse_environment_file(m_override_config_path);
+        std::map<std::string, std::string> default_map = Environment::parse_environment_file(m_default_config_path);
+        std::map<std::string, std::string> override_map = Environment::parse_environment_file(m_override_config_path);
         // Check for parameters that are defined in both files
         std::vector<std::string> overlap = dup_keys(default_map, override_map);
         if (!overlap.empty()) {
             throw Exception("Admin::check_node: "
-                            "parameter(s) defined in both the override and default files: \"" +
-                             string_join(overlap, "\", \"") + "\"\n",
-                             EINVAL, __FILE__, __LINE__);
+                            "parameter(s) defined in both the override and default files: \""
+                                + string_join(overlap, "\", \"") + "\"\n",
+                            EINVAL, __FILE__, __LINE__);
         }
         // Combine settings
         std::map<std::string, std::string> config_map(override_map);
@@ -169,12 +155,11 @@ namespace geopm
     }
 
     void Admin::check_config(const std::map<std::string, std::string> &config_map,
-                             std::vector<std::string> &policy_names,
-                             std::vector<double> &policy_vals)
+                             std::vector<std::string> &policy_names, std::vector<double> &policy_vals)
     {
         if (config_map.empty()) {
-            throw Exception("Admin::check_node(): Configuration files do not exist or are empty",
-                            ENOENT, __FILE__, __LINE__);
+            throw Exception("Admin::check_node(): Configuration files do not exist or are empty", ENOENT,
+                            __FILE__, __LINE__);
         }
         // Determine if there is an agent set and check the policy
         auto agent_it = config_map.find("GEOPM_AGENT");
@@ -193,8 +178,8 @@ namespace geopm
             agent->validate_policy(policy_vals);
         }
         else if (policy_it != config_map.end()) {
-            throw Exception("Admin::check_node(): A policy was specified, but not an agent",
-                            EINVAL, __FILE__, __LINE__);
+            throw Exception("Admin::check_node(): A policy was specified, but not an agent", EINVAL, __FILE__,
+                            __LINE__);
         }
     }
 
@@ -208,10 +193,10 @@ namespace geopm
                << "===================\n\n";
         // ensure all override vals are set
         std::map<std::string, std::string> config_map_copy = config_map;
-        for (const auto &override_config: override_map) {
+        for (const auto &override_config : override_map) {
             config_map_copy[override_config.first] = override_config.second;
         }
-        for (const auto &config: config_map_copy) {
+        for (const auto &config : config_map_copy) {
             result << "    " << config.first << "=" << config.second;
             if (override_map.find(config.first) != override_map.end()) {
                 result << " (override)\n";
@@ -226,8 +211,7 @@ namespace geopm
                    << "============\n\n";
             auto name_it = policy_names.begin();
             auto val_it = policy_vals.begin();
-            while (name_it != policy_names.end() &&
-                   val_it != policy_vals.end()) {
+            while (name_it != policy_names.end() && val_it != policy_vals.end()) {
                 result << "    " << *name_it << "=" << *val_it << "\n";
                 ++name_it;
                 ++val_it;

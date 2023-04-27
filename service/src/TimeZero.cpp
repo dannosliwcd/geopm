@@ -18,6 +18,7 @@ namespace geopm
             static const TimeZero &time_zero(void);
             struct geopm_time_s time(void) const;
             int error(void) const;
+
         private:
             struct geopm_time_s m_time_zero;
             int m_err;
@@ -47,18 +48,16 @@ namespace geopm
     struct geopm_time_s time_zero(void)
     {
         if (TimeZero::time_zero().error()) {
-            throw Exception("geopm::time_zero() call to get time failed",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("geopm::time_zero() call to get time failed", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         return TimeZero::time_zero().time();
     }
 }
 
-extern "C"
+extern "C" {
+int geopm_time_zero(struct geopm_time_s *time)
 {
-    int geopm_time_zero(struct geopm_time_s *time)
-    {
-        *time = geopm::TimeZero::time_zero().time();
-        return geopm::TimeZero::time_zero().error();
-    }
+    *time = geopm::TimeZero::time_zero().time();
+    return geopm::TimeZero::time_zero().error();
+}
 }

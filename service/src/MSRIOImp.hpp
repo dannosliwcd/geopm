@@ -21,31 +21,28 @@ namespace geopm
             MSRIOImp();
             MSRIOImp(int num_cpu, std::shared_ptr<MSRPath> path);
             virtual ~MSRIOImp();
-            uint64_t read_msr(int cpu_idx,
-                              uint64_t offset) override;
-            void write_msr(int cpu_idx,
-                           uint64_t offset,
-                           uint64_t raw_value,
-                           uint64_t write_mask) override;
+            uint64_t read_msr(int cpu_idx, uint64_t offset) override;
+            void write_msr(int cpu_idx, uint64_t offset, uint64_t raw_value, uint64_t write_mask) override;
             int add_read(int cpu_idx, uint64_t offset) override;
             void read_batch(void) override;
             uint64_t sample(int batch_idx) const override;
             void write_batch(void) override;
             int add_write(int cpu_idx, uint64_t offset) override;
             void adjust(int batch_idx, uint64_t value, uint64_t write_mask) override;
+
         private:
             struct m_msr_batch_op_s {
-                uint16_t cpu;      /// @brief In: CPU to execute {rd/wr}msr ins.
-                uint16_t isrdmsr;  /// @brief In: 0=wrmsr, non-zero=rdmsr
-                int32_t err;       /// @brief Out: Error code from operation
-                uint32_t msr;      /// @brief In: MSR Address to perform op
-                uint64_t msrdata;  /// @brief In/Out: Input/Result to/from operation
-                uint64_t wmask;    /// @brief Out: Write mask applied to wrmsr
+                    uint16_t cpu;     /// @brief In: CPU to execute {rd/wr}msr ins.
+                    uint16_t isrdmsr; /// @brief In: 0=wrmsr, non-zero=rdmsr
+                    int32_t err;      /// @brief Out: Error code from operation
+                    uint32_t msr;     /// @brief In: MSR Address to perform op
+                    uint64_t msrdata; /// @brief In/Out: Input/Result to/from operation
+                    uint64_t wmask;   /// @brief Out: Write mask applied to wrmsr
             };
 
             struct m_msr_batch_array_s {
-                uint32_t numops;               /// @brief In: # of operations in ops array
-                struct m_msr_batch_op_s *ops;  /// @brief In: Array[numops] of operations
+                    uint32_t numops;              /// @brief In: # of operations in ops array
+                    struct m_msr_batch_op_s *ops; /// @brief In: Array[numops] of operations
             };
 
             void open_all(void);

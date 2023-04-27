@@ -91,8 +91,7 @@ namespace geopm
             ///        to this method.
             /// @return A unique_ptr to the new ApplicationStatus
             ///         object.
-            static std::unique_ptr<ApplicationStatus> make_unique(int num_cpu,
-                                                                  std::shared_ptr<SharedMemory> shmem);
+            static std::unique_ptr<ApplicationStatus> make_unique(int num_cpu, std::shared_ptr<SharedMemory> shmem);
             /// @brief Return the required size of the shared memory
             ///        region used by the ApplicationStatus for the
             ///        given number of CPUs.
@@ -107,8 +106,7 @@ namespace geopm
     class ApplicationStatusImp : public ApplicationStatus
     {
         public:
-            ApplicationStatusImp(int num_cpu,
-                                 std::shared_ptr<SharedMemory> shmem);
+            ApplicationStatusImp(int num_cpu, std::shared_ptr<SharedMemory> shmem);
             virtual ~ApplicationStatusImp() = default;
             void set_hint(int cpu_idx, uint64_t hint) override;
             uint64_t get_hint(int cpu_idx) const override;
@@ -121,18 +119,19 @@ namespace geopm
             void set_process(const std::set<int> &cpu_idx, int process) override;
             int get_process(int cpu_idx) const override;
             void update_cache(void) override;
+
         private:
             // These fields must all be 32-bit int
-            struct m_app_status_s
-            {
-                int32_t process; // can be negative, indicating unset process
-                uint32_t hint;
-                uint32_t hash;
-                uint32_t total_work;
-                uint32_t completed_work;
-                char padding[44];
+            struct m_app_status_s {
+                    int32_t process; // can be negative, indicating unset process
+                    uint32_t hint;
+                    uint32_t hash;
+                    uint32_t total_work;
+                    uint32_t completed_work;
+                    char padding[44];
             };
-            static_assert((sizeof(ApplicationStatusImp::m_app_status_s) % geopm::hardware_destructive_interference_size) == 0,
+            static_assert((sizeof(ApplicationStatusImp::m_app_status_s) % geopm::hardware_destructive_interference_size)
+                              == 0,
                           "m_app_status_s not aligned to cache lines");
             static_assert(sizeof(ApplicationStatusImp::m_app_status_s) == ApplicationStatus::M_STATUS_SIZE,
                           "M_STATUS_SIZE does not match size of m_app_status_s");

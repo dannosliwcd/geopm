@@ -73,9 +73,9 @@ namespace geopm
         if (filtered.size()) {
             int64_t agg_tmp = 0;
             for (const auto &it : filtered) {
-                agg_tmp |= (int64_t) it;
+                agg_tmp |= (int64_t)it;
             }
-            result = (double) agg_tmp;
+            result = (double)agg_tmp;
         }
         return result;
     }
@@ -85,8 +85,7 @@ namespace geopm
         auto filtered = nan_filter(operand);
         double result = NAN;
         if (filtered.size()) {
-            result = std::all_of(filtered.begin(), filtered.end(),
-                                 [](double it) {return (it != 0.0);});
+            result = std::all_of(filtered.begin(), filtered.end(), [](double it) { return (it != 0.0); });
         }
         return result;
     }
@@ -96,8 +95,7 @@ namespace geopm
         auto filtered = nan_filter(operand);
         double result = NAN;
         if (filtered.size()) {
-            result = std::any_of(filtered.begin(), filtered.end(),
-                                 [](double it) {return (it != 0.0);});
+            result = std::any_of(filtered.begin(), filtered.end(), [](double it) { return (it != 0.0); });
         }
         return result;
     }
@@ -108,10 +106,9 @@ namespace geopm
         double result = NAN;
         if (filtered.size() != 0) {
             result = std::all_of(filtered.cbegin(), filtered.cend(),
-                                [filtered](double x) {
-                                    return x == filtered[0];
-                                }) ?
-                     filtered[0] : no_match;
+                                 [filtered](double x) { return x == filtered[0]; })
+                         ? filtered[0]
+                         : no_match;
         }
         return result;
     }
@@ -241,8 +238,8 @@ namespace geopm
         auto f_ref = *(func.target<decltype(&sum)>());
         auto result = function_map.find(f_ref);
         if (result == function_map.end()) {
-            throw Exception("Agg::function_to_name(): unknown aggregation function.",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("Agg::function_to_name(): unknown aggregation function.", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         return result->second;
     }
@@ -268,8 +265,8 @@ namespace geopm
         auto f_ref = *(func.target<decltype(&sum)>());
         auto result = function_map.find(f_ref);
         if (result == function_map.end()) {
-            throw Exception("Agg::function_to_name(): unknown aggregation function.",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("Agg::function_to_name(): unknown aggregation function.", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         return result->second;
     }

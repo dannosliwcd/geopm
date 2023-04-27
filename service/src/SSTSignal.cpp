@@ -12,8 +12,8 @@
 namespace geopm
 {
 
-    SSTSignal::SSTSignal(std::shared_ptr<geopm::SSTIO> sstio, SignalType signal_type,
-                         int cpu_idx, uint16_t command, uint16_t subcommand,
+    SSTSignal::SSTSignal(std::shared_ptr<geopm::SSTIO> sstio, SignalType signal_type, int cpu_idx,
+                         uint16_t command, uint16_t subcommand,
                          uint32_t subcommand_arg,      // write_value
                          uint32_t interface_parameter) // mbox_interface_param
         : m_sstio(sstio)
@@ -33,8 +33,7 @@ namespace geopm
                 m_batch_idx = m_sstio->add_mmio_read(m_cpu_idx, m_subcommand_arg);
             }
             else {
-                m_batch_idx = m_sstio->add_mbox_read(
-                    m_cpu_idx, m_command, m_subcommand, m_subcommand_arg);
+                m_batch_idx = m_sstio->add_mbox_read(m_cpu_idx, m_command, m_subcommand, m_subcommand_arg);
             }
         }
     }
@@ -51,8 +50,7 @@ namespace geopm
             ret = m_sstio->read_mmio_once(m_cpu_idx, m_subcommand_arg);
         }
         else {
-            ret = m_sstio->read_mbox_once(m_cpu_idx, m_command, m_subcommand,
-                                          m_subcommand_arg);
+            ret = m_sstio->read_mbox_once(m_cpu_idx, m_command, m_subcommand, m_subcommand_arg);
         }
         return geopm_field_to_signal(ret);
     }

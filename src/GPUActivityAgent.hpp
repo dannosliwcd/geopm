@@ -48,6 +48,7 @@ namespace geopm
             static std::unique_ptr<Agent> make_plugin(void);
             static std::vector<std::string> policy_names(void);
             static std::vector<std::string> sample_names(void);
+
         private:
             PlatformIO &m_platform_io;
             const PlatformTopo &m_platform_topo;
@@ -64,28 +65,21 @@ namespace geopm
             int m_agent_domain_count;
             int m_agent_domain;
 
-            struct m_signal
-            {
-                int batch_idx;
-                double value;
+            struct m_signal {
+                    int batch_idx;
+                    double value;
             };
 
-            struct m_control
-            {
-                int batch_idx;
-                double last_setting;
+            struct m_control {
+                    int batch_idx;
+                    double last_setting;
             };
 
             // Policy indices; must match policy_names()
-            enum m_policy_e {
-                M_POLICY_GPU_PHI,
-                M_NUM_POLICY
-            };
+            enum m_policy_e { M_POLICY_GPU_PHI, M_NUM_POLICY };
 
             // Sample indices; must match sample_names()
-            enum m_sample_e {
-                M_NUM_SAMPLE
-            };
+            enum m_sample_e { M_NUM_SAMPLE };
 
             std::map<std::string, double> m_policy_available;
 

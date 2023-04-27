@@ -9,7 +9,7 @@
 
 #include <fstream>
 
-#include "EndpointImp.hpp"  // for shmem region structs and constants
+#include "EndpointImp.hpp" // for shmem region structs and constants
 #include "geopm/Helper.hpp"
 #include "Agent.hpp"
 #include "Environment.hpp"
@@ -25,23 +25,16 @@ namespace geopm
         return geopm::make_unique<EndpointUserImp>(policy_path, hosts);
     }
 
-    EndpointUserImp::EndpointUserImp(const std::string &data_path,
-                                     const std::set<std::string> &hosts)
+    EndpointUserImp::EndpointUserImp(const std::string &data_path, const std::set<std::string> &hosts)
         : EndpointUserImp(data_path, nullptr, nullptr, environment().agent(),
-                          Agent::num_sample(environment().agent()),
-                          environment().profile(), "", hosts)
+                          Agent::num_sample(environment().agent()), environment().profile(), "", hosts)
     {
-
     }
 
-    EndpointUserImp::EndpointUserImp(const std::string &data_path,
-                                     std::unique_ptr<SharedMemory> policy_shmem,
-                                     std::unique_ptr<SharedMemory> sample_shmem,
-                                     const std::string &agent_name,
-                                     int num_sample,
-                                     const std::string &profile_name,
-                                     const std::string &hostlist_path,
-                                     const std::set<std::string> &hosts)
+    EndpointUserImp::EndpointUserImp(const std::string &data_path, std::unique_ptr<SharedMemory> policy_shmem,
+                                     std::unique_ptr<SharedMemory> sample_shmem, const std::string &agent_name,
+                                     int num_sample, const std::string &profile_name,
+                                     const std::string &hostlist_path, const std::set<std::string> &hosts)
         : m_path(data_path)
         , m_policy_shmem(std::move(policy_shmem))
         , m_sample_shmem(std::move(sample_shmem))
@@ -78,8 +71,8 @@ namespace geopm
             char temp_path[NAME_MAX] = "/tmp/geopm_hostlist_XXXXXX";
             int hostlist_fd = mkstemp(temp_path);
             if (hostlist_fd == -1) {
-                throw Exception("Failed to create temporary file for endpoint hostlist.",
-                                GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception("Failed to create temporary file for endpoint hostlist.", GEOPM_ERROR_RUNTIME,
+                                __FILE__, __LINE__);
             }
             close(hostlist_fd);
             m_hostlist_path = std::string(temp_path);
@@ -88,7 +81,7 @@ namespace geopm
         for (const auto &host : hosts) {
             outfile << host << "\n";
         }
-        data->hostlist_path[GEOPM_ENDPOINT_HOSTLIST_PATH_MAX -1] = '\0';
+        data->hostlist_path[GEOPM_ENDPOINT_HOSTLIST_PATH_MAX - 1] = '\0';
         strncpy(data->hostlist_path, m_hostlist_path.c_str(), GEOPM_ENDPOINT_HOSTLIST_PATH_MAX - 1);
     }
 
@@ -106,11 +99,13 @@ namespace geopm
     double EndpointUserImp::read_policy(std::vector<double> &policy)
     {
         auto lock = m_policy_shmem->get_scoped_lock();
-        auto data = (struct geopm_endpoint_policy_shmem_s *) m_policy_shmem->pointer(); // Managed by shmem subsystem.
+        auto data = (struct geopm_endpoint_policy_shmem_s *)m_policy_shmem->pointer(); // Managed by shmem
+                                                                                       // subsystem.
 
         int num_policy = data->count;
         if (policy.size() < (size_t)num_policy) {
-            throw Exception("EndpointUserImp::" + std::string(__func__) + "(): Data read from shmem does not fit in policy vector.",
+            throw Exception("EndpointUserImp::" + std::string(__func__)
+                                + "(): Data read from shmem does not fit in policy vector.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         // Fill in missing policy values with NAN (default)

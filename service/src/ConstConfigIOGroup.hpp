@@ -22,8 +22,7 @@ namespace geopm
     {
         public:
             ConstConfigIOGroup();
-            ConstConfigIOGroup(const PlatformTopo& topo,
-                               const std::string &user_file_path,
+            ConstConfigIOGroup(const PlatformTopo &topo, const std::string &user_file_path,
                                const std::string &default_file_path);
             std::set<std::string> signal_names(void) const override;
             /// @return empty set; this IOGroup does not provide any controls.
@@ -31,7 +30,8 @@ namespace geopm
             bool is_valid_signal(const std::string &signal_name) const override;
             /// @return false; this IOGroup does not provide any controls.
             bool is_valid_control(const std::string &control_name) const override;
-            /// @return the domain for the provided signal if the signal is valid for this IOGroup, otherwise GEOPM_DOMAIN_INVALID.
+            /// @return the domain for the provided signal if the signal is valid for this IOGroup, otherwise
+            /// GEOPM_DOMAIN_INVALID.
             int signal_domain_type(const std::string &signal_name) const override;
             /// @return GEOPM_DOMAIN_INVALID; this IOGroup does not provide any controls.
             int control_domain_type(const std::string &control_name) const override;
@@ -63,7 +63,7 @@ namespace geopm
             std::string signal_description(const std::string &signal_name) const override;
             /// @throws geopm::Exception there are no controls supported by the ConstConfigIOGroup
             std::string control_description(const std::string &control_name) const override;
-            /// @return M_SIGNAL_BEHAVIOR_CONSTANT 
+            /// @return M_SIGNAL_BEHAVIOR_CONSTANT
             int signal_behavior(const std::string &signal_name) const override;
             /// @brief Does nothing; this IOGroup does not provide any controls.
             ///
@@ -79,22 +79,22 @@ namespace geopm
 
         private:
             struct m_signal_desc_s {
-                json11::Json::Type type;
-                bool required;
+                    json11::Json::Type type;
+                    bool required;
             };
 
             struct m_signal_info_s {
-                int units;
-                int domain;
-                std::function<double(const std::vector<double> &)> agg_function;
-                std::string description;
-                bool is_common_value_provided;
-                std::vector<double> values;
+                    int units;
+                    int domain;
+                    std::function<double(const std::vector<double> &)> agg_function;
+                    std::string description;
+                    bool is_common_value_provided;
+                    std::vector<double> values;
             };
 
             struct m_signal_ref_s {
-                std::shared_ptr<m_signal_info_s> signal_info;
-                int domain_idx;
+                    std::shared_ptr<m_signal_info_s> signal_info;
+                    int domain_idx;
             };
 
             void parse_config_json(const std::string &config);

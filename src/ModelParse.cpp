@@ -27,8 +27,8 @@ namespace geopm
         std::ifstream config_stream;
         config_stream.open(config_path, std::ifstream::in);
         if (!config_stream.is_open()) {
-            throw Exception("model_parse_config(): could not open file: " + config_path,
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("model_parse_config(): could not open file: " + config_path, GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         config_stream.seekg(0, std::ios::end);
         size_t file_size = config_stream.tellg();
@@ -39,15 +39,14 @@ namespace geopm
         config_stream.seekg(0, std::ios::beg);
         std::string config_string;
         config_string.reserve(file_size);
-        config_string.assign(std::istreambuf_iterator<char>(config_stream),
-                             std::istreambuf_iterator<char>());
+        config_string.assign(std::istreambuf_iterator<char>(config_stream), std::istreambuf_iterator<char>());
 
         std::string err;
         Json root = Json::parse(config_string, err);
 
         if (!err.empty() || !root.is_object()) {
-            throw Exception("model_parse_config(): malformed json configuration file",
-                            GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
+            throw Exception("model_parse_config(): malformed json configuration file", GEOPM_ERROR_FILE_PARSE,
+                            __FILE__, __LINE__);
         }
 
         std::vector<std::string> hostname;
@@ -88,8 +87,8 @@ namespace geopm
                             big_o.push_back(big_o_obj.number_value());
                         }
                         else {
-                           throw Exception("model_parse_config(): big-o expected to be a double type",
-                                   GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
+                            throw Exception("model_parse_config(): big-o expected to be a double type",
+                                            GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
                         }
                     }
                 }
@@ -122,8 +121,8 @@ namespace geopm
                             imbalance.push_back(imbalance_obj.number_value());
                         }
                         else {
-                           throw Exception("model_parse_config(): imbalance expected to be a double type",
-                                   GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
+                            throw Exception("model_parse_config(): imbalance expected to be a double type",
+                                            GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
                         }
                     }
                 }
@@ -133,16 +132,15 @@ namespace geopm
                 }
             }
             else {
-                throw Exception("model_parse_config(): unknown key: " + key_string,
-                                GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
+                throw Exception("model_parse_config(): unknown key: " + key_string, GEOPM_ERROR_FILE_PARSE,
+                                __FILE__, __LINE__);
             }
         }
         config_stream.close();
 
-        if (region_name.size() != big_o.size() ||
-            hostname.size() != imbalance.size()) {
-            throw geopm::Exception("model_parse_config(): array length mismatch",
-                                   GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        if (region_name.size() != big_o.size() || hostname.size() != imbalance.size()) {
+            throw geopm::Exception("model_parse_config(): array length mismatch", GEOPM_ERROR_INVALID,
+                                   __FILE__, __LINE__);
         }
         int num_host = hostname.size();
         std::string this_hostname = geopm::hostname();

@@ -13,13 +13,8 @@
 
 namespace geopm
 {
-    MSRFieldControl::MSRFieldControl(std::shared_ptr<MSRIO> msrio,
-                                     int cpu,
-                                     uint64_t offset,
-                                     int begin_bit,
-                                     int end_bit,
-                                     int function,
-                                     double scalar)
+    MSRFieldControl::MSRFieldControl(std::shared_ptr<MSRIO> msrio, int cpu, uint64_t offset, int begin_bit,
+                                     int end_bit, int function, double scalar)
         : m_msrio(msrio)
         , m_cpu(cpu)
         , m_offset(offset)
@@ -33,17 +28,14 @@ namespace geopm
         , m_saved_msr_value(0)
     {
         if (m_msrio == nullptr) {
-            throw Exception("MSRFieldControl: cannot construct with null MSRIO",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("MSRFieldControl: cannot construct with null MSRIO", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
-        if (m_function < 0 || m_function >= MSR::M_NUM_FUNCTION ||
-            m_function == MSR::M_FUNCTION_OVERFLOW) {
-            throw Exception("MSRFieldControl: unsupported encode function.",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        if (m_function < 0 || m_function >= MSR::M_NUM_FUNCTION || m_function == MSR::M_FUNCTION_OVERFLOW) {
+            throw Exception("MSRFieldControl: unsupported encode function.", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (begin_bit > end_bit) {
-            throw Exception("MSRFieldControl: begin bit must be <= end bit",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("MSRFieldControl: begin bit must be <= end bit", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
     }
 
@@ -77,13 +69,12 @@ namespace geopm
                     value *= m_inverse;
                     float_y = (uint64_t)std::log2(value);
                     float_z = (uint64_t)(4.0 * (value / (1 << float_y) - 1.0));
-                    if ((float_y && (float_y >> 5) != 0) ||
-                        (float_z && (float_z >> 2) != 0)) {
+                    if ((float_y && (float_y >> 5) != 0) || (float_z && (float_z >> 2) != 0)) {
                         throw Exception("MSR::encode(): integer overflow in M_FUNCTION_7_BIT_FLOAT datatype encoding",
                                         EOVERFLOW, __FILE__, __LINE__);
                     }
                     value_inferred = (1 << float_y) * (1.0 + (float_z / 4.0));
-                    if ((value - value_inferred) > (value  * 0.25)) {
+                    if ((value - value_inferred) > (value * 0.25)) {
                         throw Exception("MSR::encode(): inferred value from encoded value is inaccurate",
                                         GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
                     }

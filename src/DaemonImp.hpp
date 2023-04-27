@@ -18,15 +18,14 @@ namespace geopm
     class DaemonImp : public Daemon
     {
         public:
-            DaemonImp(const std::string &endpoint_name,
-                      const std::string &db_path);
-            DaemonImp(std::shared_ptr<Endpoint> endpoint,
-                      std::shared_ptr<const PolicyStore> policystore);
+            DaemonImp(const std::string &endpoint_name, const std::string &db_path);
+            DaemonImp(std::shared_ptr<Endpoint> endpoint, std::shared_ptr<const PolicyStore> policystore);
             virtual ~DaemonImp();
 
             void update_endpoint_from_policystore(double timeout) override;
             void stop_wait_loop() override;
             void reset_wait_loop() override;
+
         private:
             std::shared_ptr<Endpoint> m_endpoint;
             std::shared_ptr<const PolicyStore> m_policystore;

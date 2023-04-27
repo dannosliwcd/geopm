@@ -13,7 +13,6 @@
 #include "SDBus.hpp"
 #include "SDBusMessage.hpp"
 
-
 namespace geopm
 {
 
@@ -25,20 +24,17 @@ namespace geopm
     ServiceProxyImp::ServiceProxyImp()
         : ServiceProxyImp(SDBus::make_unique())
     {
-
     }
 
     ServiceProxyImp::ServiceProxyImp(std::shared_ptr<SDBus> bus)
         : m_bus(bus)
     {
-
     }
 
     void ServiceProxyImp::platform_get_user_access(std::vector<std::string> &signal_names,
                                                    std::vector<std::string> &control_names)
     {
-        std::shared_ptr<SDBusMessage> bus_message =
-            m_bus->call_method("PlatformGetUserAccess");
+        std::shared_ptr<SDBusMessage> bus_message = m_bus->call_method("PlatformGetUserAccess");
 
         bus_message->enter_container(SDBusMessage::M_MESSAGE_TYPE_STRUCT, "asas");
         signal_names = read_string_array(bus_message);
@@ -46,12 +42,10 @@ namespace geopm
         bus_message->exit_container();
     }
 
-    std::vector<signal_info_s> ServiceProxyImp::platform_get_signal_info(
-        const std::vector<std::string> &signal_names)
+    std::vector<signal_info_s> ServiceProxyImp::platform_get_signal_info(const std::vector<std::string> &signal_names)
     {
         std::vector<signal_info_s> result;
-        std::shared_ptr<SDBusMessage> bus_message =
-            m_bus->make_call_message("PlatformGetSignalInfo");
+        std::shared_ptr<SDBusMessage> bus_message = m_bus->make_call_message("PlatformGetSignalInfo");
         bus_message->append_strings(signal_names);
         std::shared_ptr<SDBusMessage> bus_reply = m_bus->call_method(bus_message);
         bus_reply->enter_container(SDBusMessage::M_MESSAGE_TYPE_ARRAY, "(ssiiii)");
@@ -64,20 +58,17 @@ namespace geopm
             int string_format = bus_reply->read_integer();
             int behavior = bus_reply->read_integer();
             bus_reply->exit_container();
-            result.push_back({name, description, domain, aggregation,
-                              string_format, behavior});
+            result.push_back({name, description, domain, aggregation, string_format, behavior});
             bus_reply->enter_container(SDBusMessage::M_MESSAGE_TYPE_STRUCT, "ssiiii");
         }
         bus_reply->exit_container();
         return result;
     }
 
-    std::vector<control_info_s> ServiceProxyImp::platform_get_control_info(
-        const std::vector<std::string> &control_names)
+    std::vector<control_info_s> ServiceProxyImp::platform_get_control_info(const std::vector<std::string> &control_names)
     {
         std::vector<control_info_s> result;
-        std::shared_ptr<SDBusMessage> bus_message =
-            m_bus->make_call_message("PlatformGetControlInfo");
+        std::shared_ptr<SDBusMessage> bus_message = m_bus->make_call_message("PlatformGetControlInfo");
         bus_message->append_strings(control_names);
         std::shared_ptr<SDBusMessage> bus_reply = m_bus->call_method(bus_message);
         bus_reply->enter_container(SDBusMessage::M_MESSAGE_TYPE_ARRAY, "(ssi)");
@@ -106,8 +97,7 @@ namespace geopm
 
     void ServiceProxyImp::platform_start_batch(const std::vector<struct geopm_request_s> &signal_config,
                                                const std::vector<struct geopm_request_s> &control_config,
-                                               int &server_pid,
-                                               std::string &server_key)
+                                               int &server_pid, std::string &server_key)
     {
         std::shared_ptr<SDBusMessage> bus_message = m_bus->make_call_message("PlatformStartBatch");
         bus_message->open_container(SDBusMessage::M_MESSAGE_TYPE_ARRAY, "(iis)");
@@ -134,31 +124,20 @@ namespace geopm
         m_bus->call_method("PlatformStopBatch", server_pid);
     }
 
-    double ServiceProxyImp::platform_read_signal(const std::string &signal_name,
-                                                 int domain,
-                                                 int domain_idx)
+    double ServiceProxyImp::platform_read_signal(const std::string &signal_name, int domain, int domain_idx)
     {
-        std::shared_ptr<SDBusMessage> reply_message = m_bus->call_method("PlatformReadSignal",
-                                                                         signal_name,
-                                                                         domain,
-                                                                         domain_idx);
+        std::shared_ptr<SDBusMessage> reply_message = m_bus->call_method("PlatformReadSignal", signal_name,
+                                                                         domain, domain_idx);
         return reply_message->read_double();
     }
 
-    void ServiceProxyImp::platform_write_control(const std::string &control_name,
-                                                 int domain,
-                                                 int domain_idx,
+    void ServiceProxyImp::platform_write_control(const std::string &control_name, int domain, int domain_idx,
                                                  double setting)
     {
-        (void)m_bus->call_method("PlatformWriteControl",
-                                 control_name,
-                                 domain,
-                                 domain_idx,
-                                 setting);
+        (void)m_bus->call_method("PlatformWriteControl", control_name, domain, domain_idx, setting);
     }
 
-    std::vector<std::string> ServiceProxyImp::read_string_array(
-        std::shared_ptr<SDBusMessage> bus_message)
+    std::vector<std::string> ServiceProxyImp::read_string_array(std::shared_ptr<SDBusMessage> bus_message)
     {
         std::vector<std::string> result;
         bus_message->enter_container(SDBusMessage::M_MESSAGE_TYPE_ARRAY, "s");

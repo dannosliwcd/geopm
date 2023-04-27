@@ -6,7 +6,6 @@
 #ifndef COMBINEDCONTROL_HPP_INCLUDE
 #define COMBINEDCONTROL_HPP_INCLUDE
 
-
 namespace geopm
 {
     /// @brief Used by PlatformIO to define a control as a function of
@@ -19,6 +18,7 @@ namespace geopm
             virtual ~CombinedControl() = default;
             /// @brief Multiply setting by factor and return
             virtual double adjust(double setting);
+
         private:
             double m_factor;
     };

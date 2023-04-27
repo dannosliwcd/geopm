@@ -51,6 +51,7 @@ namespace geopm
             std::string name(void) const override;
             static std::string plugin_name(void);
             static std::unique_ptr<geopm::IOGroup> make_plugin(void);
+
         private:
             void register_signal_alias(const std::string &alias_name, const std::string &signal_name);
             void register_control_alias(const std::string &alias_name, const std::string &control_name);
@@ -59,31 +60,29 @@ namespace geopm
             DCGMDevicePool &m_dcgm_device_pool;
             bool m_is_batch_read;
 
-            struct signal_s
-            {
-                double m_value;
-                bool m_do_read;
+            struct signal_s {
+                    double m_value;
+                    bool m_do_read;
             };
 
-            struct control_s
-            {
-                double m_setting;
-                bool m_is_adjusted;
+            struct control_s {
+                    double m_setting;
+                    bool m_is_adjusted;
             };
 
             struct signal_info {
-                std::string m_description;
-                std::vector<std::shared_ptr<signal_s> > m_signals;
-                std::function<double (unsigned int)> m_devpool_func;
-                std::function<double(const std::vector<double> &)> m_agg_function;
-                std::function<std::string(double)> m_format_function;
+                    std::string m_description;
+                    std::vector<std::shared_ptr<signal_s> > m_signals;
+                    std::function<double(unsigned int)> m_devpool_func;
+                    std::function<double(const std::vector<double> &)> m_agg_function;
+                    std::function<std::string(double)> m_format_function;
             };
 
             struct control_info {
-                std::string m_description;
-                std::vector<std::shared_ptr<control_s> > m_controls;
-                std::function<double(const std::vector<double> &)> m_agg_function;
-                std::function<std::string(double)> m_format_function;
+                    std::string m_description;
+                    std::vector<std::shared_ptr<control_s> > m_controls;
+                    std::function<double(const std::vector<double> &)> m_agg_function;
+                    std::function<std::string(double)> m_format_function;
             };
 
             std::map<std::string, signal_info> m_signal_available;

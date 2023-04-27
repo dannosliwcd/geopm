@@ -62,8 +62,9 @@ namespace geopm
             std::set<std::string> region_name_set(void) const override;
             void controller_ready(void) override;
             void abort(void) override;
+
         private:
-            static constexpr size_t M_SHMEM_REGION_SIZE = 2*1024*1024;
+            static constexpr size_t M_SHMEM_REGION_SIZE = 2 * 1024 * 1024;
 
             bool m_is_connected;
             ApplicationSampler &m_application_sampler;

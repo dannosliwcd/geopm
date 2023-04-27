@@ -16,63 +16,51 @@
 
 namespace geopm
 {
-    const std::string OptionParser::M_COPYRIGHT_TEXT = "\nCopyright (c) 2015 - 2023, Intel Corporation. All rights reserved.\n\n";
+    const std::string OptionParser::M_COPYRIGHT_TEXT
+        = "\nCopyright (c) 2015 - 2023, Intel Corporation. All rights reserved.\n\n";
 
-    OptionParser::OptionParser(const std::string &prog_name,
-                               std::ostream &std_out,
-                               std::ostream &err_out)
+    OptionParser::OptionParser(const std::string &prog_name, std::ostream &std_out, std::ostream &err_out)
         : OptionParser(prog_name, std_out, err_out, "")
     {
-
     }
 
-    OptionParser::OptionParser(const std::string &prog_name,
-                               std::ostream &std_out,
-                               std::ostream &err_out,
+    OptionParser::OptionParser(const std::string &prog_name, std::ostream &std_out, std::ostream &err_out,
                                const std::string &custom_help)
-        : m_prog_name(prog_name),
-          m_std_out(std_out),
-          m_err_out(err_out),
-          m_custom_help(custom_help) {
+        : m_prog_name(prog_name)
+        , m_std_out(std_out)
+        , m_err_out(err_out)
+        , m_custom_help(custom_help)
+    {
         // automatically support --help and --version
-        add_option("help", 'h', "help", false,
-                   "print brief summary of the command line usage information, then exit");
-        add_option("version", 'V', "version", false,
-                   "print version of GEOPM to standard output, then exit");
+        add_option("help", 'h', "help", false, "print brief summary of the command line usage information, then exit");
+        add_option("version", 'V', "version", false, "print version of GEOPM to standard output, then exit");
     }
 
-    void OptionParser::add_option(const std::string &name,
-                                  char short_form,
-                                  const std::string &long_form,
-                                  const std::string &default_val,
-                                  const std::string &description) {
+    void OptionParser::add_option(const std::string &name, char short_form, const std::string &long_form,
+                                  const std::string &default_val, const std::string &description)
+    {
         check_add_option(name, short_form, long_form);
         m_str_opts[name] = {short_form, long_form, default_val, default_val, description};
         m_str_short_name[short_form] = name;
         m_option_order.push_back(name);
     }
 
-    void OptionParser::add_option(const std::string &name,
-                                  char short_form,
-                                  const std::string &long_form,
-                                  const char *default_val,
-                                  const std::string &description)
+    void OptionParser::add_option(const std::string &name, char short_form, const std::string &long_form,
+                                  const char *default_val, const std::string &description)
     {
         add_option(name, short_form, long_form, std::string(default_val), description);
     }
 
-    void OptionParser::add_option(const std::string &name,
-                                  char short_form,
-                                  const std::string &long_form,
-                                  bool default_val,
-                                  const std::string &description) {
+    void OptionParser::add_option(const std::string &name, char short_form, const std::string &long_form,
+                                  bool default_val, const std::string &description)
+    {
         check_add_option(name, short_form, long_form);
         m_bool_opts[name] = {short_form, long_form, default_val, default_val, description};
         m_bool_short_name[short_form] = name;
         m_option_order.push_back(name);
     }
 
-    bool OptionParser::parse(int argc, const char * const argv[])
+    bool OptionParser::parse(int argc, const char *const argv[])
     {
         std::vector<struct option> long_options;
         std::string short_options;
@@ -97,8 +85,10 @@ namespace geopm
         bool do_version = false;
         std::ostringstream msg;
         int opt;
-        optind = 1;  // reset to allow multiple parse() calls
-        while (!err && (opt = getopt_long(argc, (char * const *)argv, short_options.c_str(), long_options.data(), NULL)) != -1) {
+        optind = 1; // reset to allow multiple parse() calls
+        while (!err
+               && (opt = getopt_long(argc, (char *const *)argv, short_options.c_str(), long_options.data(), NULL))
+                      != -1) {
             if (opt == 'h') {
                 do_help = true;
             }
@@ -109,7 +99,9 @@ namespace geopm
                 auto bit = m_bool_short_name.find(opt);
                 auto sit = m_str_short_name.find(opt);
                 if (bit != m_bool_short_name.end()) {
-                    m_bool_opts[bit->second].value = !m_bool_opts.at(bit->second).default_value;  // flip bool value from default if set
+                    m_bool_opts[bit->second].value = !m_bool_opts.at(bit->second).default_value; // flip bool
+                                                                                                 // value from
+                                                                                                 // default if set
                 }
                 else if (sit != m_str_short_name.end()) {
                     m_str_opts[sit->second].value = std::string(optarg);
@@ -120,7 +112,7 @@ namespace geopm
                     err = EINVAL;
                 }
                 else {
-                    msg << "Error: getopt returned character code \"" << opt <<  "\"" << std::endl;
+                    msg << "Error: getopt returned character code \"" << opt << "\"" << std::endl;
                     do_help = true;
                     err = EINVAL;
                 }
@@ -155,8 +147,7 @@ namespace geopm
     {
         auto it = m_bool_opts.find(name);
         if (it == m_bool_opts.end()) {
-            throw geopm::Exception(std::string("Invalid option ") + name,
-                                   GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw geopm::Exception(std::string("Invalid option ") + name, GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.value;
     }
@@ -165,8 +156,7 @@ namespace geopm
     {
         auto it = m_str_opts.find(name);
         if (it == m_str_opts.end()) {
-            throw geopm::Exception(std::string("Invalid option ") + name,
-                                   GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw geopm::Exception(std::string("Invalid option ") + name, GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return it->second.value;
     }
@@ -232,10 +222,8 @@ namespace geopm
         return tmp.str();
     }
 
-    void OptionParser::format_option(std::ostream &tmp,
-                                     const std::string &short_form,
-                                     const std::string &long_form,
-                                     std::string description)
+    void OptionParser::format_option(std::ostream &tmp, const std::string &short_form,
+                                     const std::string &long_form, std::string description)
     {
         // The first column of options starts indented to col0.  The
         // second column of descriptions starts at col1 and wraps if
@@ -244,11 +232,11 @@ namespace geopm
         const int col0 = 2;
         const int col1 = 28;
         const int col2 = 79;
-        std::string left =
-            std::string(col0, ' ') + "-" + short_form + ", --" + long_form;
+        std::string left = std::string(col0, ' ') + "-" + short_form + ", --" + long_form;
         if (left.size() < col1) {
             left.resize(col1, ' ');
-        } else {
+        }
+        else {
             left += "\n";
             tmp << left;
             left = std::string(col1, ' ');
@@ -264,8 +252,7 @@ namespace geopm
         tmp << left << description << "\n";
     }
 
-    void OptionParser::check_add_option(const std::string &name, char short_form,
-                                        const std::string &long_form)
+    void OptionParser::check_add_option(const std::string &name, char short_form, const std::string &long_form)
     {
         if (short_form == '?') {
             throw Exception("OptionParser::check_add_option(): cannot have ? as a short option",
@@ -273,27 +260,26 @@ namespace geopm
         }
         for (auto const &opt : m_bool_opts) {
             if (short_form == opt.second.short_form) {
-                throw Exception(std::string("OptionParser::check_add_option(): short form ") + short_form +
-                                " already assigned to an option.", GEOPM_ERROR_INVALID,
-                                __FILE__, __LINE__);
-
+                throw Exception(std::string("OptionParser::check_add_option(): short form ") + short_form
+                                    + " already assigned to an option.",
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             if (long_form == opt.second.long_form) {
-                throw Exception(std::string("OptionParser::check_add_option(): long form ") + long_form +
-                                " already assigned to an option.", GEOPM_ERROR_INVALID,
-                                __FILE__, __LINE__);
+                throw Exception(std::string("OptionParser::check_add_option(): long form ") + long_form
+                                    + " already assigned to an option.",
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
         for (auto const &opt : m_str_opts) {
             if (short_form == opt.second.short_form) {
-                throw Exception(std::string("OptionParser::check_add_option(): short form ") + short_form +
-                                " already assigned to an option.", GEOPM_ERROR_INVALID,
-                                __FILE__, __LINE__);
+                throw Exception(std::string("OptionParser::check_add_option(): short form ") + short_form
+                                    + " already assigned to an option.",
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             if (long_form == opt.second.long_form) {
-                throw Exception(std::string("OptionParser::check_add_option(): long form ") + long_form +
-                                " already assigned to an option.", GEOPM_ERROR_INVALID,
-                                __FILE__, __LINE__);
+                throw Exception(std::string("OptionParser::check_add_option(): long form ") + long_form
+                                    + " already assigned to an option.",
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
     }

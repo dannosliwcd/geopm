@@ -20,7 +20,6 @@ namespace geopm
     ApplicationIOImp::ApplicationIOImp()
         : ApplicationIOImp(ApplicationSampler::application_sampler())
     {
-
     }
 
     ApplicationIOImp::ApplicationIOImp(ApplicationSampler &application_sampler)
@@ -33,10 +32,7 @@ namespace geopm
         }
     }
 
-    ApplicationIOImp::~ApplicationIOImp()
-    {
-
-    }
+    ApplicationIOImp::~ApplicationIOImp() {}
 
     void ApplicationIOImp::connect(void)
     {
@@ -55,8 +51,7 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (!m_is_connected) {
-            throw Exception("ApplicationIOImp::" + std::string(__func__) +
-                            " called before connect().",
+            throw Exception("ApplicationIOImp::" + std::string(__func__) + " called before connect().",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
@@ -67,8 +62,7 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (!m_is_connected) {
-            throw Exception("ApplicationIOImp::" + std::string(__func__) +
-                            " called before connect().",
+            throw Exception("ApplicationIOImp::" + std::string(__func__) + " called before connect().",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
@@ -79,8 +73,7 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (!m_is_connected) {
-            throw Exception("ApplicationIOImp::" + std::string(__func__) +
-                            " called before connect().",
+            throw Exception("ApplicationIOImp::" + std::string(__func__) + " called before connect().",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
@@ -91,8 +84,7 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (!m_is_connected) {
-            throw Exception("ApplicationIOImp::" + std::string(__func__) +
-                            " called before connect().",
+            throw Exception("ApplicationIOImp::" + std::string(__func__) + " called before connect().",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif

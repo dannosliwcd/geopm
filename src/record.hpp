@@ -20,40 +20,40 @@ namespace geopm
     /// description of the "signal" field in the m_record_s is
     /// given for each enum value.
     enum event_e {
-        EVENT_REGION_ENTRY = 0,  /// EVENT: The application has entered a region.
-                                 /// SIGNAL: The hash of the entered region.
-        EVENT_REGION_EXIT = 1,   /// EVENT: The application has exited a region.
-                                 /// SIGNAL: The hash of the exited region.
-        EVENT_EPOCH_COUNT = 2,   /// EVENT: An epoch call was made by the application.
-                                 /// SIGNAL: The number of epochs signaled by process.
-        EVENT_SHORT_REGION = 3,  /// EVENT: The application entered and exited a
-                                 ///        region at least once since last update.
-                                 /// SIGNAL: Handle to pass to AppliationSampler::get_short_region()
+        EVENT_REGION_ENTRY = 0, /// EVENT: The application has entered a region.
+                                /// SIGNAL: The hash of the entered region.
+        EVENT_REGION_EXIT = 1,  /// EVENT: The application has exited a region.
+                                /// SIGNAL: The hash of the exited region.
+        EVENT_EPOCH_COUNT = 2,  /// EVENT: An epoch call was made by the application.
+                                /// SIGNAL: The number of epochs signaled by process.
+        EVENT_SHORT_REGION = 3, /// EVENT: The application entered and exited a
+                                ///        region at least once since last update.
+                                /// SIGNAL: Handle to pass to AppliationSampler::get_short_region()
         ///
         /// @todo SUPPORT FOR EVENTS BELOW IS FUTURE WORK
         ///
-        EVENT_PROFILE = 4,       /// EVENT: The application has started up and all
-                                 ///        processes associated with the
-                                 ///        application identify their profile name.
-                                 /// SIGNAL: The hash of the profile name unique to
-                                 ///         the application.
-        EVENT_REPORT = 5,        /// EVENT: The application has completed and
-                                 ///        all processes associated with the
-                                 ///        application identify their report name.
-                                 /// SIGNAL: The hash of the report name.
-        EVENT_CLAIM_CPU = 6,     /// EVENT: The application has started up.  Each
-                                 ///        process will send one "claim" event per
-                                 ///        CPU in affinity mask.
-                                 /// SIGNAL: Linux logical CPU claimed by process.
-        EVENT_RELEASE_CPU = 7,   /// EVENT: The application is shutting down.  Each
-                                 ///        process will send one "release" event for
-                                 ///        every previous "claim" event.
-        EVENT_NAME_MAP = 8,      /// EVENT: The application is shutting down and has
-                                 ///        recorded all region names.
-                                 /// SIGNAL: A unique identifier which can be used to
-                                 ///         access the map to all strings hashed
-                                 ///         by the application (get_name_map()
-                                 ///         parameter).
+        EVENT_PROFILE = 4,     /// EVENT: The application has started up and all
+                               ///        processes associated with the
+                               ///        application identify their profile name.
+                               /// SIGNAL: The hash of the profile name unique to
+                               ///         the application.
+        EVENT_REPORT = 5,      /// EVENT: The application has completed and
+                               ///        all processes associated with the
+                               ///        application identify their report name.
+                               /// SIGNAL: The hash of the report name.
+        EVENT_CLAIM_CPU = 6,   /// EVENT: The application has started up.  Each
+                               ///        process will send one "claim" event per
+                               ///        CPU in affinity mask.
+                               /// SIGNAL: Linux logical CPU claimed by process.
+        EVENT_RELEASE_CPU = 7, /// EVENT: The application is shutting down.  Each
+                               ///        process will send one "release" event for
+                               ///        every previous "claim" event.
+        EVENT_NAME_MAP = 8,    /// EVENT: The application is shutting down and has
+                               ///        recorded all region names.
+                               /// SIGNAL: A unique identifier which can be used to
+                               ///         access the map to all strings hashed
+                               ///         by the application (get_name_map()
+                               ///         parameter).
     };
 
     /// @brief Format an event_e type as a string.
@@ -75,21 +75,21 @@ namespace geopm
 
     /// @brief Record of an application event.
     struct record_s {
-        /// @brief Elapsed time since time zero when event was
-        ///        recorded.
-        double time;
-        /// @brief The process identifier where event occurred.
-        int process;
-        /// @brief One of the m_event_e event types.
-        int event;
-        /// @brief The signal associated with the event type.
-        uint64_t signal;
+            /// @brief Elapsed time since time zero when event was
+            ///        recorded.
+            double time;
+            /// @brief The process identifier where event occurred.
+            int process;
+            /// @brief One of the m_event_e event types.
+            int event;
+            /// @brief The signal associated with the event type.
+            uint64_t signal;
     };
 
     struct short_region_s {
-        uint64_t hash;
-        int num_complete;
-        double total_time;
+            uint64_t hash;
+            int num_complete;
+            double total_time;
     };
 }
 

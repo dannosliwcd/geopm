@@ -12,8 +12,7 @@
 
 namespace geopm
 {
-    std::string MSRPath::msr_path(int cpu_idx,
-                                  int fallback_idx)
+    std::string MSRPath::msr_path(int cpu_idx, int fallback_idx)
     {
         std::ostringstream path_ss;
         path_ss << "/dev/cpu/" << cpu_idx;
@@ -37,4 +36,3 @@ namespace geopm
         return "/dev/cpu/msr_batch";
     }
 }
-

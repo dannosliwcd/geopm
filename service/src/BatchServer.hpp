@@ -12,7 +12,6 @@
 #include <functional>
 #include <signal.h>
 
-
 struct geopm_request_s;
 
 namespace geopm
@@ -70,12 +69,10 @@ namespace geopm
                                                             const std::vector<geopm_request_s> &control_config);
             /// @return The shm key to use for the signal shared memory
             ///         region.
-            static std::string get_signal_shmem_key(
-                const std::string &server_key);
+            static std::string get_signal_shmem_key(const std::string &server_key);
             /// @return The shm key to use for the control shared memory
             ///         region.
-            static std::string get_control_shmem_key(
-                const std::string &server_key);
+            static std::string get_control_shmem_key(const std::string &server_key);
             /// @return The Unix process ID of the server process
             ///        created.
             virtual int server_pid(void) const = 0;
@@ -94,27 +91,20 @@ namespace geopm
             virtual bool is_active(void) = 0;
 
         protected:
-            static constexpr const char* M_SHMEM_PREFIX =
-                "/run/geopm-service/batch-buffer-";
+            static constexpr const char *M_SHMEM_PREFIX = "/run/geopm-service/batch-buffer-";
     };
 
     class BatchServerImp : public BatchServer
     {
         public:
-            BatchServerImp(int client_pid,
-                           const std::vector<geopm_request_s> &signal_config,
+            BatchServerImp(int client_pid, const std::vector<geopm_request_s> &signal_config,
                            const std::vector<geopm_request_s> &control_config);
-            BatchServerImp(int client_pid,
-                           const std::vector<geopm_request_s> &signal_config,
+            BatchServerImp(int client_pid, const std::vector<geopm_request_s> &signal_config,
                            const std::vector<geopm_request_s> &control_config,
-                           const std::string &signal_shmem_key,
-                           const std::string &control_shmem_key,
-                           PlatformIO &pio,
-                           std::shared_ptr<BatchStatus> batch_status,
-                           std::shared_ptr<POSIXSignal> posix_signal,
-                           std::shared_ptr<SharedMemory> signal_shmem,
-                           std::shared_ptr<SharedMemory> control_shmem,
-                           int server_pid);
+                           const std::string &signal_shmem_key, const std::string &control_shmem_key,
+                           PlatformIO &pio, std::shared_ptr<BatchStatus> batch_status,
+                           std::shared_ptr<POSIXSignal> posix_signal, std::shared_ptr<SharedMemory> signal_shmem,
+                           std::shared_ptr<SharedMemory> control_shmem, int server_pid);
             virtual ~BatchServerImp();
             int server_pid(void) const override;
             std::string server_key(void) const override;
@@ -124,8 +114,7 @@ namespace geopm
             void create_shmem(void);
             /// @brief Fork a process that runs two functions and
             ///        block until the first function completes.
-            int fork_with_setup(std::function<char(void)> setup,
-                                std::function<void(void)> run);
+            int fork_with_setup(std::function<char(void)> setup, std::function<void(void)> run);
             void child_register_handler(void);
             void parent_register_handler(void);
 

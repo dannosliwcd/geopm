@@ -28,11 +28,9 @@ namespace geopm
     PowerBalancerImp::PowerBalancerImp(double ctl_latency)
         : PowerBalancerImp(ctl_latency, 0.125, 9, 0.25)
     {
-
     }
 
-    PowerBalancerImp::PowerBalancerImp(double ctl_latency, double trial_delta,
-                                       int num_sample, double measure_duration)
+    PowerBalancerImp::PowerBalancerImp(double ctl_latency, double trial_delta, int num_sample, double measure_duration)
         : M_CONTROL_LATENCY(ctl_latency)
         , M_MIN_TRIAL_DELTA(trial_delta)
         , M_MIN_NUM_SAMPLE(num_sample)
@@ -41,14 +39,13 @@ namespace geopm
         , m_num_sample(0)
         , m_power_cap(NAN)
         , m_power_limit(NAN)
-        , m_power_limit_change_time({{0,0}})
+        , m_power_limit_change_time({{0, 0}})
         , m_target_runtime(NAN)
         , m_trial_delta(8.0)
         , m_runtime_sample(NAN)
         , m_is_target_met(false)
         , m_runtime_buffer(geopm::make_unique<CircularBuffer<double> >(0))
     {
-
     }
 
     void PowerBalancerImp::power_cap(double cap)
@@ -93,8 +90,7 @@ namespace geopm
     bool PowerBalancerImp::is_runtime_stable(double measured_runtime)
     {
         bool result = false;
-        if (!is_limit_stable() ||
-            std::isnan(measured_runtime)) {
+        if (!is_limit_stable() || std::isnan(measured_runtime)) {
             return result;
         }
         /// m_runtime_vec used as a temporary holder until enough time
@@ -157,13 +153,11 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (std::isnan(measured_runtime)) {
-            throw Exception("PowerBalancerImp::" + std::string(__func__) +
-                            "Encountered NAN for sampled epoch runtime.",
+            throw Exception("PowerBalancerImp::" + std::string(__func__) + "Encountered NAN for sampled epoch runtime.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
-        if (!m_is_target_met &&
-            is_runtime_stable(measured_runtime)) {
+        if (!m_is_target_met && is_runtime_stable(measured_runtime)) {
             if (m_runtime_sample > m_target_runtime) {
                 if (m_power_limit < m_power_cap) {
                     m_power_limit += m_trial_delta;

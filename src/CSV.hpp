@@ -48,8 +48,7 @@ namespace geopm
             ///        - "raw64": View of raw memory contained in
             ///                   signal printed as a 16 hexadecimal
             ///                   digit number.
-            virtual void add_column(const std::string &name,
-                                    const std::string &format) = 0;
+            virtual void add_column(const std::string &name, const std::string &format) = 0;
             /// @brief Add a column with the given field name.  The
             ///        formatting of the column values is implemented
             ///        with the format function provided.
@@ -58,8 +57,7 @@ namespace geopm
             /// @param [in] format Function that converts a double
             ///        precision signal into the printed string for
             ///        this column in the CSV file.
-            virtual void add_column(const std::string &name,
-                                    std::function<std::string(double)> format) = 0;
+            virtual void add_column(const std::string &name, std::function<std::string(double)> format) = 0;
             /// @brief Calling activate indicates that all columns
             ///        have been added to the object and calls to
             ///        update() are enabled.
@@ -76,19 +74,16 @@ namespace geopm
     class CSVImp : public CSV
     {
         public:
-            CSVImp(const std::string &file_path,
-                   const std::string &host_name,
-                   const std::string &start_time,
+            CSVImp(const std::string &file_path, const std::string &host_name, const std::string &start_time,
                    size_t buffer_size);
             virtual ~CSVImp();
             void add_column(const std::string &name) override;
-            void add_column(const std::string &name,
-                            const std::string &format) override;
-            void add_column(const std::string &name,
-                            std::function<std::string(double)> format) override;
+            void add_column(const std::string &name, const std::string &format) override;
+            void add_column(const std::string &name, std::function<std::string(double)> format) override;
             void activate(void) override;
             void update(const std::vector<double> &sample) override;
             void flush(void) override;
+
         private:
             void write_header(const std::string &host_name, const std::string &start_time);
             void write_names(void);

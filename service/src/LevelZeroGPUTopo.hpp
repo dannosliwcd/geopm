@@ -20,13 +20,13 @@ namespace geopm
     {
         public:
             LevelZeroGPUTopo();
-            LevelZeroGPUTopo(const LevelZeroDevicePool &device_pool,
-                                     const int num_cpu);
+            LevelZeroGPUTopo(const LevelZeroDevicePool &device_pool, const int num_cpu);
             virtual ~LevelZeroGPUTopo() = default;
             int num_gpu(void) const override;
             int num_gpu(int domain) const override;
             std::set<int> cpu_affinity_ideal(int gpu_idx) const override;
             std::set<int> cpu_affinity_ideal(int domain, int gpu_idx) const override;
+
         private:
             const LevelZeroDevicePool &m_levelzero_device_pool;
             std::vector<std::set<int> > m_cpu_affinity_ideal;

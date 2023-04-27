@@ -27,9 +27,9 @@ namespace geopm
         public:
             FrequencyMapAgent();
             FrequencyMapAgent(PlatformIO &plat_io, const PlatformTopo &topo);
-            FrequencyMapAgent(const std::map<uint64_t, double>& hash_freq_map,
-                              const std::set<uint64_t>& default_freq_hash,
-                              PlatformIO &plat_io, const PlatformTopo &topo);
+            FrequencyMapAgent(const std::map<uint64_t, double> &hash_freq_map,
+                              const std::set<uint64_t> &default_freq_hash, PlatformIO &plat_io,
+                              const PlatformTopo &topo);
             virtual ~FrequencyMapAgent() = default;
             void init(int level, const std::vector<int> &fan_in, bool is_level_root) override;
             void validate_policy(std::vector<double> &policy) const override;

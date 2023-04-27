@@ -37,9 +37,7 @@ namespace geopm
             /// @param db_path The path to the PolicyStore
             ///
             /// @return unique_ptr<Daemon> to a concrete DaemonImp object.
-            static std::unique_ptr<Daemon> make_unique(const std::string &endpoint_name,
-                                                       const std::string &db_path);
-
+            static std::unique_ptr<Daemon> make_unique(const std::string &endpoint_name, const std::string &db_path);
     };
 }
 

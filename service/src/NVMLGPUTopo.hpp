@@ -26,6 +26,7 @@ namespace geopm
             int num_gpu(int domain_type) const override;
             std::set<int> cpu_affinity_ideal(int gpu_idx) const override;
             std::set<int> cpu_affinity_ideal(int domain_type, int gpu_idx) const override;
+
         private:
             const NVMLDevicePool &m_nvml_device_pool;
             std::vector<std::set<int> > m_cpu_affinity_ideal;

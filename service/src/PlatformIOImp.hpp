@@ -24,8 +24,7 @@ namespace geopm
     {
         public:
             PlatformIOImp();
-            PlatformIOImp(std::list<std::shared_ptr<IOGroup> > iogroup_list,
-                          const PlatformTopo &topo);
+            PlatformIOImp(std::list<std::shared_ptr<IOGroup> > iogroup_list, const PlatformTopo &topo);
             PlatformIOImp(const PlatformIOImp &other) = delete;
             PlatformIOImp &operator=(const PlatformIOImp &other) = delete;
             virtual ~PlatformIOImp() = default;
@@ -34,23 +33,14 @@ namespace geopm
             std::set<std::string> control_names(void) const override;
             int signal_domain_type(const std::string &signal_name) const override;
             int control_domain_type(const std::string &control_name) const override;
-            int push_signal(const std::string &signal_name,
-                            int domain_type,
-                            int domain_idx) override;
-            int push_control(const std::string &control_name,
-                             int domain_type,
-                             int domain_idx) override;
+            int push_signal(const std::string &signal_name, int domain_type, int domain_idx) override;
+            int push_control(const std::string &control_name, int domain_type, int domain_idx) override;
             double sample(int signal_idx) override;
             void adjust(int control_idx, double setting) override;
             void read_batch(void) override;
             void write_batch(void) override;
-            double read_signal(const std::string &signal_name,
-                               int domain_type,
-                               int domain_idx) override;
-            void write_control(const std::string &control_name,
-                               int domain_type,
-                               int domain_idx,
-                               double setting) override;
+            double read_signal(const std::string &signal_name, int domain_type, int domain_idx) override;
+            void write_control(const std::string &control_name, int domain_type, int domain_idx, double setting) override;
             void save_control(void) override;
             void restore_control(void) override;
             std::function<double(const std::vector<double> &)> agg_function(const std::string &signal_name) const override;
@@ -60,10 +50,8 @@ namespace geopm
             int signal_behavior(const std::string &signal_name) const override;
             void save_control(const std::string &save_dir) override;
             void restore_control(const std::string &save_dir) override;
-            void start_batch_server(int client_pid,
-                                    const std::vector<geopm_request_s> &signal_config,
-                                    const std::vector<geopm_request_s> &control_config,
-                                    int &server_pid,
+            void start_batch_server(int client_pid, const std::vector<geopm_request_s> &signal_config,
+                                    const std::vector<geopm_request_s> &control_config, int &server_pid,
                                     std::string &server_key) override;
             void stop_batch_server(int server_pid) override;
 
@@ -86,13 +74,9 @@ namespace geopm
             /// @return Index of signal when sample() method is called
             ///         or throws if the signal is not valid
             ///         on the platform.
-            int push_combined_signal(const std::string &signal_name,
-                                     int domain_type,
-                                     int domain_idx,
+            int push_combined_signal(const std::string &signal_name, int domain_type, int domain_idx,
                                      const std::vector<int> &sub_signal_idx);
-            int push_combined_control(const std::string &control_name,
-                                      int domain_type,
-                                      int domain_idx,
+            int push_combined_control(const std::string &control_name, int domain_type, int domain_idx,
                                       const std::vector<int> &sub_control_idx);
             /// @brief Save a high-level signal as a combination of other signals.
             /// @param [in] signal_idx Index a caller can use to refer to this signal.
@@ -100,25 +84,15 @@ namespace geopm
             ///             be valid pushed signals registered with PlatformIO.
             /// @param [in] func The function that will combine the signals into
             ///             a single result.
-            void register_combined_signal(int signal_idx,
-                                          std::vector<int> operands,
+            void register_combined_signal(int signal_idx, std::vector<int> operands,
                                           std::unique_ptr<CombinedSignal> signal);
-            void register_combined_control(int control_idx,
-                                           std::vector<int> operands,
+            void register_combined_control(int control_idx, std::vector<int> operands,
                                            std::unique_ptr<CombinedControl> control);
-            int push_signal_convert_domain(const std::string &signal_name,
-                                           int domain_type,
-                                           int domain_idx);
-            int push_control_convert_domain(const std::string &control_name,
-                                            int domain_type,
-                                            int domain_idx);
-            double read_signal_convert_domain(const std::string &signal_name,
-                                              int domain_type,
-                                              int domain_idx);
-            void write_control_convert_domain(const std::string &control_name,
-                                              int domain_type,
-                                              int domain_idx,
-                                              double setting);
+            int push_signal_convert_domain(const std::string &signal_name, int domain_type, int domain_idx);
+            int push_control_convert_domain(const std::string &control_name, int domain_type, int domain_idx);
+            double read_signal_convert_domain(const std::string &signal_name, int domain_type, int domain_idx);
+            void write_control_convert_domain(const std::string &control_name, int domain_type,
+                                              int domain_idx, double setting);
             /// @brief Sample a combined signal using the saved function and operands.
             double sample_combined(int signal_idx);
             void adjust_combined(int control_idx, double setting);
@@ -139,10 +113,8 @@ namespace geopm
             std::vector<std::pair<std::shared_ptr<IOGroup>, int> > m_active_control;
             std::map<std::tuple<std::string, int, int>, int> m_existing_signal;
             std::map<std::tuple<std::string, int, int>, int> m_existing_control;
-            std::map<int, std::pair<std::vector<int>,
-                                    std::unique_ptr<CombinedSignal> > > m_combined_signal;
-            std::map<int, std::pair<std::vector<int>,
-                                    std::unique_ptr<CombinedControl> > > m_combined_control;
+            std::map<int, std::pair<std::vector<int>, std::unique_ptr<CombinedSignal> > > m_combined_signal;
+            std::map<int, std::pair<std::vector<int>, std::unique_ptr<CombinedControl> > > m_combined_control;
             bool m_do_restore;
             std::map<int, std::shared_ptr<BatchServer> > m_batch_server;
             static const std::map<const std::string, const std::string> m_signal_descriptions;

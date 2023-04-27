@@ -28,17 +28,16 @@ class Imbalancer
         void frac(double delay_frac);
         void enter(void);
         void exit(void);
+
     private:
         double m_delay_frac;
         struct geopm_time_s m_enter_time;
 };
 
-
 Imbalancer::Imbalancer()
     : m_delay_frac(0.0)
-    , m_enter_time({{0,0}})
+    , m_enter_time({{0, 0}})
 {
-
 }
 
 Imbalancer::Imbalancer(const std::string &config_path)
@@ -48,7 +47,7 @@ Imbalancer::Imbalancer(const std::string &config_path)
         std::ifstream config_stream(config_path, std::ifstream::in);
         std::string this_host;
         double this_frac;
-        while(config_stream.good()) {
+        while (config_stream.good()) {
             config_stream >> this_host >> this_frac;
             if (geopm::hostname() == this_host) {
                 frac(this_frac);
@@ -58,10 +57,7 @@ Imbalancer::Imbalancer(const std::string &config_path)
     }
 }
 
-Imbalancer::~Imbalancer()
-{
-
-}
+Imbalancer::~Imbalancer() {}
 
 void Imbalancer::frac(double delay_frac)
 {
@@ -69,8 +65,8 @@ void Imbalancer::frac(double delay_frac)
         m_delay_frac = delay_frac;
     }
     else {
-        throw geopm::Exception("Imbalancer::frac(): delay_fraction is negative",
-                               GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        throw geopm::Exception("Imbalancer::frac(): delay_fraction is negative", GEOPM_ERROR_INVALID,
+                               __FILE__, __LINE__);
     }
 }
 

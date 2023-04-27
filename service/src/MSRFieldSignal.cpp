@@ -11,14 +11,11 @@
 #include "geopm/Exception.hpp"
 #include "geopm_debug.hpp"
 #include "geopm/Helper.hpp"
-#include "MSR.hpp"  // for enums
+#include "MSR.hpp" // for enums
 
 namespace geopm
 {
-    MSRFieldSignal::MSRFieldSignal(std::shared_ptr<Signal> raw_msr,
-                                   int begin_bit,
-                                   int end_bit,
-                                   int function,
+    MSRFieldSignal::MSRFieldSignal(std::shared_ptr<Signal> raw_msr, int begin_bit, int end_bit, int function,
                                    double scalar)
         : m_raw_msr(raw_msr)
         , m_shift(begin_bit)
@@ -35,14 +32,10 @@ namespace geopm
         /// comes from user input files or if this interface is
         /// public. Alternatively, checks for these at the json
         /// parsing step would make these correctly logic errors.
-        GEOPM_DEBUG_ASSERT(raw_msr != nullptr,
-                           "Signal pointer for raw_msr cannot be null");
+        GEOPM_DEBUG_ASSERT(raw_msr != nullptr, "Signal pointer for raw_msr cannot be null");
         GEOPM_DEBUG_ASSERT(m_num_bit < 64, "64-bit fields are not supported");
-        GEOPM_DEBUG_ASSERT(begin_bit <= end_bit,
-                           "begin bit must be <= end bit");
-        GEOPM_DEBUG_ASSERT(m_function >= 0 && 
-                           m_function < MSR::M_NUM_FUNCTION,
-                           "invalid encoding function");
+        GEOPM_DEBUG_ASSERT(begin_bit <= end_bit, "begin bit must be <= end bit");
+        GEOPM_DEBUG_ASSERT(m_function >= 0 && m_function < MSR::M_NUM_FUNCTION, "invalid encoding function");
     }
 
     void MSRFieldSignal::setup_batch(void)
@@ -53,9 +46,7 @@ namespace geopm
         }
     }
 
-    double MSRFieldSignal::convert_raw_value(double val,
-                                     uint64_t &last_field,
-                                     int &num_overflow) const
+    double MSRFieldSignal::convert_raw_value(double val, uint64_t &last_field, int &num_overflow) const
     {
         uint64_t field = geopm_signal_to_field(val);
         uint64_t subfield = (field & m_mask) >> m_shift;
@@ -99,8 +90,7 @@ namespace geopm
     double MSRFieldSignal::sample(void)
     {
         if (!m_is_batch_ready) {
-            throw Exception("setup_batch() must be called before sample().",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("setup_batch() must be called before sample().", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         return convert_raw_value(m_raw_msr->sample(), m_last_field, m_num_overflow);
     }

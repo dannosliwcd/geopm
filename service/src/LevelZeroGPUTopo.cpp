@@ -19,8 +19,7 @@ namespace geopm
     {
     }
 
-    LevelZeroGPUTopo::LevelZeroGPUTopo(const LevelZeroDevicePool &device_pool,
-                                                       const int num_cpu)
+    LevelZeroGPUTopo::LevelZeroGPUTopo(const LevelZeroDevicePool &device_pool, const int num_cpu)
         : m_levelzero_device_pool(device_pool)
     {
         if (getenv("ZE_AFFINITY_MASK") != nullptr) {
@@ -44,25 +43,21 @@ namespace geopm
 
             // TODO: Add ideal CPU to GPU affinitization that isn't a simple split if needed.
             //       This may come from a call to oneAPI, LevelZero, etc
-            for (int gpu_idx = 0; gpu_idx <  num_gpu; ++gpu_idx) {
+            for (int gpu_idx = 0; gpu_idx < num_gpu; ++gpu_idx) {
                 size_t gpu_chip_index = gpu_idx * static_cast<size_t>(num_chip_per_gpu);
                 int end_cpu_idx = (gpu_idx + 1) * num_cpu_per_gpu;
-                for (int cpu_idx = gpu_idx * num_cpu_per_gpu, chip_idx = 0;
-                     cpu_idx < end_cpu_idx;
-                     ++cpu_idx) {
+                for (int cpu_idx = gpu_idx * num_cpu_per_gpu, chip_idx = 0; cpu_idx < end_cpu_idx; ++cpu_idx) {
                     m_cpu_affinity_ideal.at(gpu_idx).insert(cpu_idx);
 
                     // CHIP to CPU association is currently only used to associate CHIPS to
                     // GPUS.  This logic just distributes the CPUs associated with
                     // an GPU to its CHIPS in a round robin fashion.
-                    m_cpu_affinity_ideal_chip.at(gpu_chip_index +
-                                                 (chip_idx % num_chip_per_gpu)).insert(cpu_idx);
+                    m_cpu_affinity_ideal_chip.at(gpu_chip_index + (chip_idx % num_chip_per_gpu)).insert(cpu_idx);
                     ++chip_idx;
                 }
             }
             if ((num_cpu % num_gpu) != 0) {
-                for (int cpu_idx = num_cpu_per_gpu * num_gpu, gpu_idx = 0;
-                     cpu_idx < num_cpu; ++cpu_idx) {
+                for (int cpu_idx = num_cpu_per_gpu * num_gpu, gpu_idx = 0; cpu_idx < num_cpu; ++cpu_idx) {
                     m_cpu_affinity_ideal.at(gpu_idx % num_gpu).insert(cpu_idx);
                     size_t gpu_chip_index = gpu_idx * static_cast<size_t>(num_chip_per_gpu);
                     m_cpu_affinity_ideal_chip.at(gpu_chip_index).insert(cpu_idx);
@@ -87,8 +82,8 @@ namespace geopm
             result = m_cpu_affinity_ideal_chip.size();
         }
         else {
-            throw Exception("LevelZeroGPUTopo::" + std::string(__func__) + ": domain " +
-                            std::to_string(domain) + " is not supported.",
+            throw Exception("LevelZeroGPUTopo::" + std::string(__func__) + ": domain "
+                                + std::to_string(domain) + " is not supported.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return result;
@@ -104,23 +99,23 @@ namespace geopm
         std::set<int> result = {};
         if (domain == GEOPM_DOMAIN_GPU) {
             if (gpu_idx < 0 || (unsigned int)gpu_idx >= m_cpu_affinity_ideal.size()) {
-                throw Exception("LevelZeroGPUTopo::" + std::string(__func__) + ": gpu_idx " +
-                                std::to_string(gpu_idx) + " is out of range",
+                throw Exception("LevelZeroGPUTopo::" + std::string(__func__) + ": gpu_idx "
+                                    + std::to_string(gpu_idx) + " is out of range",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             result = m_cpu_affinity_ideal.at(gpu_idx);
         }
         else if (domain == GEOPM_DOMAIN_GPU_CHIP) {
             if (gpu_idx < 0 || (unsigned int)gpu_idx >= m_cpu_affinity_ideal_chip.size()) {
-                throw Exception("LevelZeroGPUTopo::" + std::string(__func__) + ": gpu_idx " +
-                                std::to_string(gpu_idx) + " is out of range",
+                throw Exception("LevelZeroGPUTopo::" + std::string(__func__) + ": gpu_idx "
+                                    + std::to_string(gpu_idx) + " is out of range",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             result = m_cpu_affinity_ideal_chip.at(gpu_idx);
         }
         else {
-            throw Exception("LevelZeroGPUTopo::" + std::string(__func__) + ": domain " +
-                            std::to_string(domain) + " is not supported.",
+            throw Exception("LevelZeroGPUTopo::" + std::string(__func__) + ": domain "
+                                + std::to_string(domain) + " is not supported.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return result;

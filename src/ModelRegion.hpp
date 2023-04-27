@@ -15,9 +15,7 @@ namespace geopm
     class ModelRegion
     {
         public:
-            static std::unique_ptr<ModelRegion> model_region(const std::string &name,
-                                                             double big_o,
-                                                             int verbosity);
+            static std::unique_ptr<ModelRegion> model_region(const std::string &name, double big_o, int verbosity);
             ModelRegion(int verbosity);
             virtual ~ModelRegion();
             std::string name(void);
@@ -30,6 +28,7 @@ namespace geopm
             virtual void loop_exit(void);
             virtual void big_o(double big_o_in) = 0;
             virtual void run(void) = 0;
+
         protected:
             virtual void num_progress_updates(double big_o_in);
             static bool name_check(const std::string &name, const std::string &key);

@@ -50,12 +50,12 @@ namespace geopm
             /// @param [in] gpu_idx The index indicating a particular
             ///        GPU.
             /// @return GPU power consumption in milliwatts.
-            virtual uint64_t power (int gpu_idx) const = 0;
+            virtual uint64_t power(int gpu_idx) const = 0;
             /// @brief Get the NVML device power limit in milliwatts.
             /// @param [in] gpu_idx The index indicating a particular
             ///        GPU.
             /// @return GPU power limit in milliwatts.
-            virtual uint64_t power_limit (int gpu_idx) const = 0;
+            virtual uint64_t power_limit(int gpu_idx) const = 0;
             /// @brief Get the NVML device memory subsystem frequency in MHz.
             /// @param [in] gpu_idx The index indicating a particular
             ///        GPU.
@@ -129,6 +129,7 @@ namespace geopm
             virtual void power_control(int gpu_idx, int setting) const = 0;
 
             virtual bool is_privileged_access(void) const = 0;
+
         private:
     };
 

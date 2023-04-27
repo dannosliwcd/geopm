@@ -17,7 +17,7 @@ namespace geopm
     class GPUTopoNull : public GPUTopo
     {
         public:
-            GPUTopoNull() = default ;
+            GPUTopoNull() = default;
             virtual ~GPUTopoNull() = default;
             int num_gpu(void) const override;
             int num_gpu(int domain_type) const override;

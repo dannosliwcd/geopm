@@ -38,8 +38,7 @@ namespace geopm
             /// @brief Get the number of LevelZero frequency domains of a certain type
             /// @param [in] l0_domain The LevelZero domain type being targeted
             /// @return GPU frequency domain count.
-            virtual int frequency_domain_count(unsigned int l0_device_idx,
-                                               int l0_domain) const = 0;
+            virtual int frequency_domain_count(unsigned int l0_device_idx, int l0_domain) const = 0;
             /// @brief Get the LevelZero device actual frequency in MHz
             /// @param [in] l0_device_idx The index indicating a particular
             ///        Level Zero GPU.
@@ -47,8 +46,7 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return GPU device core clock rate in MHz.
-            virtual double frequency_status(unsigned int l0_device_idx,
-                                            int l0_domain, int l0_domain_idx) const = 0;
+            virtual double frequency_status(unsigned int l0_device_idx, int l0_domain, int l0_domain_idx) const = 0;
             /// @brief Get the LevelZero device efficient frequency in MHz
             /// @param [in] l0_device_idx The index indicating a particular
             ///        Level Zero GPU.
@@ -56,8 +54,7 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return GPU device efficient clock rate in MHz.
-            virtual double frequency_efficient(unsigned int l0_device_idx,
-                                               int l0_domain, int l0_domain_idx) const = 0;
+            virtual double frequency_efficient(unsigned int l0_device_idx, int l0_domain, int l0_domain_idx) const = 0;
             /// @brief Get the LevelZero device mininmum frequency in MHz
             /// @param [in] l0_device_idx The index indicating a particular
             ///        Level Zero GPU.
@@ -65,8 +62,7 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return GPU minimum frequency in MHz.
-            virtual double frequency_min(unsigned int l0_device_idx, int l0_domain,
-                                         int l0_domain_idx) const = 0;
+            virtual double frequency_min(unsigned int l0_device_idx, int l0_domain, int l0_domain_idx) const = 0;
             /// @brief Get the LevelZero device maximum frequency in MHz
             /// @param [in] l0_device_idx The index indicating a particular
             ///        Level Zero GPU.
@@ -74,8 +70,7 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return GPU maximum frequency in MHz.
-            virtual double frequency_max(unsigned int l0_device_idx, int l0_domain,
-                                         int l0_domain_idx) const = 0;
+            virtual double frequency_max(unsigned int l0_device_idx, int l0_domain, int l0_domain_idx) const = 0;
 
             /// @brief Get the LevelZero device supported frequencies in MHz
             /// @param [in] l0_device_idx The index indicating a particular
@@ -84,8 +79,7 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return GPU supported frequencies in MHz.
-            virtual std::vector<double> frequency_supported(unsigned int l0_device_idx,
-                                                            int l0_domain,
+            virtual std::vector<double> frequency_supported(unsigned int l0_device_idx, int l0_domain,
                                                             int l0_domain_idx) const = 0;
 
             /// @brief Get the LevelZero device frequency throttle reasons
@@ -105,8 +99,7 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return GPU minimum and maximum frequency range in MHz.
-            virtual std::pair<double, double> frequency_range(unsigned int l0_device_idx,
-                                                              int l0_domain,
+            virtual std::pair<double, double> frequency_range(unsigned int l0_device_idx, int l0_domain,
                                                               int l0_domain_idx) const = 0;
 
             /// @brief Get the number of LevelZero temperature domains
@@ -122,8 +115,7 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return Domain maximum temperature in Celsius.
-            virtual double temperature_max(unsigned int l0_device_idx, int l0_domain,
-                                           int l0_domain_idx) const = 0;
+            virtual double temperature_max(unsigned int l0_device_idx, int l0_domain, int l0_domain_idx) const = 0;
             /// @brief Get the number of LevelZero engine domains
             /// @param [in] l0_domain The LevelZero domain type being targeted
             /// @return GPU engine domain count.
@@ -135,8 +127,7 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return GPU active time and timestamp in microseconds.
-            virtual std::pair<uint64_t, uint64_t> active_time_pair(unsigned int l0_device_idx,
-                                                                   int l0_domain,
+            virtual std::pair<uint64_t, uint64_t> active_time_pair(unsigned int l0_device_idx, int l0_domain,
                                                                    int l0_domain_idx) const = 0;
             /// @brief Get the LevelZero device active time in microseconds
             /// @param [in] l0_device_idx The index indicating a particular
@@ -145,8 +136,7 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return GPU active time in microseconds.
-            virtual uint64_t active_time(unsigned int l0_device_idx, int l0_domain,
-                                         int l0_domain_idx) const = 0;
+            virtual uint64_t active_time(unsigned int l0_device_idx, int l0_domain, int l0_domain_idx) const = 0;
             /// @brief Get the cachced LevelZero device timestamp for the
             ///        active time value in microseconds
             /// @param [in] l0_device_idx The index indicating a particular
@@ -155,31 +145,27 @@ namespace geopm
             /// @param [in] l0_domain_idx The LevelZero index indicating a particular
             ///        domain of the GPU.
             /// @return GPU device timestamp for the active time value in microseconds.
-            virtual uint64_t active_time_timestamp(unsigned int l0_device_idx,
-                                                   int l0_domain, int l0_domain_idx) const = 0;
+            virtual uint64_t active_time_timestamp(unsigned int l0_device_idx, int l0_domain,
+                                                   int l0_domain_idx) const = 0;
 
             /// @brief Get the number of LevelZero power domains of a certain type
             /// @param [in] geopm_domain The GEOPM domain being targeted
             /// @param [in] l0_device_idx The LevelZero device being targeted
             /// @param [in] l0_domain The LevelZero domain type being targeted
             /// @return GPU frequency domain count.
-            virtual int power_domain_count(int geopm_domain,
-                                           unsigned int l0_device_idx,
-                                           int l0_domain) const = 0;
+            virtual int power_domain_count(int geopm_domain, unsigned int l0_device_idx, int l0_domain) const = 0;
             /// @brief Get the number of LevelZero perf domains of a certain type
             /// @param [in] l0_device_idx The LevelZero device being targeted
             /// @param [in] l0_domain The LevelZero domain type being targeted
             /// @return GPU perf domain count.
-            virtual int performance_domain_count(unsigned int l0_device_idx,
-                                                 int l0_domain) const = 0;
+            virtual int performance_domain_count(unsigned int l0_device_idx, int l0_domain) const = 0;
             /// @brief Get the performance factor value of various LevelZero domains
             /// @param [in] l0_device_idx The LevelZero device being targeted
             /// @param [in] l0_domain The LevelZero domain type being targeted
             /// @param [in] l0_domain_idx The index indicating a particular
             ///        Level Zero domain.
             /// @return Subdevice performance factor value
-            virtual double performance_factor(unsigned int l0_device_idx,
-                                              int l0_domain, int l0_domain_idx) const = 0;
+            virtual double performance_factor(unsigned int l0_device_idx, int l0_domain, int l0_domain_idx) const = 0;
 
             /// @brief Get the LevelZero device default power limit in milliwatts
             /// @param [in] l0_device_idx The index indicating a particular
@@ -235,9 +221,8 @@ namespace geopm
             /// @param [in] l0_domain_idx The domain being targeted
             /// @param [in] range_min Min target frequency in MHz.
             /// @param [in] range_max Max target frequency in MHz.
-            virtual void frequency_control(unsigned int l0_device_idx, int l0_domain,
-                                           int l0_domain_idx, double range_min,
-                                           double range_max) const = 0;
+            virtual void frequency_control(unsigned int l0_device_idx, int l0_domain, int l0_domain_idx,
+                                           double range_min, double range_max) const = 0;
 
             /// @brief Set the performance factor for the LevelZero device.
             /// @param [in] l0_device_idx The index indicating a particular
@@ -245,10 +230,8 @@ namespace geopm
             /// @param [in] l0_domain The level zero domain type being targeted
             /// @param [in] l0_domain_idx The level zero domain being targeted
             /// @param [in] setting The performance factor value, 0-100
-            virtual void performance_factor_control(unsigned int l0_device_idx,
-                                                    int l0_domain,
-                                                    int l0_domain_idx,
-                                                    double setting) const = 0;
+            virtual void performance_factor_control(unsigned int l0_device_idx, int l0_domain,
+                                                    int l0_domain_idx, double setting) const = 0;
     };
 
     const LevelZero &levelzero();

@@ -53,15 +53,13 @@ int main(int argc, char **argv)
                         "Copyright (c) 2015 - 2023, Intel Corporation. All rights reserved.\n"
                         "\n";
 
-    static struct option long_options[] = {
-        {"domain", no_argument, NULL, 'd'},
-        {"info", no_argument, NULL, 'i'},
-        {"info-all", no_argument, NULL, 'I'},
-        {"cache", no_argument, NULL, 'c'},
-        {"help", no_argument, NULL, 'h'},
-        {"version", no_argument, NULL, 'v'},
-        {NULL, 0, NULL, 0}
-    };
+    static struct option long_options[] = {{"domain", no_argument, NULL, 'd'},
+                                           {"info", no_argument, NULL, 'i'},
+                                           {"info-all", no_argument, NULL, 'I'},
+                                           {"cache", no_argument, NULL, 'c'},
+                                           {"help", no_argument, NULL, 'h'},
+                                           {"version", no_argument, NULL, 'v'},
+                                           {NULL, 0, NULL, 0}};
 
     int opt;
     int err = 0;
@@ -116,8 +114,7 @@ int main(int argc, char **argv)
     if (is_domain) {
         // print all domains
         for (int dom = GEOPM_DOMAIN_BOARD; dom < GEOPM_NUM_DOMAIN; ++dom) {
-            std::cout << std::setw(28) << std::left
-                      << PlatformTopo::domain_type_to_name(dom)
+            std::cout << std::setw(28) << std::left << PlatformTopo::domain_type_to_name(dom)
                       << platform_topo.num_domain(dom) << std::endl;
         }
     }
@@ -142,8 +139,7 @@ int main(int argc, char **argv)
         // print all signals with description
         auto signals = platform_io.signal_names();
         for (const auto &sig : signals) {
-            std::cout << sig << ":" << std::endl
-                      << platform_io.signal_description(sig) << std::endl;
+            std::cout << sig << ":" << std::endl << platform_io.signal_description(sig) << std::endl;
         }
     }
     else {

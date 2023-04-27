@@ -57,9 +57,7 @@ namespace geopm
             ///             related char values defined in "sd-bus.h".
             /// @param contents [in] The sd_bus string expression that
             ///                 describes the data types in the message.
-            virtual void enter_container(
-                char type,
-                const std::string &contents) = 0;
+            virtual void enter_container(char type, const std::string &contents) = 0;
             /// @brief Exit a container in the message for reading
             ///
             /// Wrapper around sd_bus_message_exit_container(3)
@@ -74,9 +72,7 @@ namespace geopm
             ///             related char values defined in "sd-bus.h".
             /// @param contents [in] The sd_bus string expression that
             ///                 describes the data types in the message.
-            virtual void open_container(
-                char type,
-                const std::string &contents) = 0;
+            virtual void open_container(char type, const std::string &contents) = 0;
             /// @brief Close a container in the message for writing
             ///
             /// Wrapper around sd_bus_message_close_open_container(3)
@@ -107,8 +103,7 @@ namespace geopm
             ///
             /// @param [in] Vector of strings to write into the
             ///        message as an array.
-            virtual void append_strings(
-                const std::vector<std::string> &write_values) = 0;
+            virtual void append_strings(const std::vector<std::string> &write_values) = 0;
             /// @brief Write an array of geopm_request_s into the message
             ///
             /// Wrapper around the "sd_bus_message_append(3)"
@@ -140,21 +135,17 @@ namespace geopm
             SDBusMessageImp(sd_bus_message *bus_message);
             virtual ~SDBusMessageImp() = default;
             sd_bus_message *get_sd_ptr(void) override;
-            void enter_container(
-                char type,
-                const std::string &contents) override;
+            void enter_container(char type, const std::string &contents) override;
             void exit_container(void) override;
-            virtual void open_container(
-                char type,
-                const std::string &contents) override;
+            virtual void open_container(char type, const std::string &contents) override;
             virtual void close_container(void) override;
             std::string read_string(void) override;
             double read_double(void) override;
             int read_integer(void) override;
-            void append_strings(
-                const std::vector<std::string> &write_values) override;
+            void append_strings(const std::vector<std::string> &write_values) override;
             void append_request(const geopm_request_s &request) override;
             bool was_success(void) override;
+
         private:
             sd_bus_message *m_bus_message;
             bool m_was_success;

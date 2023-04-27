@@ -21,8 +21,7 @@ namespace geopm
 
             MSRPath() = default;
             virtual ~MSRPath() = default;
-            virtual std::string msr_path(int cpu_idx,
-                                         int fallback_idx);
+            virtual std::string msr_path(int cpu_idx, int fallback_idx);
             virtual std::string msr_batch_path(void);
     };
 }

@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-
 #include "ProfileTable.hpp"
 
 #include <limits.h>
@@ -21,7 +20,6 @@
 
 #include "config.h"
 
-
 namespace geopm
 {
     ProfileTableImp::ProfileTableImp(size_t size, void *buffer)
@@ -35,8 +33,7 @@ namespace geopm
             throw Exception("ProfileTableImp: Buffer pointer is NULL", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (size < (sizeof(struct table_s) + 4 * sizeof(struct geopm_prof_message_s))) {
-            throw Exception("ProfileTableImp: table size too small",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("ProfileTableImp: table size too small", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
 
         // set up prof message array
@@ -53,13 +50,14 @@ namespace geopm
         if (m_is_pshared) {
             err = pthread_mutexattr_setpshared(&lock_attr, PTHREAD_PROCESS_SHARED);
             if (err) {
-                (void) pthread_mutexattr_destroy(&lock_attr);
-                throw Exception("ProfileTableImp: pthread mutex initialization", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                (void)pthread_mutexattr_destroy(&lock_attr);
+                throw Exception("ProfileTableImp: pthread mutex initialization", GEOPM_ERROR_RUNTIME,
+                                __FILE__, __LINE__);
             }
         }
         err = pthread_mutex_init(&(m_table->lock), &lock_attr);
         if (err) {
-            (void) pthread_mutexattr_destroy(&lock_attr);
+            (void)pthread_mutexattr_destroy(&lock_attr);
             throw Exception("ProfileTableImp: pthread mutex initialization", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         err = pthread_mutexattr_destroy(&lock_attr);
@@ -80,9 +78,8 @@ namespace geopm
         bool is_inserted = false;
         if (m_table->curr_size > 0) {
             size_t curr_idx = m_table->curr_size - 1;
-            if (value.region_id == m_table_value[curr_idx].region_id &&
-                m_table_value[curr_idx].progress != 0.0 &&
-                m_table_value[curr_idx].progress != 1.0) {
+            if (value.region_id == m_table_value[curr_idx].region_id
+                && m_table_value[curr_idx].progress != 0.0 && m_table_value[curr_idx].progress != 1.0) {
 
                 m_table_value[curr_idx] = value;
                 is_inserted = true;
@@ -96,8 +93,7 @@ namespace geopm
                 if (err != 0) {
                     err_msg += ", when throwing exception, failed pthread_mutex_unlock()";
                 }
-                throw Exception(err_msg,
-                                GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception(err_msg, GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
 
             m_table_value[m_table->curr_size] = value;
@@ -128,7 +124,8 @@ namespace geopm
         else {
             result = geopm_crc32_str((char *)(&name.front()));
             if (GEOPM_REGION_HASH_INVALID == result) {
-                throw Exception("ProfileTableImp::key(): CRC 32 hashed to zero!", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception("ProfileTableImp::key(): CRC 32 hashed to zero!", GEOPM_ERROR_RUNTIME,
+                                __FILE__, __LINE__);
             }
             err = pthread_mutex_lock(&(m_key_map_lock));
             if (err) {
@@ -138,8 +135,7 @@ namespace geopm
                 std::string err_msg = "ProfileTableImp::key(): String hash collision";
                 err = pthread_mutex_unlock(&(m_key_map_lock));
                 if (err != 0) {
-                    err_msg += ": pthread_mutex_unlock() also failed with error: "
-                               + geopm::error_message(err);
+                    err_msg += ": pthread_mutex_unlock() also failed with error: " + geopm::error_message(err);
                 }
                 throw Exception(err_msg, GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
@@ -176,7 +172,8 @@ namespace geopm
         return result;
     }
 
-    void ProfileTableImp::dump(std::vector<std::pair<uint64_t, struct geopm_prof_message_s> >::iterator content, size_t &length)
+    void ProfileTableImp::dump(std::vector<std::pair<uint64_t, struct geopm_prof_message_s> >::iterator content,
+                               size_t &length)
     {
         int err;
         err = pthread_mutex_lock(&(m_table->lock));
@@ -202,8 +199,7 @@ namespace geopm
         bool result = false;
         size_t buffer_remain = m_buffer_size - header_offset - 1;
         char *buffer_ptr = (char *)m_table + header_offset;
-        while (m_key_map_last != m_key_map.end() &&
-               buffer_remain > m_key_map_last->first.length()) {
+        while (m_key_map_last != m_key_map.end() && buffer_remain > m_key_map_last->first.length()) {
             strncpy(buffer_ptr, m_key_map_last->first.c_str(), buffer_remain);
             buffer_remain -= m_key_map_last->first.length() + 1;
             buffer_ptr += m_key_map_last->first.length() + 1;
@@ -232,7 +228,8 @@ namespace geopm
         while (buffer_remain) {
             size_t name_len = strnlen(buffer_ptr, buffer_remain);
             if (name_len == buffer_remain) {
-                throw Exception("ProfileTableImp::name_set(): buffer missing null termination", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception("ProfileTableImp::name_set(): buffer missing null termination",
+                                GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
             if (name_len) {
                 name.insert(std::string(buffer_ptr));

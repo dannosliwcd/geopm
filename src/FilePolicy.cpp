@@ -19,8 +19,7 @@ using json11::Json;
 
 namespace geopm
 {
-    FilePolicy::FilePolicy(const std::string &policy_path,
-                           const std::vector<std::string> &policy_names)
+    FilePolicy::FilePolicy(const std::string &policy_path, const std::vector<std::string> &policy_names)
         : m_policy_path(policy_path)
         , m_policy_names(policy_names)
     {
@@ -44,8 +43,8 @@ namespace geopm
 
         for (const auto &obj : root.object_items()) {
             if (std::find(m_policy_names.begin(), m_policy_names.end(), obj.first) == m_policy_names.end()) {
-                throw Exception("FilePolicy::" + std::string(__func__) + "(): invalid policy name: " +
-                                obj.first, GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+                throw Exception("FilePolicy::" + std::string(__func__) + "(): invalid policy name: " + obj.first,
+                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             if (obj.second.type() == Json::NUMBER) {
                 policy_value_map.emplace(obj.first, obj.second.number_value());
@@ -56,12 +55,13 @@ namespace geopm
                     policy_value_map.emplace(obj.first, NAN);
                 }
                 else {
-                    throw Exception("FilePolicy::" + std::string(__func__)  + ": unsupported type or malformed json config file",
+                    throw Exception("FilePolicy::" + std::string(__func__)
+                                        + ": unsupported type or malformed json config file",
                                     GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
                 }
             }
             else {
-                throw Exception("FilePolicy::" + std::string(__func__)  + ": unsupported type or malformed json config file",
+                throw Exception("FilePolicy::" + std::string(__func__) + ": unsupported type or malformed json config file",
                                 GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
             }
         }

@@ -20,14 +20,11 @@
 namespace geopm
 {
     EpochIOGroup::EpochIOGroup()
-        : EpochIOGroup(platform_topo(),
-                       ApplicationSampler::application_sampler())
+        : EpochIOGroup(platform_topo(), ApplicationSampler::application_sampler())
     {
-
     }
 
-    EpochIOGroup::EpochIOGroup(const PlatformTopo &topo,
-                               ApplicationSampler &app)
+    EpochIOGroup::EpochIOGroup(const PlatformTopo &topo, ApplicationSampler &app)
         : m_topo(topo)
         , m_app(app)
         , m_num_cpu(m_topo.num_domain(GEOPM_DOMAIN_CPU))
@@ -35,7 +32,6 @@ namespace geopm
         , m_is_batch_read(false)
         , m_is_initialized(false)
     {
-
     }
 
     const std::set<std::string> EpochIOGroup::m_valid_signal_name = {
@@ -93,8 +89,7 @@ namespace geopm
     int EpochIOGroup::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("EpochIOGroup::push_signal(): signal_name " + signal_name +
-                            " not valid for EpochIOGroup",
+            throw Exception("EpochIOGroup::push_signal(): signal_name " + signal_name + " not valid for EpochIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         check_domain(domain_type, domain_idx);
@@ -143,26 +138,22 @@ namespace geopm
         m_is_batch_read = true;
     }
 
-    void EpochIOGroup::write_batch(void)
-    {
-
-    }
+    void EpochIOGroup::write_batch(void) {}
 
     double EpochIOGroup::sample(int batch_idx)
     {
         if (!m_is_batch_read) {
-            throw Exception("EpochIOGroup::sample(): signal has not been read",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("EpochIOGroup::sample(): signal has not been read", GEOPM_ERROR_INVALID, __FILE__,
+                            __LINE__);
         }
         if (batch_idx < 0 || (size_t)batch_idx >= m_active_signal.size()) {
-            throw Exception("EpochIOGroup::sample(): batch_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("EpochIOGroup::sample(): batch_idx out of range", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         int cpu_idx = m_active_signal[batch_idx];
 #ifdef GEOPM_DEBUG
         if (cpu_idx < 0 || cpu_idx >= m_num_cpu) {
-            throw Exception("EpochIOGroup::sample(): invalid cpu_idx saved in map.",
-                            GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
+            throw Exception("EpochIOGroup::sample(): invalid cpu_idx saved in map.", GEOPM_ERROR_LOGIC,
+                            __FILE__, __LINE__);
         }
 #endif
         return m_per_cpu_count[cpu_idx];
@@ -186,15 +177,9 @@ namespace geopm
                         GEOPM_ERROR_NOT_IMPLEMENTED, __FILE__, __LINE__);
     }
 
-    void EpochIOGroup::save_control(void)
-    {
+    void EpochIOGroup::save_control(void) {}
 
-    }
-
-    void EpochIOGroup::restore_control(void)
-    {
-
-    }
+    void EpochIOGroup::restore_control(void) {}
 
     std::string EpochIOGroup::name(void) const
     {
@@ -214,8 +199,7 @@ namespace geopm
     std::function<double(const std::vector<double> &)> EpochIOGroup::agg_function(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("EpochIOGroup::agg_function(): " + signal_name +
-                            "not valid for EpochIOGroup",
+            throw Exception("EpochIOGroup::agg_function(): " + signal_name + "not valid for EpochIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return Agg::min;
@@ -224,8 +208,7 @@ namespace geopm
     std::function<std::string(double)> EpochIOGroup::format_function(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("EpochIOGroup::format_function(): " + signal_name +
-                            " not valid for EpochIOGroup",
+            throw Exception("EpochIOGroup::format_function(): " + signal_name + " not valid for EpochIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return string_format_integer;
@@ -234,8 +217,7 @@ namespace geopm
     std::string EpochIOGroup::signal_description(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("EpochIOGroup::signal_description(): " + signal_name +
-                            " not valid for EpochIOGroup",
+            throw Exception("EpochIOGroup::signal_description(): " + signal_name + " not valid for EpochIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return "Number of epoch events sampled from the process on the given CPU";
@@ -250,32 +232,25 @@ namespace geopm
     int EpochIOGroup::signal_behavior(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("EpochIOGroup::signal_behavior(): " + signal_name +
-                            " not valid for EpochIOGroup",
+            throw Exception("EpochIOGroup::signal_behavior(): " + signal_name + " not valid for EpochIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         return IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE;
     }
 
-    void EpochIOGroup::save_control(const std::string &save_path)
-    {
+    void EpochIOGroup::save_control(const std::string &save_path) {}
 
-    }
-
-    void EpochIOGroup::restore_control(const std::string &save_path)
-    {
-
-    }
+    void EpochIOGroup::restore_control(const std::string &save_path) {}
 
     void EpochIOGroup::check_domain(int domain_type, int domain_idx) const
     {
         if (domain_type != GEOPM_DOMAIN_CPU) {
-            throw Exception("EpochIOGroup::check_domain(): signals not defined for domain " + std::to_string(domain_type),
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception(
+                "EpochIOGroup::check_domain(): signals not defined for domain " + std::to_string(domain_type),
+                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_idx < 0 || domain_idx >= m_num_cpu) {
-            throw Exception("EpochIOGroup::check_domain(): invalid domain index: "
-                            + std::to_string(domain_idx),
+            throw Exception("EpochIOGroup::check_domain(): invalid domain index: " + std::to_string(domain_idx),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
     }

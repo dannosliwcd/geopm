@@ -18,32 +18,23 @@ namespace geopm
     {
         public:
             Admin();
-            Admin(const std::string &default_config_path,
-                  const std::string &override_config_path,
-                  int cpuid_local);
-            void main(int argc,
-                      const char **argv,
-                      std::ostream &std_out,
-                      std::ostream &std_err);
-            std::string run(bool do_default,
-                            bool do_override,
-                            bool do_allowlist,
-                            int cpuid);
-            OptionParser parser(std::ostream &std_out,
-                                std::ostream &std_err);
+            Admin(const std::string &default_config_path, const std::string &override_config_path, int cpuid_local);
+            void main(int argc, const char **argv, std::ostream &std_out, std::ostream &std_err);
+            std::string run(bool do_default, bool do_override, bool do_allowlist, int cpuid);
+            OptionParser parser(std::ostream &std_out, std::ostream &std_err);
             std::string default_config(void);
             std::string override_config(void);
             std::string allowlist(int cpuid);
             std::string check_node(void);
             void check_config(const std::map<std::string, std::string> &config_map,
-                              std::vector<std::string> &policy_names,
-                              std::vector<double> &policy_vals);
+                              std::vector<std::string> &policy_names, std::vector<double> &policy_vals);
             std::string print_config(const std::map<std::string, std::string> &config_map,
                                      const std::map<std::string, std::string> &override_map,
                                      const std::vector<std::string> &policy_names,
                                      const std::vector<double> &policy_vals);
             static std::vector<std::string> dup_keys(const std::map<std::string, std::string> &map_a,
                                                      const std::map<std::string, std::string> &map_b);
+
         private:
             std::string m_default_config_path;
             std::string m_override_config_path;

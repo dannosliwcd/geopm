@@ -18,14 +18,13 @@
 #include "geopm_hint.h"
 #include "config.h"
 
-
 /****************************************/
 /* Encode/decode function for region_id */
 /****************************************/
 
 enum geopm_region_id_e {
-    GEOPM_REGION_ID_EPOCH =        1ULL << 63, /* Signaling the start of an epoch, no associated Region */
-    GEOPM_REGION_ID_MPI =          1ULL << 62, /* Execution of MPI calls */
+    GEOPM_REGION_ID_EPOCH = 1ULL << 63, /* Signaling the start of an epoch, no associated Region */
+    GEOPM_REGION_ID_MPI = 1ULL << 62,   /* Execution of MPI calls */
 };
 
 static inline uint64_t geopm_region_id_hash(uint64_t region_id)
@@ -70,7 +69,6 @@ static inline int geopm_region_id_hint_is_equal(uint64_t hint_type, uint64_t reg
 {
     return (region_id & (hint_type << 32)) ? 1 : 0;
 }
-
 
 namespace geopm
 {
@@ -252,17 +250,10 @@ namespace geopm
             ///
             /// @param [in] table Preconstructed ProfileTable instance,
             ///        bypasses shmem creation.
-            ProfileImp(const std::string &prof_name,
-                       const std::string &key_base,
-                       const std::string &report,
-                       double timeout,
-                       std::shared_ptr<Comm> comm,
-                       std::shared_ptr<ControlMessage> ctl_msg,
-                       int num_cpu,
-                       std::set<int> cpu_set,
-                       std::shared_ptr<ProfileTable> table,
-                       std::shared_ptr<Comm> reduce_comm,
-                       std::shared_ptr<ApplicationStatus> app_status,
+            ProfileImp(const std::string &prof_name, const std::string &key_base, const std::string &report,
+                       double timeout, std::shared_ptr<Comm> comm, std::shared_ptr<ControlMessage> ctl_msg,
+                       int num_cpu, std::set<int> cpu_set, std::shared_ptr<ProfileTable> table,
+                       std::shared_ptr<Comm> reduce_comm, std::shared_ptr<ApplicationStatus> app_status,
                        std::shared_ptr<ApplicationRecordLog> app_record_log);
             /// @brief ProfileImp destructor, virtual.
             virtual ~ProfileImp();
@@ -275,8 +266,10 @@ namespace geopm
             void thread_init(uint32_t num_work_unit) override;
             void thread_post(int cpu) override;
             virtual void enable_pmpi(void) override;
+
         protected:
             bool m_is_enabled;
+
         private:
             void init_prof_comm(std::shared_ptr<Comm> comm, int &shm_num_rank);
             void init_ctl_msg(const std::string &sample_key);
@@ -351,7 +344,6 @@ namespace geopm
 #ifdef GEOPM_DEBUG
             std::set<uint64_t> m_region_ids;
 #endif
-
     };
 }
 

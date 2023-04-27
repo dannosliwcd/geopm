@@ -20,28 +20,23 @@ namespace geopm
     const char SDBusMessage::M_MESSAGE_TYPE_STRUCT = SD_BUS_TYPE_STRUCT;
     const char SDBusMessage::M_MESSAGE_TYPE_ARRAY = SD_BUS_TYPE_ARRAY;
 
-    static void check_bus_error(const std::string &func_name,
-                                int return_val)
+    static void check_bus_error(const std::string &func_name, int return_val)
     {
         if (return_val < 0) {
             std::ostringstream error_message;
-            error_message << "SDBusMessage: Failed to call sd-bus function "
-                          << func_name << "(), error:" << return_val;
-            throw Exception(error_message.str(),
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            error_message << "SDBusMessage: Failed to call sd-bus function " << func_name
+                          << "(), error:" << return_val;
+            throw Exception(error_message.str(), GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
     }
 
-    static void check_null_ptr(const std::string &method_name,
-                               sd_bus_message *bus_message)
+    static void check_null_ptr(const std::string &method_name, sd_bus_message *bus_message)
     {
         if (bus_message == nullptr) {
             std::ostringstream error_message;
             error_message << "SDBusMessage: Called method with NULL "
-                          << "sd_bus_message pointer: SDBusMessageImp::"
-                          << method_name << "()";
-            throw Exception(error_message.str(),
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                          << "sd_bus_message pointer: SDBusMessageImp::" << method_name << "()";
+            throw Exception(error_message.str(), GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
     }
 
@@ -53,14 +48,12 @@ namespace geopm
     SDBusMessageImp::SDBusMessageImp()
         : SDBusMessageImp(nullptr)
     {
-
     }
 
     SDBusMessageImp::SDBusMessageImp(sd_bus_message *bus_message)
         : m_bus_message(bus_message)
         , m_was_success(false)
     {
-
     }
 
     sd_bus_message *SDBusMessageImp::get_sd_ptr(void)
@@ -71,8 +64,7 @@ namespace geopm
     void SDBusMessageImp::enter_container(char type, const std::string &contents)
     {
         check_null_ptr(__func__, m_bus_message);
-        int ret = sd_bus_message_enter_container(m_bus_message,
-                                                 type, contents.c_str());
+        int ret = sd_bus_message_enter_container(m_bus_message, type, contents.c_str());
         check_bus_error("sd_bus_message_enter_container", ret);
         m_was_success = (ret != 0);
     }
@@ -88,8 +80,7 @@ namespace geopm
     void SDBusMessageImp::open_container(char type, const std::string &contents)
     {
         check_null_ptr(__func__, m_bus_message);
-        int ret = sd_bus_message_open_container(m_bus_message,
-                                                type, contents.c_str());
+        int ret = sd_bus_message_open_container(m_bus_message, type, contents.c_str());
         check_bus_error("sd_bus_message_open_container", ret);
     }
 
@@ -144,16 +135,15 @@ namespace geopm
             write_values_cstr.push_back(wv.c_str());
         }
         write_values_cstr.push_back(nullptr);
-        int ret = sd_bus_message_append_strv(m_bus_message,
-                                             (char **)write_values_cstr.data());
+        int ret = sd_bus_message_append_strv(m_bus_message, (char **)write_values_cstr.data());
         check_bus_error("sd_bus_message_append_strv", ret);
     }
 
     void SDBusMessageImp::append_request(const geopm_request_s &request)
     {
         check_null_ptr(__func__, m_bus_message);
-        int ret = sd_bus_message_append(m_bus_message, "(iis)", request.domain_type,
-                                        request.domain_idx, request.name);
+        int ret = sd_bus_message_append(m_bus_message, "(iis)", request.domain_type, request.domain_idx,
+                                        request.name);
         check_bus_error("sd_bus_message_append", ret);
     }
 

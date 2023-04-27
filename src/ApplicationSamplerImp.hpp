@@ -22,20 +22,17 @@ namespace geopm
     {
         public:
             struct m_process_s {
-                std::shared_ptr<RecordFilter> filter;
-                ValidateRecord valid;
-                std::shared_ptr<SharedMemory> record_log_shmem;
-                std::shared_ptr<ApplicationRecordLog> record_log;
-                std::vector<record_s> records;
-                std::vector<short_region_s> short_regions;
+                    std::shared_ptr<RecordFilter> filter;
+                    ValidateRecord valid;
+                    std::shared_ptr<SharedMemory> record_log_shmem;
+                    std::shared_ptr<ApplicationRecordLog> record_log;
+                    std::vector<record_s> records;
+                    std::vector<short_region_s> short_regions;
             };
             ApplicationSamplerImp();
-            ApplicationSamplerImp(std::shared_ptr<ApplicationStatus> status,
-                                  const PlatformTopo &platform_topo,
-                                  const std::map<int, m_process_s> &process_map,
-                                  bool is_filtered,
-                                  const std::string &filter_name,
-                                  const std::vector<bool> &is_cpu_active);
+            ApplicationSamplerImp(std::shared_ptr<ApplicationStatus> status, const PlatformTopo &platform_topo,
+                                  const std::map<int, m_process_s> &process_map, bool is_filtered,
+                                  const std::string &filter_name, const std::vector<bool> &is_cpu_active);
             virtual ~ApplicationSamplerImp();
             void time_zero(const geopm_time_s &start_time) override;
             void update(const geopm_time_s &curr_time) override;
@@ -52,6 +49,7 @@ namespace geopm
 
             void set_sampler(std::shared_ptr<ProfileSampler> sampler) override;
             std::shared_ptr<ProfileSampler> get_sampler(void) override;
+
         private:
             std::shared_ptr<ProfileSampler> m_sampler;
             struct geopm_time_s m_time_zero;
@@ -64,7 +62,7 @@ namespace geopm
             std::map<int, m_process_s> m_process_map;
             const bool m_is_filtered;
             const std::string m_filter_name;
-            std::vector<std::array<double, GEOPM_NUM_REGION_HINT>> m_hint_time;
+            std::vector<std::array<double, GEOPM_NUM_REGION_HINT> > m_hint_time;
             std::vector<bool> m_is_cpu_active;
             geopm_time_s m_update_time;
             bool m_is_first_update;

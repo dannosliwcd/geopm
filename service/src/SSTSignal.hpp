@@ -19,8 +19,7 @@ namespace geopm
     class SSTSignal : public geopm::Signal
     {
         public:
-            enum SignalType
-            {
+            enum SignalType {
                 M_MBOX, // SST Mailbox interface
                 M_MMIO  // SST MMIO interface
             };
@@ -36,19 +35,15 @@ namespace geopm
             ///             argument to use.
             /// @param [in] interface_parameter Which SST interface parameter
             ///             to use.
-            SSTSignal(std::shared_ptr<geopm::SSTIO> sstio,
-                      SignalType signal_type,
-                      int cpu_idx,
-                      uint16_t command,
-                      uint16_t subcommand,
-                      uint32_t subcommand_arg,
-                      uint32_t interface_parameter);
+            SSTSignal(std::shared_ptr<geopm::SSTIO> sstio, SignalType signal_type, int cpu_idx, uint16_t command,
+                      uint16_t subcommand, uint32_t subcommand_arg, uint32_t interface_parameter);
 
             virtual ~SSTSignal() = default;
 
             void setup_batch(void) override;
             double sample(void) override;
             double read(void) const override;
+
         private:
             std::shared_ptr<geopm::SSTIO> m_sstio;
             SignalType m_signal_type;

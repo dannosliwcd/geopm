@@ -29,11 +29,9 @@ namespace geopm
 
             virtual ~PolicyStoreImp();
 
-            std::vector<double> get_best(const std::string &agent_name,
-                                         const std::string &profile_name) const override;
+            std::vector<double> get_best(const std::string &agent_name, const std::string &profile_name) const override;
 
-            void set_best(const std::string &agent_name,
-                          const std::string &profile_name,
+            void set_best(const std::string &agent_name, const std::string &profile_name,
                           const std::vector<double> &policy) override;
 
             void set_default(const std::string &agent_name, const std::vector<double> &policy) override;

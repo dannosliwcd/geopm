@@ -16,8 +16,7 @@
 
 namespace geopm
 {
-    RatioSignal::RatioSignal(std::shared_ptr<Signal> numerator,
-                             std::shared_ptr<Signal> denominator)
+    RatioSignal::RatioSignal(std::shared_ptr<Signal> numerator, std::shared_ptr<Signal> denominator)
         : m_numerator(numerator)
         , m_denominator(denominator)
         , m_is_batch_ready(false)
@@ -38,8 +37,7 @@ namespace geopm
     double RatioSignal::sample(void)
     {
         if (!m_is_batch_ready) {
-            throw Exception("setup_batch() must be called before sample().",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("setup_batch() must be called before sample().", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
 
         double result = NAN;

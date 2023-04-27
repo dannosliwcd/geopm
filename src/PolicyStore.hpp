@@ -38,15 +38,14 @@ namespace geopm
             /// @param [in] agent_name Name of the agent for which this policy applies.
             /// @param [in] profile_name Name of the profile whose policy is being set.
             /// @param [in] policy Policy string to use with the given agent.
-            virtual void set_best(const std::string &agent_name,
-                                  const std::string &profile_name,
-                                  const std::vector<double> &policy) = 0;
+            virtual void set_best(const std::string &agent_name, const std::string &profile_name,
+                                  const std::vector<double> &policy)
+                = 0;
 
             /// @brief Set the default policy to use with an agent.
             /// @param [in] agent_name Name of the agent for which this policy applies.
             /// @param [in] policy Policy string to use with the given agent.
-            virtual void set_default(const std::string &agent_name,
-                                     const std::vector<double> &policy) = 0;
+            virtual void set_default(const std::string &agent_name, const std::vector<double> &policy) = 0;
             /// @brief Returns a unique_ptr to a concrete object
             ///        constructed using the underlying implementation
             static std::unique_ptr<PolicyStore> make_unique(const std::string &data_path);

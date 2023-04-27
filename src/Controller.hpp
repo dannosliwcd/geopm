@@ -40,26 +40,15 @@ namespace geopm
             Controller(std::shared_ptr<Comm> ppn1_comm);
             /// @brief Constructor for testing that allows injecting mocked
             ///        versions of internal objects.
-            Controller(std::shared_ptr<Comm> comm,
-                       PlatformIO &plat_io,
-                       const std::string &agent_name,
-                       int num_send_up,
-                       int num_send_down,
-                       std::unique_ptr<TreeComm> tree_comm,
-                       ApplicationSampler &application_sampler,
-                       std::shared_ptr<ApplicationIO> application_io,
-                       std::unique_ptr<Reporter> reporter,
-                       std::unique_ptr<Tracer> tracer,
+            Controller(std::shared_ptr<Comm> comm, PlatformIO &plat_io, const std::string &agent_name,
+                       int num_send_up, int num_send_down, std::unique_ptr<TreeComm> tree_comm,
+                       ApplicationSampler &application_sampler, std::shared_ptr<ApplicationIO> application_io,
+                       std::unique_ptr<Reporter> reporter, std::unique_ptr<Tracer> tracer,
                        std::unique_ptr<EndpointPolicyTracer> policy_tracer,
                        std::shared_ptr<ProfileTracer> profile_tracer,
-                       std::vector<std::unique_ptr<Agent> > level_agent,
-                       std::vector<std::string> policy_names,
-                       const std::string &policy_path,
-                       bool do_policy,
-                       std::unique_ptr<EndpointUser> endpoint,
-                       const std::string &endpoint_path,
-                       bool do_endpoint,
-                       const std::string &shm_key);
+                       std::vector<std::unique_ptr<Agent> > level_agent, std::vector<std::string> policy_names,
+                       const std::string &policy_path, bool do_policy, std::unique_ptr<EndpointUser> endpoint,
+                       const std::string &endpoint_path, bool do_endpoint, const std::string &shm_key);
             virtual ~Controller();
             /// @brief Run control algorithm.
             ///
@@ -122,6 +111,7 @@ namespace geopm
             ///         the root of the tree, otherwise returns an
             ///         empty set.
             std::set<std::string> get_hostnames(const std::string &hostname);
+
         private:
             /// @brief Construct Agents for every level.  Agents can
             ///        register new IOGroups, signals, and controls

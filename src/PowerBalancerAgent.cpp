@@ -32,11 +32,8 @@ namespace geopm
     }
 
     PowerBalancerAgent::Role::Role(int num_node)
-        : M_STEP_IMP({
-                std::make_shared<SendDownLimitStep>(),
-                std::make_shared<MeasureRuntimeStep>(),
-                std::make_shared<ReduceLimitStep>()
-            })
+        : M_STEP_IMP({std::make_shared<SendDownLimitStep>(), std::make_shared<MeasureRuntimeStep>(),
+                      std::make_shared<ReduceLimitStep>()})
         , m_policy(M_NUM_POLICY, NAN)
         , m_step_count(-1)
         , M_NUM_NODE(num_node)
@@ -50,7 +47,7 @@ namespace geopm
     }
 
     bool PowerBalancerAgent::Role::descend(const std::vector<double> &in_policy,
-            std::vector<std::vector<double> >&out_policy)
+                                           std::vector<std::vector<double> > &out_policy)
     {
 #ifdef GEOPM_DEBUG
         throw Exception("PowerBalancerAgent::Role::" + std::string(__func__) + "(): was called on non-tree agent",
@@ -60,7 +57,7 @@ namespace geopm
     }
 
     bool PowerBalancerAgent::Role::ascend(const std::vector<std::vector<double> > &in_sample,
-            std::vector<double> &out_sample)
+                                          std::vector<double> &out_sample)
     {
 #ifdef GEOPM_DEBUG
         throw Exception("PowerBalancerAgent::Role::" + std::string(__func__) + "(): was called on non-tree agent",
@@ -105,20 +102,16 @@ namespace geopm
         return step(m_step_count);
     }
 
-    const PowerBalancerAgent::Step& PowerBalancerAgent::Role::step_imp()
+    const PowerBalancerAgent::Step &PowerBalancerAgent::Role::step_imp()
     {
         return *M_STEP_IMP[step()];
     }
 
-    PowerBalancerAgent::LeafRole::LeafRole(PlatformIO &platform_io,
-                                           const PlatformTopo &platform_topo,
+    PowerBalancerAgent::LeafRole::LeafRole(PlatformIO &platform_io, const PlatformTopo &platform_topo,
                                            std::shared_ptr<SampleAggregator> sample_agg,
                                            std::vector<std::shared_ptr<PowerBalancer> > power_balancer,
-                                           double min_power,
-                                           double max_power,
-                                           double time_window,
-                                           bool is_single_node,
-                                           int num_node)
+                                           double min_power, double max_power, double time_window,
+                                           bool is_single_node, int num_node)
         : Role(num_node)
         , m_platform_io(platform_io)
         , m_platform_topo(platform_topo)
@@ -130,7 +123,7 @@ namespace geopm
         , m_ignore_agg_idx(m_num_domain, -1)
         , m_power_balancer(power_balancer)
         , M_STABILITY_FACTOR(3.0)
-        , m_package(m_num_domain, m_package_s {0, 0.0, NAN, 0.0, 0.0, false, true, -1})
+        , m_package(m_num_domain, m_package_s{0, 0.0, NAN, 0.0, 0.0, false, true, -1})
         , M_MIN_PKG_POWER_SETTING(min_power)
         , M_MAX_PKG_POWER_SETTING(max_power)
         , m_is_single_node(is_single_node)
@@ -152,38 +145,27 @@ namespace geopm
     {
         // Setup signals and controls
         for (int pkg_idx = 0; pkg_idx != m_num_domain; ++pkg_idx) {
-            m_count_pio_idx[pkg_idx] =
-                m_platform_io.push_signal("EPOCH_COUNT",
-                                          GEOPM_DOMAIN_PACKAGE, pkg_idx);
-            m_time_agg_idx[pkg_idx] =
-                m_sample_agg->push_signal("TIME",
-                                          GEOPM_DOMAIN_PACKAGE, pkg_idx);
-            m_network_agg_idx[pkg_idx] =
-                m_sample_agg->push_signal("TIME_HINT_NETWORK",
-                                          GEOPM_DOMAIN_PACKAGE, pkg_idx);
-            m_ignore_agg_idx[pkg_idx] =
-                m_sample_agg->push_signal("TIME_HINT_IGNORE",
-                                          GEOPM_DOMAIN_PACKAGE, pkg_idx);
-            m_package[pkg_idx].pio_power_idx =
-                m_platform_io.push_control("CPU_POWER_LIMIT_CONTROL",
-                                           GEOPM_DOMAIN_PACKAGE, pkg_idx);
+            m_count_pio_idx[pkg_idx] = m_platform_io.push_signal("EPOCH_COUNT", GEOPM_DOMAIN_PACKAGE, pkg_idx);
+            m_time_agg_idx[pkg_idx] = m_sample_agg->push_signal("TIME", GEOPM_DOMAIN_PACKAGE, pkg_idx);
+            m_network_agg_idx[pkg_idx] = m_sample_agg->push_signal("TIME_HINT_NETWORK", GEOPM_DOMAIN_PACKAGE, pkg_idx);
+            m_ignore_agg_idx[pkg_idx] = m_sample_agg->push_signal("TIME_HINT_IGNORE", GEOPM_DOMAIN_PACKAGE, pkg_idx);
+            m_package[pkg_idx].pio_power_idx = m_platform_io.push_control("CPU_POWER_LIMIT_CONTROL",
+                                                                          GEOPM_DOMAIN_PACKAGE, pkg_idx);
         }
     }
 
-   void PowerBalancerAgent::LeafRole::are_steps_complete(bool is_complete)
-   {
-       for (auto &pkg : m_package) {
-           pkg.is_step_complete = is_complete;
-       }
-   }
+    void PowerBalancerAgent::LeafRole::are_steps_complete(bool is_complete)
+    {
+        for (auto &pkg : m_package) {
+            pkg.is_step_complete = is_complete;
+        }
+    }
 
-   bool PowerBalancerAgent::LeafRole::are_steps_complete(void)
-   {
-       return std::all_of(m_package.cbegin(), m_package.cend(),
-           [](const m_package_s &pkg) {
-               return pkg.is_step_complete;
-           });
-   }
+    bool PowerBalancerAgent::LeafRole::are_steps_complete(void)
+    {
+        return std::all_of(m_package.cbegin(), m_package.cend(),
+                           [](const m_package_s &pkg) { return pkg.is_step_complete; });
+    }
 
     bool PowerBalancerAgent::LeafRole::adjust_platform(const std::vector<double> &in_policy)
     {
@@ -252,7 +234,8 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (out_sample.size() != M_NUM_SAMPLE) {
-            throw Exception("PowerBalancerAgent::LeafRole::" + std::string(__func__)  + "(): out_sample vector not correctly sized.",
+            throw Exception("PowerBalancerAgent::LeafRole::" + std::string(__func__)
+                                + "(): out_sample vector not correctly sized.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
@@ -274,8 +257,7 @@ namespace geopm
         bool result = are_steps_complete();
         if (m_is_single_node && result) {
             m_policy.at(M_POLICY_MAX_EPOCH_RUNTIME) = runtime;
-            m_policy.at(M_POLICY_POWER_SLACK) = std::min(power_slack,
-                                                         power_headroom);
+            m_policy.at(M_POLICY_POWER_SLACK) = std::min(power_slack, power_headroom);
         }
         return result;
     }
@@ -286,25 +268,20 @@ namespace geopm
         // platform, latest policy values, and actual power limit
 #ifdef GEOPM_DEBUG
         if (values.size() != M_TRACE_NUM_SAMPLE) {
-            throw Exception("PowerBalancerAgent::LeafRole::" + std::string(__func__) +
-                            "(): values vector not correctly sized.",
+            throw Exception("PowerBalancerAgent::LeafRole::" + std::string(__func__)
+                                + "(): values vector not correctly sized.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
-        values[M_TRACE_SAMPLE_POLICY_CPU_POWER_LIMIT] =
-            m_policy.at(M_POLICY_CPU_POWER_LIMIT);
-        values[M_TRACE_SAMPLE_POLICY_STEP_COUNT] =
-            m_policy.at(M_POLICY_STEP_COUNT);
-        values[M_TRACE_SAMPLE_POLICY_MAX_EPOCH_RUNTIME] =
-            m_policy.at(M_POLICY_MAX_EPOCH_RUNTIME);
-        values[M_TRACE_SAMPLE_POLICY_POWER_SLACK] =
-            m_policy.at(M_POLICY_POWER_SLACK);
+        values[M_TRACE_SAMPLE_POLICY_CPU_POWER_LIMIT] = m_policy.at(M_POLICY_CPU_POWER_LIMIT);
+        values[M_TRACE_SAMPLE_POLICY_STEP_COUNT] = m_policy.at(M_POLICY_STEP_COUNT);
+        values[M_TRACE_SAMPLE_POLICY_MAX_EPOCH_RUNTIME] = m_policy.at(M_POLICY_MAX_EPOCH_RUNTIME);
+        values[M_TRACE_SAMPLE_POLICY_POWER_SLACK] = m_policy.at(M_POLICY_POWER_SLACK);
         double actual_limit = 0.0;
         for (auto &pkg : m_package) {
             actual_limit += pkg.actual_limit;
         }
-        values[M_TRACE_SAMPLE_ENFORCED_POWER_LIMIT] =
-            actual_limit;
+        values[M_TRACE_SAMPLE_ENFORCED_POWER_LIMIT] = actual_limit;
     }
 
     PowerBalancerAgent::TreeRole::TreeRole(int level, const std::vector<int> &fan_in)
@@ -320,7 +297,8 @@ namespace geopm
     {
 #ifdef GEOPM_DEBUG
         if (M_AGG_FUNC.size() != M_NUM_SAMPLE) {
-            throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__) + "(): aggregation function vector is not the size of the policy vector",
+            throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__)
+                                + "(): aggregation function vector is not the size of the policy vector",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
@@ -329,17 +307,17 @@ namespace geopm
     PowerBalancerAgent::TreeRole::~TreeRole() = default;
 
     bool PowerBalancerAgent::TreeRole::descend(const std::vector<double> &in_policy,
-                                               std::vector<std::vector<double> >&out_policy)
+                                               std::vector<std::vector<double> > &out_policy)
     {
 #ifdef GEOPM_DEBUG
         if (out_policy.size() != (size_t)M_NUM_CHILDREN) {
-            throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__) + "(): policy vectors are not correctly sized.",
+            throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__)
+                                + "(): policy vectors are not correctly sized.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
         bool result = false;
-        if (m_is_step_complete &&
-            in_policy[M_POLICY_STEP_COUNT] != m_step_count) {
+        if (m_is_step_complete && in_policy[M_POLICY_STEP_COUNT] != m_step_count) {
             if (in_policy[M_POLICY_STEP_COUNT] == M_STEP_SEND_DOWN_LIMIT) {
                 m_step_count = M_STEP_SEND_DOWN_LIMIT;
             }
@@ -366,9 +344,9 @@ namespace geopm
                                               std::vector<double> &out_sample)
     {
 #ifdef GEOPM_DEBUG
-        if (in_sample.size() != (size_t)M_NUM_CHILDREN ||
-            out_sample.size() != M_NUM_SAMPLE) {
-            throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__) + "(): sample vectors not correctly sized.",
+        if (in_sample.size() != (size_t)M_NUM_CHILDREN || out_sample.size() != M_NUM_SAMPLE) {
+            throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__)
+                                + "(): sample vectors not correctly sized.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
@@ -380,17 +358,16 @@ namespace geopm
             result = true;
             m_is_step_complete = true;
             if (out_sample[M_SAMPLE_STEP_COUNT] != m_step_count) {
-                throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__) +
-                                "(): sample received has true for step complete field, " +
-                                "but the step_count does not match the agent's current step_count.",
+                throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__)
+                                    + "(): sample received has true for step complete field, "
+                                    + "but the step_count does not match the agent's current step_count.",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
         return result;
     }
 
-    PowerBalancerAgent::RootRole::RootRole(int level, const std::vector<int> &fan_in,
-                                           double min_power, double max_power)
+    PowerBalancerAgent::RootRole::RootRole(int level, const std::vector<int> &fan_in, double min_power, double max_power)
         : TreeRole(level, fan_in)
         , m_root_cap(NAN)
         , M_MIN_PKG_POWER_SETTING(min_power)
@@ -403,13 +380,13 @@ namespace geopm
     PowerBalancerAgent::RootRole::~RootRole() = default;
 
     bool PowerBalancerAgent::RootRole::ascend(const std::vector<std::vector<double> > &in_sample,
-            std::vector<double> &out_sample)
+                                              std::vector<double> &out_sample)
     {
         bool result = TreeRole::ascend(in_sample, out_sample);
         if (result) {
             if (m_step_count != m_policy.at(M_POLICY_STEP_COUNT)) {
-                throw Exception("PowerBalancerAgent::RootRole::" + std::string(__func__) +
-                                "(): sample passed does not match current step_count.",
+                throw Exception("PowerBalancerAgent::RootRole::" + std::string(__func__)
+                                    + "(): sample passed does not match current step_count.",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
             step_imp().update_policy(*this, out_sample);
@@ -419,11 +396,12 @@ namespace geopm
     }
 
     bool PowerBalancerAgent::RootRole::descend(const std::vector<double> &in_policy,
-            std::vector<std::vector<double> >&out_policy)
+                                               std::vector<std::vector<double> > &out_policy)
     {
 #ifdef GEOPM_DEBUG
         if (out_policy.size() != (size_t)M_NUM_CHILDREN) {
-            throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__) + "(): policy vectors are not correctly sized.",
+            throw Exception("PowerBalancerAgent::TreeRole::" + std::string(__func__)
+                                + "(): policy vectors are not correctly sized.",
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
@@ -435,8 +413,7 @@ namespace geopm
             m_policy[M_POLICY_MAX_EPOCH_RUNTIME] = 0.0;
             m_policy[M_POLICY_POWER_SLACK] = 0.0;
             m_root_cap = in_policy[M_POLICY_CPU_POWER_LIMIT];
-            if (m_root_cap > M_MAX_PKG_POWER_SETTING ||
-                m_root_cap < M_MIN_PKG_POWER_SETTING) {
+            if (m_root_cap > M_MAX_PKG_POWER_SETTING || m_root_cap < M_MIN_PKG_POWER_SETTING) {
                 throw Exception("PowerBalancerAgent::descend(): invalid power budget: " + std::to_string(m_root_cap),
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
@@ -459,19 +436,20 @@ namespace geopm
         return result;
     }
 
-    void PowerBalancerAgent::SendDownLimitStep::update_policy(PowerBalancerAgent::Role &role, const std::vector<double> &sample) const
+    void PowerBalancerAgent::SendDownLimitStep::update_policy(PowerBalancerAgent::Role &role,
+                                                              const std::vector<double> &sample) const
     {
         role.m_policy.at(PowerBalancerAgent::M_POLICY_CPU_POWER_LIMIT) = 0.0;
     }
 
-    void PowerBalancerAgent::SendDownLimitStep::enter_step(PowerBalancerAgent::LeafRole &role, const std::vector<double> &in_policy) const
+    void PowerBalancerAgent::SendDownLimitStep::enter_step(PowerBalancerAgent::LeafRole &role,
+                                                           const std::vector<double> &in_policy) const
     {
         double slack_power = in_policy[PowerBalancerAgent::M_POLICY_POWER_SLACK];
         // Find the package with the least headroom at the current power limit
         double min_headroom = std::numeric_limits<double>::max();
         for (auto &balancer : role.m_power_balancer) {
-            double headroom = role.M_MAX_PKG_POWER_SETTING -
-                              balancer->power_limit();
+            double headroom = role.M_MAX_PKG_POWER_SETTING - balancer->power_limit();
             min_headroom = std::min(min_headroom, headroom);
         }
         double even_slack = slack_power / role.m_num_domain;
@@ -484,13 +462,11 @@ namespace geopm
         }
         double total_headroom = 0.0;
         for (auto &balancer : role.m_power_balancer) {
-            double headroom = role.M_MAX_PKG_POWER_SETTING -
-                              (balancer->power_limit() + even_slack);
+            double headroom = role.M_MAX_PKG_POWER_SETTING - (balancer->power_limit() + even_slack);
             total_headroom += headroom;
         }
         for (auto &balancer : role.m_power_balancer) {
-            double headroom = role.M_MAX_PKG_POWER_SETTING -
-                              (balancer->power_limit() + even_slack);
+            double headroom = role.M_MAX_PKG_POWER_SETTING - (balancer->power_limit() + even_slack);
             double factor = 1.0;
             if (total_headroom != 0.0) {
                 factor = headroom / total_headroom;
@@ -501,16 +477,17 @@ namespace geopm
         role.are_steps_complete(true);
     }
 
-    void PowerBalancerAgent::SendDownLimitStep::sample_platform(PowerBalancerAgent::LeafRole &role) const
+    void PowerBalancerAgent::SendDownLimitStep::sample_platform(PowerBalancerAgent::LeafRole &role) const {}
+
+    void PowerBalancerAgent::MeasureRuntimeStep::update_policy(PowerBalancerAgent::Role &role,
+                                                               const std::vector<double> &sample) const
     {
+        role.m_policy.at(PowerBalancerAgent::M_POLICY_MAX_EPOCH_RUNTIME)
+            = sample[PowerBalancerAgent::M_SAMPLE_MAX_EPOCH_RUNTIME];
     }
 
-    void PowerBalancerAgent::MeasureRuntimeStep::update_policy(PowerBalancerAgent::Role &role, const std::vector<double> &sample) const
-    {
-        role.m_policy.at(PowerBalancerAgent::M_POLICY_MAX_EPOCH_RUNTIME) = sample[PowerBalancerAgent::M_SAMPLE_MAX_EPOCH_RUNTIME];
-    }
-
-    void PowerBalancerAgent::MeasureRuntimeStep::enter_step(PowerBalancerAgent::LeafRole &role, const std::vector<double> &in_policy) const
+    void PowerBalancerAgent::MeasureRuntimeStep::enter_step(PowerBalancerAgent::LeafRole &role,
+                                                            const std::vector<double> &in_policy) const
     {
     }
 
@@ -519,16 +496,14 @@ namespace geopm
         for (int pkg_idx = 0; pkg_idx < role.m_num_domain; ++pkg_idx) {
             auto &package = role.m_package[pkg_idx];
             int epoch_count = role.m_platform_io.sample(role.m_count_pio_idx[pkg_idx]);
-            if (epoch_count > 1 &&
-                epoch_count != package.last_epoch_count &&
-                !package.is_step_complete) {
+            if (epoch_count > 1 && epoch_count != package.last_epoch_count && !package.is_step_complete) {
                 /// We wish to measure runtime that is a function of node
                 /// local optimizations only, and therefore uncorrelated
                 /// between compute nodes.
                 double total = role.m_sample_agg->sample_epoch_last(role.m_time_agg_idx[pkg_idx]);
                 double network = role.m_sample_agg->sample_epoch_last(role.m_network_agg_idx[pkg_idx]);
                 double ignore = role.m_sample_agg->sample_epoch_last(role.m_ignore_agg_idx[pkg_idx]);
-                double balanced_epoch_runtime =  total - network - ignore;
+                double balanced_epoch_runtime = total - network - ignore;
                 auto &balancer = role.m_power_balancer[pkg_idx];
                 package.is_step_complete = balancer->is_runtime_stable(balanced_epoch_runtime);
                 if (!package.is_step_complete) {
@@ -539,14 +514,16 @@ namespace geopm
         }
     }
 
-    void PowerBalancerAgent::ReduceLimitStep::update_policy(PowerBalancerAgent::Role &role, const std::vector<double> &sample) const
+    void PowerBalancerAgent::ReduceLimitStep::update_policy(PowerBalancerAgent::Role &role,
+                                                            const std::vector<double> &sample) const
     {
         double slack = sample[PowerBalancerAgent::M_SAMPLE_SUM_POWER_SLACK] / role.M_NUM_NODE;
         double head = sample[PowerBalancerAgent::M_SAMPLE_MIN_POWER_HEADROOM];
         role.m_policy.at(PowerBalancerAgent::M_POLICY_POWER_SLACK) = std::min(slack, head);
     }
 
-    void PowerBalancerAgent::ReduceLimitStep::enter_step(PowerBalancerAgent::LeafRole &role, const std::vector<double> &in_policy) const
+    void PowerBalancerAgent::ReduceLimitStep::enter_step(PowerBalancerAgent::LeafRole &role,
+                                                         const std::vector<double> &in_policy) const
     {
         double target = in_policy[PowerBalancerAgent::M_POLICY_MAX_EPOCH_RUNTIME];
         for (auto balancer : role.m_power_balancer) {
@@ -562,18 +539,16 @@ namespace geopm
             // the power_balancer.
             auto &package = role.m_package[pkg_idx];
             auto &balancer = role.m_power_balancer[pkg_idx];
-            if (epoch_count > 1 &&
-                epoch_count != package.last_epoch_count &&
-                !package.is_step_complete) {
+            if (epoch_count > 1 && epoch_count != package.last_epoch_count && !package.is_step_complete) {
                 /// We wish to measure runtime that is a function of
                 /// node local optimizations only, and therefore
                 /// uncorrelated between compute nodes.
                 double total = role.m_sample_agg->sample_epoch_last(role.m_time_agg_idx[pkg_idx]);
                 double network = role.m_sample_agg->sample_epoch_last(role.m_network_agg_idx[pkg_idx]);
                 double ignore = role.m_sample_agg->sample_epoch_last(role.m_ignore_agg_idx[pkg_idx]);
-                double balanced_epoch_runtime =  total - network - ignore;
-                package.is_step_complete = package.is_out_of_bounds ||
-                                           balancer->is_target_met(balanced_epoch_runtime);
+                double balanced_epoch_runtime = total - network - ignore;
+                package.is_step_complete = package.is_out_of_bounds
+                                           || balancer->is_target_met(balanced_epoch_runtime);
                 package.power_slack = balancer->power_slack();
                 package.is_out_of_bounds = false;
                 package.power_headroom = role.M_MAX_PKG_POWER_SETTING - balancer->power_limit();
@@ -583,22 +558,17 @@ namespace geopm
     }
 
     PowerBalancerAgent::PowerBalancerAgent()
-        : PowerBalancerAgent(PlatformIOProf::platform_io(),
-                             platform_topo(),
-                             SampleAggregator::make_unique(),
-                             {},
-                             PlatformIOProf::platform_io().read_signal("CPU_POWER_MIN_AVAIL", GEOPM_DOMAIN_PACKAGE, 0),
-                             PlatformIOProf::platform_io().read_signal("CPU_POWER_MAX_AVAIL", GEOPM_DOMAIN_PACKAGE, 0))
+        : PowerBalancerAgent(
+            PlatformIOProf::platform_io(), platform_topo(), SampleAggregator::make_unique(), {},
+            PlatformIOProf::platform_io().read_signal("CPU_POWER_MIN_AVAIL", GEOPM_DOMAIN_PACKAGE, 0),
+            PlatformIOProf::platform_io().read_signal("CPU_POWER_MAX_AVAIL", GEOPM_DOMAIN_PACKAGE, 0))
     {
-
     }
 
-    PowerBalancerAgent::PowerBalancerAgent(PlatformIO &platform_io,
-                                           const PlatformTopo &platform_topo,
+    PowerBalancerAgent::PowerBalancerAgent(PlatformIO &platform_io, const PlatformTopo &platform_topo,
                                            std::shared_ptr<SampleAggregator> sample_agg,
                                            std::vector<std::shared_ptr<PowerBalancer> > power_balancer,
-                                           double min_power,
-                                           double max_power)
+                                           double min_power, double max_power)
         : m_platform_io(platform_io)
         , m_platform_topo(platform_topo)
         , m_sample_agg(sample_agg)
@@ -624,23 +594,13 @@ namespace geopm
     {
         bool is_tree_root = (level == (int)fan_in.size());
         if (level == 0) {
-            m_role = std::make_shared<LeafRole>(m_platform_io,
-                                                m_platform_topo,
-                                                m_sample_agg,
-                                                m_power_balancer,
-                                                M_MIN_PKG_POWER_SETTING,
-                                                M_MAX_PKG_POWER_SETTING,
-                                                M_TIME_WINDOW,
-                                                is_tree_root,
-                                                calc_num_node(fan_in));
-            m_platform_io.write_control("CPU_POWER_TIME_WINDOW",
-                                        GEOPM_DOMAIN_BOARD, 0, M_TIME_WINDOW);
+            m_role = std::make_shared<LeafRole>(m_platform_io, m_platform_topo, m_sample_agg, m_power_balancer,
+                                                M_MIN_PKG_POWER_SETTING, M_MAX_PKG_POWER_SETTING,
+                                                M_TIME_WINDOW, is_tree_root, calc_num_node(fan_in));
+            m_platform_io.write_control("CPU_POWER_TIME_WINDOW", GEOPM_DOMAIN_BOARD, 0, M_TIME_WINDOW);
         }
         else if (is_tree_root) {
-            m_role = std::make_shared<RootRole>(level,
-                                                fan_in,
-                                                M_MIN_PKG_POWER_SETTING,
-                                                M_MAX_PKG_POWER_SETTING);
+            m_role = std::make_shared<RootRole>(level, fan_in, M_MIN_PKG_POWER_SETTING, M_MAX_PKG_POWER_SETTING);
         }
         else {
             m_role = std::make_shared<TreeRole>(level, fan_in);
@@ -656,7 +616,7 @@ namespace geopm
                             GEOPM_ERROR_LOGIC, __FILE__, __LINE__);
         }
 #endif
-        m_do_send_policy =  m_role->descend(in_policy, out_policy);
+        m_do_send_policy = m_role->descend(in_policy, out_policy);
     }
 
     bool PowerBalancerAgent::do_send_policy(void) const
@@ -696,9 +656,9 @@ namespace geopm
         m_do_send_sample = m_role->sample_platform(out_sample);
     }
 
-    void PowerBalancerAgent::wait(void)    {
-        while(geopm_time_since(&m_last_wait) < M_WAIT_SEC) {
-
+    void PowerBalancerAgent::wait(void)
+    {
+        while (geopm_time_since(&m_last_wait) < M_WAIT_SEC) {
         }
         geopm_time(&m_last_wait);
     }
@@ -720,22 +680,24 @@ namespace geopm
 
     std::vector<std::string> PowerBalancerAgent::trace_names(void) const
     {
-        return {"POLICY_CPU_POWER_LIMIT", // M_TRACE_SAMPLE_POLICY_CPU_POWER_LIMIT
-                "POLICY_STEP_COUNT",        // M_TRACE_SAMPLE_POLICY_STEP_COUNT
-                "POLICY_MAX_EPOCH_RUNTIME", // M_TRACE_SAMPLE_POLICY_MAX_EPOCH_RUNTIME
-                "POLICY_POWER_SLACK",       // M_TRACE_SAMPLE_POLICY_POWER_SLACK
-                "ENFORCED_POWER_LIMIT",     // M_TRACE_SAMPLE_ENFORCED_POWER_LIMIT
-               };
+        return {
+            "POLICY_CPU_POWER_LIMIT",   // M_TRACE_SAMPLE_POLICY_CPU_POWER_LIMIT
+            "POLICY_STEP_COUNT",        // M_TRACE_SAMPLE_POLICY_STEP_COUNT
+            "POLICY_MAX_EPOCH_RUNTIME", // M_TRACE_SAMPLE_POLICY_MAX_EPOCH_RUNTIME
+            "POLICY_POWER_SLACK",       // M_TRACE_SAMPLE_POLICY_POWER_SLACK
+            "ENFORCED_POWER_LIMIT",     // M_TRACE_SAMPLE_ENFORCED_POWER_LIMIT
+        };
     }
 
     std::vector<std::function<std::string(double)> > PowerBalancerAgent::trace_formats(void) const
     {
-        return {string_format_double,         // M_TRACE_SAMPLE_POLICY_CPU_POWER_LIMIT
-                format_step_count,            // M_TRACE_SAMPLE_POLICY_STEP_COUNT
-                string_format_double,         // M_TRACE_SAMPLE_POLICY_MAX_EPOCH_RUNTIME
-                string_format_double,         // M_TRACE_SAMPLE_POLICY_POWER_SLACK
-                string_format_double,         // M_TRACE_SAMPLE_ENFORCED_POWER_LIMIT
-               };
+        return {
+            string_format_double, // M_TRACE_SAMPLE_POLICY_CPU_POWER_LIMIT
+            format_step_count,    // M_TRACE_SAMPLE_POLICY_STEP_COUNT
+            string_format_double, // M_TRACE_SAMPLE_POLICY_MAX_EPOCH_RUNTIME
+            string_format_double, // M_TRACE_SAMPLE_POLICY_POWER_SLACK
+            string_format_double, // M_TRACE_SAMPLE_ENFORCED_POWER_LIMIT
+        };
     }
 
     void PowerBalancerAgent::trace_values(std::vector<double> &values)
@@ -749,7 +711,8 @@ namespace geopm
             throw Exception("PowerBalancerAgent::enforce_policy(): policy vector incorrectly sized.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
-        m_platform_io.write_control("CPU_POWER_LIMIT_CONTROL", GEOPM_DOMAIN_BOARD, 0, policy[M_POLICY_CPU_POWER_LIMIT]);
+        m_platform_io.write_control("CPU_POWER_LIMIT_CONTROL", GEOPM_DOMAIN_BOARD, 0,
+                                    policy[M_POLICY_CPU_POWER_LIMIT]);
     }
 
     std::string PowerBalancerAgent::plugin_name(void)
@@ -764,18 +727,12 @@ namespace geopm
 
     std::vector<std::string> PowerBalancerAgent::policy_names(void)
     {
-        return {"CPU_POWER_LIMIT",
-                "STEP_COUNT",
-                "MAX_EPOCH_RUNTIME",
-                "POWER_SLACK"};
+        return {"CPU_POWER_LIMIT", "STEP_COUNT", "MAX_EPOCH_RUNTIME", "POWER_SLACK"};
     }
 
     std::vector<std::string> PowerBalancerAgent::sample_names(void)
     {
-        return {"STEP_COUNT",
-                "MAX_EPOCH_RUNTIME",
-                "SUM_POWER_SLACK",
-                "MIN_POWER_HEADROOM"};
+        return {"STEP_COUNT", "MAX_EPOCH_RUNTIME", "SUM_POWER_SLACK", "MIN_POWER_HEADROOM"};
     }
 
     std::string PowerBalancerAgent::format_step_count(double step)
@@ -828,10 +785,8 @@ namespace geopm
         }
 
         // Policy of all zero is not valid
-        if (std::all_of(policy.begin(), policy.end(),
-                        [] (double x) { return x == 0.0; })) {
-            throw Exception("PowerBalancerAgent: invalid policy.",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+        if (std::all_of(policy.begin(), policy.end(), [](double x) { return x == 0.0; })) {
+            throw Exception("PowerBalancerAgent: invalid policy.", GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
     }
 }

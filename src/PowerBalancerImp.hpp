@@ -14,7 +14,7 @@
 
 namespace geopm
 {
-    template <typename T> class CircularBuffer;
+    template<typename T> class CircularBuffer;
 
     class PowerBalancerImp : public PowerBalancer
     {
@@ -35,6 +35,7 @@ namespace geopm
             void target_runtime(double largest_runtime) override;
             bool is_target_met(double measured_runtime) override;
             double power_slack(void) override;
+
         private:
             bool is_limit_stable(void);
 

@@ -16,37 +16,26 @@
 #include "BatchServer.hpp"
 #include "BatchStatus.hpp"
 
-
 namespace geopm
 {
-    std::unique_ptr<BatchClient> BatchClient::make_unique(const std::string &server_key,
-                                                          double timeout,
-                                                          int num_signal,
-                                                          int num_control)
+    std::unique_ptr<BatchClient> BatchClient::make_unique(const std::string &server_key, double timeout,
+                                                          int num_signal, int num_control)
     {
-        return geopm::make_unique<BatchClientImp>(server_key, timeout,
-                                                  num_signal, num_control);
+        return geopm::make_unique<BatchClientImp>(server_key, timeout, num_signal, num_control);
     }
 
-    BatchClientImp::BatchClientImp(const std::string &server_key, double timeout,
-                                   int num_signal, int num_control)
-        : BatchClientImp(num_signal, num_control,
-                         BatchStatus::make_unique_client(server_key),
-                         num_signal == 0 ? nullptr :
-                            SharedMemory::make_unique_user(
-                                BatchServer::get_signal_shmem_key(
-                                    server_key), timeout),
-                         num_control == 0 ? nullptr :
-                            SharedMemory::make_unique_user(
-                                BatchServer::get_control_shmem_key(
-                                    server_key), timeout))
+    BatchClientImp::BatchClientImp(const std::string &server_key, double timeout, int num_signal, int num_control)
+        : BatchClientImp(
+            num_signal, num_control, BatchStatus::make_unique_client(server_key),
+            num_signal == 0 ? nullptr
+                            : SharedMemory::make_unique_user(BatchServer::get_signal_shmem_key(server_key), timeout),
+            num_control == 0
+                ? nullptr
+                : SharedMemory::make_unique_user(BatchServer::get_control_shmem_key(server_key), timeout))
     {
-
     }
 
-
-    BatchClientImp::BatchClientImp(int num_signal, int num_control,
-                                   std::shared_ptr<BatchStatus> batch_status,
+    BatchClientImp::BatchClientImp(int num_signal, int num_control, std::shared_ptr<BatchStatus> batch_status,
                                    std::shared_ptr<SharedMemory> signal_shmem,
                                    std::shared_ptr<SharedMemory> control_shmem)
         : m_num_signal(num_signal)
@@ -55,7 +44,6 @@ namespace geopm
         , m_signal_shmem(signal_shmem)
         , m_control_shmem(control_shmem)
     {
-
     }
 
     std::vector<double> BatchClientImp::read_batch(void)

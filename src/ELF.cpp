@@ -71,9 +71,11 @@ namespace geopm
             if (elf_ptr->num_symbol()) {
                 do {
                     result[elf_ptr->symbol_offset()] = elf_ptr->symbol_name();
-                } while (elf_ptr->next_symbol());
+                }
+                while (elf_ptr->next_symbol());
             }
-        } while (elf_ptr->next_section());
+        }
+        while (elf_ptr->next_section());
 
         return result;
     }
@@ -106,8 +108,7 @@ namespace geopm
                 // object, assume the file points to current
                 // executable (/proc/self/exe).
                 std::string file_name(info.dli_fname);
-                if (file_name.find('/') == std::string::npos &&
-                    file_name.find(".so") == std::string::npos) {
+                if (file_name.find('/') == std::string::npos && file_name.find(".so") == std::string::npos) {
                     file_name = "/proc/self/exe";
                     char file_name_cstr[NAME_MAX];
                     int name_len = readlink(file_name.c_str(), file_name_cstr, NAME_MAX - 1);
@@ -132,11 +133,11 @@ namespace geopm
                     }
                 }
                 catch (const Exception &ex) {
-                   // If the ELF read fails, just swallow the exception
-                   std::string what(ex.what());
-                   if (what.find("ELFImp") == std::string::npos) {
-                       throw ex;
-                   }
+                    // If the ELF read fails, just swallow the exception
+                    std::string what(ex.what());
+                    if (what.find("ELFImp") == std::string::npos) {
+                        throw ex;
+                    }
                 }
             }
         }
@@ -163,6 +164,7 @@ namespace geopm
             bool next_section(void) override;
             bool next_data(void) override;
             bool next_symbol(void) override;
+
         private:
             int m_file_desc;
             struct Elf *m_elf_handle;
@@ -189,8 +191,7 @@ namespace geopm
     {
         unsigned int version = elf_version(EV_CURRENT);
         if (version == EV_NONE) {
-            throw Exception("ELFImp::ELFImp(): version unsupported",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("ELFImp::ELFImp(): version unsupported", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         m_file_desc = open(file_path.c_str(), O_RDONLY, 0);
         if (m_file_desc < 0) {
@@ -200,8 +201,8 @@ namespace geopm
         m_elf_handle = elf_begin(m_file_desc, ELF_C_READ, nullptr);
         if (!m_elf_handle) {
             (void)close(m_file_desc);
-            throw Exception("ELFImp::ELFImp(): libelf init failed on file: " + file_path,
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("ELFImp::ELFImp(): libelf init failed on file: " + file_path, GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         m_section = elf_nextscn(m_elf_handle, nullptr);
         if (m_section) {
@@ -227,7 +228,8 @@ namespace geopm
             int ref_count = elf_end(m_elf_handle);
             if (ref_count != 0) {
 #ifdef GEOPM_DEBUG
-                std::cerr << "Warning: <geopm> ~ELFImp(): Call to elf_end() returned non-zero reference count" << std::endl;
+                std::cerr << "Warning: <geopm> ~ELFImp(): Call to elf_end() returned non-zero reference count"
+                          << std::endl;
 #endif
             }
         }
@@ -235,7 +237,8 @@ namespace geopm
             int err = close(m_file_desc);
             if (err) {
 #ifdef GEOPM_DEBUG
-                std::cerr << "Warning: <geopm> ~ELFImp(): Call to close() returned error, errno= " << errno << std::endl;
+                std::cerr << "Warning: <geopm> ~ELFImp(): Call to close() returned error, errno= " << errno
+                          << std::endl;
 #endif
             }
         }
@@ -254,9 +257,7 @@ namespace geopm
     {
         std::string result;
         if (m_section && m_data && m_symbol_idx < num_symbol()) {
-            const char *result_cstr = elf_strptr(m_elf_handle,
-                                                 m_section_header->sh_link,
-                                                 m_symbol->st_name);
+            const char *result_cstr = elf_strptr(m_elf_handle, m_section_header->sh_link, m_symbol->st_name);
             if (result_cstr) {
                 result = result_cstr;
             }
@@ -268,7 +269,7 @@ namespace geopm
     {
         size_t result = 0;
         if (m_data && m_symbol_idx < num_symbol()) {
-           result = m_symbol->st_value;
+            result = m_symbol->st_value;
         }
         return result;
     }

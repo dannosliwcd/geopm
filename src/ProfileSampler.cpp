@@ -51,7 +51,8 @@ namespace geopm
         // Remove shared memory file if one already exists.
         (void)unlink(sample_key_path.c_str());
         m_ctl_shmem = SharedMemory::make_unique_owner(sample_key, sizeof(struct geopm_ctl_message_s));
-        m_ctl_msg = geopm::make_unique<ControlMessageImp>(*(struct geopm_ctl_message_s *)m_ctl_shmem->pointer(), true, true, env.timeout());
+        m_ctl_msg = geopm::make_unique<ControlMessageImp>(*(struct geopm_ctl_message_s *)m_ctl_shmem->pointer(),
+                                                          true, true, env.timeout());
 
         errno = 0; // Ignore errors from the unlink calls.
     }
@@ -74,13 +75,13 @@ namespace geopm
         std::set<int> rank_set;
         for (int i = 0; i < GEOPM_MAX_NUM_CPU; i++) {
             if (m_ctl_msg->cpu_rank(i) >= 0) {
-                (void) rank_set.insert(m_ctl_msg->cpu_rank(i));
+                (void)rank_set.insert(m_ctl_msg->cpu_rank(i));
             }
         }
 
         for (auto it = rank_set.begin(); it != rank_set.end(); ++it) {
             shm_key.str("");
-            shm_key << m_ctl_shmem->key() <<  "-"  << *it;
+            shm_key << m_ctl_shmem->key() << "-" << *it;
             m_rank_sampler.push_front(geopm::make_unique<ProfileRankSamplerImp>(shm_key.str(), m_table_size));
         }
         m_rank_per_node = rank_set.size();
@@ -94,8 +95,8 @@ namespace geopm
 
     void ProfileSamplerImp::controller_ready(void)
     {
-        m_ctl_msg->wait();  // M_STATUS_SAMPLE_BEGIN
-        m_ctl_msg->step();  // M_STATUS_SAMPLE_BEGIN
+        m_ctl_msg->wait(); // M_STATUS_SAMPLE_BEGIN
+        m_ctl_msg->step(); // M_STATUS_SAMPLE_BEGIN
     }
 
     int ProfileSamplerImp::rank_per_node(void) const
@@ -120,14 +121,12 @@ namespace geopm
 
     void ProfileSamplerImp::check_sample_end(void)
     {
-        if (m_ctl_msg->is_sample_end()) {  // M_STATUS_SAMPLE_END
-            //comm->barrier();  // TODO: is this needed?
+        if (m_ctl_msg->is_sample_end()) { // M_STATUS_SAMPLE_END
+            // comm->barrier();  // TODO: is this needed?
             m_ctl_msg->step();
-            while (!m_ctl_msg->is_name_begin() &&
-                   !m_ctl_msg->is_shutdown()) {
-
+            while (!m_ctl_msg->is_name_begin() && !m_ctl_msg->is_shutdown()) {
             }
-            if (m_ctl_msg->is_name_begin()) {  // M_STATUS_NAME_BEGIN
+            if (m_ctl_msg->is_name_begin()) { // M_STATUS_NAME_BEGIN
                 region_names();
             }
         }
@@ -145,21 +144,22 @@ namespace geopm
 
     void ProfileSamplerImp::region_names(void)
     {
-        m_ctl_msg->step();  // M_STATUS_NAME_BEGIN
+        m_ctl_msg->step(); // M_STATUS_NAME_BEGIN
 
         bool is_all_done = false;
         while (!is_all_done) {
-            m_ctl_msg->loop_begin();  // M_STATUS_NAME_LOOP_BEGIN
-            m_ctl_msg->wait();        // M_STATUS_NAME_LOOP_END
+            m_ctl_msg->loop_begin(); // M_STATUS_NAME_LOOP_BEGIN
+            m_ctl_msg->wait();       // M_STATUS_NAME_LOOP_END
             is_all_done = true;
             for (auto it = m_rank_sampler.begin(); it != m_rank_sampler.end(); ++it) {
                 if (!(*it)->name_fill(m_name_set)) {
                     is_all_done = false;
                 }
             }
-            m_ctl_msg->step();  // M_STATUS_NAME_LOOP_END
+            m_ctl_msg->step(); // M_STATUS_NAME_LOOP_END
             if (!is_all_done && m_ctl_msg->is_shutdown()) {
-                throw Exception("ProfileSamplerImp::region_names(): Application shutdown while report was being generated", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                throw Exception("ProfileSamplerImp::region_names(): Application shutdown while report was being generated",
+                                GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
         }
         m_rank_sampler.front()->report_name(m_report_name);
@@ -167,9 +167,9 @@ namespace geopm
 
         m_do_report = true;
 
-        m_ctl_msg->wait();  // M_STATUS_NAME_END
-        m_ctl_msg->step();  // M_STATUS_NAME_END
-        m_ctl_msg->wait();  // M_STATUS_SHUTDOWN
+        m_ctl_msg->wait(); // M_STATUS_NAME_END
+        m_ctl_msg->step(); // M_STATUS_NAME_END
+        m_ctl_msg->wait(); // M_STATUS_SHUTDOWN
     }
 
     std::set<std::string> ProfileSamplerImp::name_set(void) const

@@ -13,20 +13,18 @@ namespace geopm
     class StreamModelRegion : public ModelRegion
     {
         public:
-            StreamModelRegion(double big_o_in,
-                              int verbosity,
-                              bool do_imbalance,
-                              bool do_progress,
-                              bool do_unmarked);
+            StreamModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress, bool do_unmarked);
             virtual ~StreamModelRegion();
             void big_o(double big_o);
             void run(void);
+
         protected:
             double *m_array_a;
             double *m_array_b;
             double *m_array_c;
             size_t m_array_len;
             const size_t m_align;
+
         private:
             void cleanup(void);
     };

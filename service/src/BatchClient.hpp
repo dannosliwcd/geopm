@@ -46,10 +46,8 @@ namespace geopm
             ///
             /// @return New unique pointer to an object that supports the
             ///         BatchClient interface.
-            static std::unique_ptr<BatchClient> make_unique(const std::string &server_key,
-                                                            double timeout,
-                                                            int num_signal,
-                                                            int num_control);
+            static std::unique_ptr<BatchClient> make_unique(const std::string &server_key, double timeout,
+                                                            int num_signal, int num_control);
 
             /// @brief Ask batch server to read all signal values and return
             ///        result.
@@ -79,16 +77,14 @@ namespace geopm
     class BatchClientImp : public BatchClient
     {
         public:
-            BatchClientImp(const std::string &server_key, double timeout,
-                           int num_signal, int num_control);
-            BatchClientImp(int num_signal, int num_control,
-                           std::shared_ptr<BatchStatus> batch_status,
-                           std::shared_ptr<SharedMemory> signal_shmem,
-                           std::shared_ptr<SharedMemory> control_shmem);
+            BatchClientImp(const std::string &server_key, double timeout, int num_signal, int num_control);
+            BatchClientImp(int num_signal, int num_control, std::shared_ptr<BatchStatus> batch_status,
+                           std::shared_ptr<SharedMemory> signal_shmem, std::shared_ptr<SharedMemory> control_shmem);
             virtual ~BatchClientImp() = default;
             std::vector<double> read_batch(void) override;
             void write_batch(std::vector<double> settings) override;
             void stop_batch(void) override;
+
         private:
             int m_num_signal;
             int m_num_control;

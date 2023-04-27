@@ -37,7 +37,8 @@ namespace geopm
             int signal_domain_type(const std::string &signal_name) const override;
             /// @return GEOPM_DOMAIN_INVALID; this IOGroup does not provide any controls.
             int control_domain_type(const std::string &control_name) const override;
-            /// @param signal_name Adds the signal specified to the list of signals to be read during read_batch()
+            /// @param signal_name Adds the signal specified to the list of signals to be read during
+            /// read_batch()
             ///
             /// @param domain_type This must be == GEOPM_DOMAIN_BOARD
             ///
@@ -46,13 +47,11 @@ namespace geopm
             /// @throws geopm::Exception
             ///         if signal_name is not valid
             ///         if domain_type is not GEOPM_DOMAIN_BOARD
-            int push_signal(const std::string &signal_name, int domain_type,
-                            int domain_idx) override;
+            int push_signal(const std::string &signal_name, int domain_type, int domain_idx) override;
             /// @brief Should not be called; this IOGroup does not provide any controls.
             ///
             /// @throws geopm::Exception there are no controls supported by the CNLIOGroup
-            int push_control(const std::string &control_name, int domain_type,
-                             int domain_idx) override;
+            int push_control(const std::string &control_name, int domain_type, int domain_idx) override;
             /// @brief Read all pushed signals from the platform so that the next call to
             ///        sample() will reflect the updated data.
             ///
@@ -82,13 +81,11 @@ namespace geopm
             ///         if domain_type is not GEOPM_DOMAIN_BOARD
             ///
             /// @return the stored value for the given signal_name.
-            double read_signal(const std::string &signal_name, int domain_type,
-                               int domain_idx) override;
+            double read_signal(const std::string &signal_name, int domain_type, int domain_idx) override;
             /// @brief Should not be called; this IOGroup does not provide any controls.
             ///
             /// @throws geopm::Exception there are no controls supported by the CNLIOGroup
-            void write_control(const std::string &control_name, int domain_type,
-                               int domain_idx, double setting) override;
+            void write_control(const std::string &control_name, int domain_type, int domain_idx, double setting) override;
             /// @brief Does nothing; this IOGroup does not provide any controls.
             void save_control(void) override;
             /// @brief Does nothing; this IOGroup does not provide any controls.
@@ -98,13 +95,11 @@ namespace geopm
             /// @return  a function that should be used when aggregating the given signal.
             ///
             /// @see geopm::Agg
-            std::function<double(const std::vector<double> &)>
-                agg_function(const std::string &signal_name) const override;
+            std::function<double(const std::vector<double> &)> agg_function(const std::string &signal_name) const override;
             /// @return  a function that should be used when formatting the given signal.
             ///
             /// @see geopm::Agg
-            std::function<std::string(double)>
-                format_function(const std::string &signal_name) const override;
+            std::function<std::string(double)> format_function(const std::string &signal_name) const override;
             /// @return a string description for signal_name, if defined.
             std::string signal_description(const std::string &signal_name) const override;
             /// @brief Should not be called; this IOGroup does not provide any controls.
@@ -141,14 +136,14 @@ namespace geopm
             void register_signal_alias(const std::string &alias_name, const std::string &signal_name);
 
             struct m_signal_info_s {
-                std::string m_description;
-                std::function<double(const std::vector<double> &)> m_agg_function;
-                std::function<std::string(double)> m_format_function;
-                std::function<double()> m_read_function;
-                bool m_do_read;
-                double m_value;
-                int m_units;
-                int m_behavior;
+                    std::string m_description;
+                    std::function<double(const std::vector<double> &)> m_agg_function;
+                    std::function<std::string(double)> m_format_function;
+                    std::function<double()> m_read_function;
+                    bool m_do_read;
+                    double m_value;
+                    int m_units;
+                    int m_behavior;
             };
             std::map<std::string, m_signal_info_s> m_signal_available;
 

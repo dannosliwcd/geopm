@@ -24,16 +24,13 @@ namespace geopm
      * Members of class BatchStatus *
      ********************************/
 
-    std::unique_ptr<BatchStatus>
-    BatchStatus::make_unique_server(int client_pid,
-                                    const std::string &server_key)
+    std::unique_ptr<BatchStatus> BatchStatus::make_unique_server(int client_pid, const std::string &server_key)
     {
         // calling the server constructor
         return geopm::make_unique<BatchStatusServer>(client_pid, server_key);
     }
 
-    std::unique_ptr<BatchStatus>
-    BatchStatus::make_unique_client(const std::string &server_key)
+    std::unique_ptr<BatchStatus> BatchStatus::make_unique_client(const std::string &server_key)
     {
         // calling the client constructor
         return geopm::make_unique<BatchStatusClient>(server_key);
@@ -70,10 +67,8 @@ namespace geopm
         if (actual != expect) {
             std::ostringstream error_message;
             error_message << "BatchStatusImp::receive_message(): "
-                          << "Expected message: \"" << expect
-                          << "\" but received \"" <<   actual << "\"";
-            throw Exception(error_message.str(), GEOPM_ERROR_RUNTIME,
-                            __FILE__, __LINE__);
+                          << "Expected message: \"" << expect << "\" but received \"" << actual << "\"";
+            throw Exception(error_message.str(), GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
     }
 
@@ -81,8 +76,7 @@ namespace geopm
     {
         if (ret == -1) {
             throw Exception("BatchStatusImp: System call failed: " + func_name,
-                            errno ? errno : GEOPM_ERROR_RUNTIME,
-                            __FILE__, __LINE__);
+                            errno ? errno : GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
     }
 
@@ -91,40 +85,25 @@ namespace geopm
      **************************************/
 
     // The constructor which is called by the server.
-    BatchStatusServer::BatchStatusServer(int client_pid,
-                                         const std::string &server_key)
+    BatchStatusServer::BatchStatusServer(int client_pid, const std::string &server_key)
         : BatchStatusServer(client_pid, server_key, M_DEFAULT_FIFO_PREFIX)
     {
     }
 
-    BatchStatusServer::BatchStatusServer(int client_pid,
-                                         const std::string &server_key,
-                                         const std::string &fifo_prefix)
+    BatchStatusServer::BatchStatusServer(int client_pid, const std::string &server_key, const std::string &fifo_prefix)
         : BatchStatusImp(-1, -1)
         , m_read_fifo_path(fifo_prefix + server_key + "-in")
         , m_write_fifo_path(fifo_prefix + server_key + "-out")
     {
         // The server first creates the fifo in the file system.
-        check_return(
-            mkfifo(m_read_fifo_path.c_str(), S_IRUSR | S_IWUSR),
-            "mkfifo(3)"
-        );
-        check_return(
-            mkfifo(m_write_fifo_path.c_str(), S_IRUSR | S_IWUSR),
-            "mkfifo(3)"
-        );
+        check_return(mkfifo(m_read_fifo_path.c_str(), S_IRUSR | S_IWUSR), "mkfifo(3)");
+        check_return(mkfifo(m_write_fifo_path.c_str(), S_IRUSR | S_IWUSR), "mkfifo(3)");
 
         // Then the server grants the client ownership of the fifo.
         int uid = pid_to_uid(client_pid);
         int gid = pid_to_gid(client_pid);
-        check_return(
-            chown(m_read_fifo_path.c_str(), uid, gid),
-            "chown(2)"
-        );
-        check_return(
-            chown(m_write_fifo_path.c_str(), uid, gid),
-            "chown(2)"
-        );
+        check_return(chown(m_read_fifo_path.c_str(), uid, gid), "chown(2)");
+        check_return(chown(m_write_fifo_path.c_str(), uid, gid), "chown(2)");
     }
 
     BatchStatusServer::~BatchStatusServer()
@@ -148,7 +127,7 @@ namespace geopm
             m_read_fd = open(m_read_fifo_path.c_str(), O_RDONLY);
             check_return(m_read_fd, "open(2)");
 
-            check_return(unlink(m_read_fifo_path.c_str()),  "unlink(2)");
+            check_return(unlink(m_read_fifo_path.c_str()), "unlink(2)");
             check_return(unlink(m_write_fifo_path.c_str()), "unlink(2)");
         }
     }
@@ -163,11 +142,10 @@ namespace geopm
     {
     }
 
-    BatchStatusClient::BatchStatusClient(const std::string &server_key,
-                                         const std::string &fifo_prefix)
+    BatchStatusClient::BatchStatusClient(const std::string &server_key, const std::string &fifo_prefix)
         : BatchStatusImp(-1, -1)
-        , m_read_fifo_path(fifo_prefix +  server_key + "-out")
-        , m_write_fifo_path(fifo_prefix + server_key + "-in" )
+        , m_read_fifo_path(fifo_prefix + server_key + "-out")
+        , m_write_fifo_path(fifo_prefix + server_key + "-in")
     {
         // Assume that the server itself will make the fifo.
     }

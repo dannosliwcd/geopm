@@ -17,22 +17,17 @@
 
 namespace geopm
 {
-    std::unique_ptr<Daemon> Daemon::make_unique(const std::string &endpoint_name,
-                                                const std::string &db_path)
+    std::unique_ptr<Daemon> Daemon::make_unique(const std::string &endpoint_name, const std::string &db_path)
     {
         return geopm::make_unique<DaemonImp>(endpoint_name, db_path);
     }
 
-    DaemonImp::DaemonImp(const std::string &endpoint_name,
-                         const std::string &db_path)
-        : DaemonImp(Endpoint::make_unique(endpoint_name),
-                    PolicyStore::make_unique(db_path))
+    DaemonImp::DaemonImp(const std::string &endpoint_name, const std::string &db_path)
+        : DaemonImp(Endpoint::make_unique(endpoint_name), PolicyStore::make_unique(db_path))
     {
-
     }
 
-    DaemonImp::DaemonImp(std::shared_ptr<Endpoint> endpoint,
-                         std::shared_ptr<const PolicyStore> policystore)
+    DaemonImp::DaemonImp(std::shared_ptr<Endpoint> endpoint, std::shared_ptr<const PolicyStore> policystore)
         : m_endpoint(endpoint)
         , m_policystore(policystore)
     {
@@ -66,14 +61,11 @@ namespace geopm
     }
 }
 
-int geopm_daemon_create(const char *endpoint_name,
-                        const char *policystore_path,
-                        struct geopm_daemon_c **daemon)
+int geopm_daemon_create(const char *endpoint_name, const char *policystore_path, struct geopm_daemon_c **daemon)
 {
     int err = 0;
     try {
-        *daemon = (struct geopm_daemon_c*)(new geopm::DaemonImp(endpoint_name,
-                                                                policystore_path));
+        *daemon = (struct geopm_daemon_c *)(new geopm::DaemonImp(endpoint_name, policystore_path));
     }
     catch (...) {
         err = geopm::exception_handler(std::current_exception(), true);
@@ -85,7 +77,7 @@ int geopm_daemon_destroy(struct geopm_daemon_c *daemon)
 {
     int err = 0;
     try {
-        delete (geopm::DaemonImp*)daemon;
+        delete (geopm::DaemonImp *)daemon;
     }
     catch (...) {
         err = geopm::exception_handler(std::current_exception(), true);
@@ -93,11 +85,10 @@ int geopm_daemon_destroy(struct geopm_daemon_c *daemon)
     return err;
 }
 
-int geopm_daemon_update_endpoint_from_policystore(struct geopm_daemon_c *daemon,
-                                                  double timeout)
+int geopm_daemon_update_endpoint_from_policystore(struct geopm_daemon_c *daemon, double timeout)
 {
     int err = 0;
-    geopm::DaemonImp *dae = (geopm::DaemonImp*)daemon;
+    geopm::DaemonImp *dae = (geopm::DaemonImp *)daemon;
     try {
         dae->update_endpoint_from_policystore(timeout);
     }
@@ -110,7 +101,7 @@ int geopm_daemon_update_endpoint_from_policystore(struct geopm_daemon_c *daemon,
 int geopm_daemon_stop_wait_loop(struct geopm_daemon_c *daemon)
 {
     int err = 0;
-    geopm::DaemonImp *dae = (geopm::DaemonImp*)daemon;
+    geopm::DaemonImp *dae = (geopm::DaemonImp *)daemon;
     try {
         dae->stop_wait_loop();
     }
@@ -123,7 +114,7 @@ int geopm_daemon_stop_wait_loop(struct geopm_daemon_c *daemon)
 int geopm_daemon_reset_wait_loop(struct geopm_daemon_c *daemon)
 {
     int err = 0;
-    geopm::DaemonImp *dae = (geopm::DaemonImp*)daemon;
+    geopm::DaemonImp *dae = (geopm::DaemonImp *)daemon;
     try {
         dae->reset_wait_loop();
     }

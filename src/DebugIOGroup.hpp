@@ -28,8 +28,7 @@ namespace geopm
             ///        constructor.  value_cache is created and
             ///        updated by the Agent, but the lifetime of the
             ///        IOGroup may be longer than the Agent.
-            DebugIOGroup(const PlatformTopo &topo,
-                         std::shared_ptr<std::vector<double> > value_cache);
+            DebugIOGroup(const PlatformTopo &topo, std::shared_ptr<std::vector<double> > value_cache);
             virtual ~DebugIOGroup() = default;
             std::set<std::string> signal_names(void) const override;
             std::set<std::string> control_names(void) const override;
@@ -37,7 +36,7 @@ namespace geopm
             bool is_valid_control(const std::string &control_name) const override;
             int signal_domain_type(const std::string &signal_name) const override;
             int control_domain_type(const std::string &control_name) const override;
-            int push_signal(const std::string &signal_name, int domain_type, int domain_idx)  override;
+            int push_signal(const std::string &signal_name, int domain_type, int domain_idx) override;
             int push_control(const std::string &control_name, int domain_type, int domain_idx) override;
             void read_batch(void) override;
             void write_batch(void) override;
@@ -60,12 +59,12 @@ namespace geopm
             /// @brief Set up a signal name and base domain to map to one or
             ///        more underlying values.  One signal will be added for
             ///        each index in the domain.
-            void register_signal(const std::string &name, int domain_type,
-                                 int signal_behavior);
+            void register_signal(const std::string &name, int domain_type, int signal_behavior);
+
         private:
             struct m_signal_info_s {
-                int domain_type;
-                int behavior;
+                    int domain_type;
+                    int behavior;
             };
 
             const PlatformTopo &m_topo;

@@ -20,13 +20,11 @@ namespace geopm
     {
         public:
             EndpointPolicyTracerImp();
-            EndpointPolicyTracerImp(size_t buffer_size,
-                                    bool is_trace_enabled,
-                                    const std::string &file_name,
-                                    PlatformIO &platform_io,
-                                    const std::vector<std::string> &policy_names);
+            EndpointPolicyTracerImp(size_t buffer_size, bool is_trace_enabled, const std::string &file_name,
+                                    PlatformIO &platform_io, const std::vector<std::string> &policy_names);
             virtual ~EndpointPolicyTracerImp();
             void update(const std::vector<double> &policy);
+
         private:
             bool m_is_trace_enabled;
             std::unique_ptr<CSV> m_csv;

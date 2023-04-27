@@ -27,7 +27,6 @@ namespace geopm
     SampleAggregatorImp::SampleAggregatorImp()
         : SampleAggregatorImp(PlatformIOProf::platform_io())
     {
-
     }
 
     SampleAggregatorImp::SampleAggregatorImp(PlatformIO &platio)
@@ -37,25 +36,20 @@ namespace geopm
         , m_period_duration(0.0)
         , m_period_last(0)
     {
-
     }
 
-    int SampleAggregatorImp::push_signal(const std::string &signal_name,
-                                         int domain_type,
-                                         int domain_idx)
+    int SampleAggregatorImp::push_signal(const std::string &signal_name, int domain_type, int domain_idx)
     {
         int result = -1;
         switch (m_platform_io.signal_behavior(signal_name)) {
             case IOGroup::M_SIGNAL_BEHAVIOR_CONSTANT:
-                throw Exception("SampleAggregregator::push_signal(): signal_name \"" +
-                                signal_name +
-                                "\" is constant and cannot be summarized over time.",
+                throw Exception("SampleAggregregator::push_signal(): signal_name \"" + signal_name
+                                    + "\" is constant and cannot be summarized over time.",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
                 break;
             case IOGroup::M_SIGNAL_BEHAVIOR_LABEL:
-                throw Exception("SampleAggregregator::push_signal(): signal_name \"" +
-                                signal_name +
-                                "\" is label and cannot be summarized over time.",
+                throw Exception("SampleAggregregator::push_signal(): signal_name \"" + signal_name
+                                    + "\" is label and cannot be summarized over time.",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
 
             case IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE:
@@ -71,19 +65,17 @@ namespace geopm
         return result;
     }
 
-    int SampleAggregatorImp::push_signal_total(const std::string &signal_name,
-                                               int domain_type,
-                                               int domain_idx)
+    int SampleAggregatorImp::push_signal_total(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (m_is_updated) {
-           throw Exception("SampleAggregatorImp::push_signal_total(): called after update()",
-                           GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("SampleAggregatorImp::push_signal_total(): called after update()",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         int result = m_platform_io.push_signal(signal_name, domain_type, domain_idx);
         auto bad_it = m_avg_signal.find(result);
         if (bad_it != m_avg_signal.end()) {
-           throw Exception("SampleAggregatorImp::push_signal_total(): signal already pushed for average",
-                           GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("SampleAggregatorImp::push_signal_total(): signal already pushed for average",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto signal_it = m_sum_signal.find(result);
         if (signal_it == m_sum_signal.end()) {
@@ -98,24 +90,22 @@ namespace geopm
                 SumAccumulator::make_unique(),
                 {},
                 {},
-           };
+            };
         }
         return result;
     }
 
-    int SampleAggregatorImp::push_signal_average(const std::string &signal_name,
-                                                 int domain_type,
-                                                 int domain_idx)
+    int SampleAggregatorImp::push_signal_average(const std::string &signal_name, int domain_type, int domain_idx)
     {
         if (m_is_updated) {
-           throw Exception("SampleAggregatorImp::push_signal_average(): called after update()",
-                           GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("SampleAggregatorImp::push_signal_average(): called after update()",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         int result = m_platform_io.push_signal(signal_name, domain_type, domain_idx);
         auto bad_it = m_sum_signal.find(result);
         if (bad_it != m_sum_signal.end()) {
-           throw Exception("SampleAggregatorImp::push_signal_average(): signal already pushed for total",
-                           GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("SampleAggregatorImp::push_signal_average(): signal already pushed for total",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         auto signal_it = m_avg_signal.find(result);
         if (signal_it == m_avg_signal.end()) {
@@ -130,16 +120,14 @@ namespace geopm
                 AvgAccumulator::make_unique(),
                 {},
                 {},
-           };
+            };
         }
         return result;
     }
 
     template<typename type>
     typename std::map<uint64_t, std::shared_ptr<type> >::iterator
-    sample_aggregator_emplace_hash(
-        std::map<uint64_t, std::shared_ptr<type> > &hash_accum_map,
-        uint64_t hash)
+        sample_aggregator_emplace_hash(std::map<uint64_t, std::shared_ptr<type> > &hash_accum_map, uint64_t hash)
     {
         typename std::map<uint64_t, std::shared_ptr<type> >::iterator result;
         result = hash_accum_map.find(hash);
@@ -150,8 +138,7 @@ namespace geopm
         return result;
     }
 
-    template <typename type>
-    void sample_aggregator_update_epoch(type &signal, int epoch_count)
+    template<typename type> void sample_aggregator_update_epoch(type &signal, int epoch_count)
     {
         // If the epoch count has changed, call the exit/enter
         if (epoch_count != signal.epoch_count_last) {
@@ -163,8 +150,7 @@ namespace geopm
         }
     }
 
-    template <typename type>
-    void sample_aggregator_update_hash_exit(type &signal, uint64_t hash)
+    template<typename type> void sample_aggregator_update_hash_exit(type &signal, uint64_t hash)
     {
         if (signal.region_hash_last != hash) {
             // If we have exited a valid region, call exit()
@@ -174,8 +160,7 @@ namespace geopm
         }
     }
 
-    template <typename type>
-    void sample_aggregator_update_hash_enter(type &signal, uint64_t hash)
+    template<typename type> void sample_aggregator_update_hash_enter(type &signal, uint64_t hash)
     {
         if (signal.region_hash_last != hash) {
             // If we have entered a valid region, call enter()
@@ -185,8 +170,7 @@ namespace geopm
         }
     }
 
-    template <typename type>
-    void sample_aggregator_update_period(type &signal, int period)
+    template<typename type> void sample_aggregator_update_period(type &signal, int period)
     {
         if (period != 0) {
             signal.period_accum->exit();
@@ -206,8 +190,8 @@ namespace geopm
     void SampleAggregatorImp::period_duration(double duration)
     {
         if (m_is_updated) {
-           throw Exception("SampleAggregatorImp::period_duration(): called after update()",
-                           GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("SampleAggregatorImp::period_duration(): called after update()",
+                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         m_period_duration = duration;
     }

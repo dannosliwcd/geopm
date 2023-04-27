@@ -13,8 +13,8 @@
 
 namespace geopm
 {
-    std::unique_ptr<cpu_set_t, std::function<void(cpu_set_t *)> >
-        make_cpu_set(int num_cpu, const std::set<int> &cpu_enabled);
+    std::unique_ptr<cpu_set_t, std::function<void(cpu_set_t *)> > make_cpu_set(int num_cpu,
+                                                                               const std::set<int> &cpu_enabled);
 
     // TODO: Add a "Scheduler" class that provides a mockable
     // abstraction to the Linux sched_* interfaces in place of

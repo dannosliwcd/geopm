@@ -13,11 +13,7 @@ namespace geopm
     class BarrierModelRegion : public ModelRegion
     {
         public:
-            BarrierModelRegion(double big_o_in,
-                               int verbosity,
-                               bool do_imbalance,
-                               bool do_progress,
-                               bool do_unmarked);
+            BarrierModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress, bool do_unmarked);
             virtual ~BarrierModelRegion() = default;
             void big_o(double big_o);
             void run(void);

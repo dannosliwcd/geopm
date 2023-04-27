@@ -26,7 +26,6 @@ namespace geopm
         , m_current(0.0)
         , m_last(0.0)
     {
-
     }
 
     void SumAccumulatorImp::update(double delta_signal)
@@ -62,7 +61,6 @@ namespace geopm
         , m_curr_weight(0.0)
         , m_last(0.0)
     {
-
     }
 
     void AvgAccumulatorImp::update(double delta_time, double signal)
@@ -81,14 +79,12 @@ namespace geopm
 
     void AvgAccumulatorImp::exit(void)
     {
-        m_last = m_curr_weight == 0.0 ? 0.0 :
-                 m_curr_total / m_curr_weight;
+        m_last = m_curr_weight == 0.0 ? 0.0 : m_curr_total / m_curr_weight;
     }
 
     double AvgAccumulatorImp::average(void) const
     {
-        return m_weight == 0.0 ? 0.0 :
-               m_total / m_weight;
+        return m_weight == 0.0 ? 0.0 : m_total / m_weight;
     }
 
     double AvgAccumulatorImp::interval_average(void) const

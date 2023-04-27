@@ -13,15 +13,12 @@ namespace geopm
     class SpinModelRegion : public ModelRegion
     {
         public:
-            SpinModelRegion(double big_o_in,
-                            int verbosity,
-                            bool do_imbalance,
-                            bool do_progress,
-                            bool do_unmarked);
+            SpinModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress, bool do_unmarked);
             virtual ~SpinModelRegion();
             void big_o(double big_o);
             void run(void);
             virtual void run_atom(void);
+
         protected:
             double m_delay;
     };

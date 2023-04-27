@@ -22,8 +22,7 @@ namespace geopm
             ///        from.
             /// @param [in] offset The MSR offset to read from.
             /// @return The raw encoded MSR value read.
-            virtual uint64_t read_msr(int cpu_idx,
-                                      uint64_t offset) = 0;
+            virtual uint64_t read_msr(int cpu_idx, uint64_t offset) = 0;
             /// @brief Write to a single MSR on a CPU.
             /// @param [in] cpu_idx logical Linux CPU index to write
             ///        to.
@@ -36,10 +35,7 @@ namespace geopm
             ///        the MSR that will be modified.  An error will
             ///        occur if bits are set in the raw_value that are
             ///        not in the write mask.
-            virtual void write_msr(int cpu_idx,
-                                   uint64_t offset,
-                                   uint64_t raw_value,
-                                   uint64_t write_mask) = 0;
+            virtual void write_msr(int cpu_idx, uint64_t offset, uint64_t raw_value, uint64_t write_mask) = 0;
             /// @brief Extend the set of MSRs for batch read with a single offset.
             /// @param [in] cpu_idx logical Linux CPU index to read from when
             ///         read_batch() method is called.
@@ -63,9 +59,7 @@ namespace geopm
             virtual int add_write(int cpu_idx, uint64_t offset) = 0;
             /// @brief Adjust a value that was previously added with
             ///        the add_write() method.
-            virtual void adjust(int batch_idx,
-                                uint64_t value,
-                                uint64_t write_mask) = 0;
+            virtual void adjust(int batch_idx, uint64_t value, uint64_t write_mask) = 0;
             /// @brief Read the full 64-bit value of the MSR that was
             ///        previously added to the MSRIO with add_read().
             ///        read_batch() must be called prior to calling

@@ -50,8 +50,8 @@ namespace geopm
             /// @param [in] in_policy Policy values from the parent.
             /// @param [out] out_policy Vector of policies to be sent
             ///        to each child.
-            virtual void split_policy(const std::vector<double> &in_policy,
-                                      std::vector<std::vector<double> > &out_policy) = 0;
+            virtual void split_policy(const std::vector<double> &in_policy, std::vector<std::vector<double> > &out_policy)
+                = 0;
             /// @brief Called by Controller to determine if new policy values
             ///        should be sent down the tree to the Agent's children.
             /// @return True if the policy has been updated since last call.
@@ -63,7 +63,8 @@ namespace geopm
             /// @param [out] out_sample Aggregated sample values to be
             ///        sent up to the parent.
             virtual void aggregate_sample(const std::vector<std::vector<double> > &in_sample,
-                                          std::vector<double> &out_sample) = 0;
+                                          std::vector<double> &out_sample)
+                = 0;
             /// @return True if new samples were read since last call.
             virtual bool do_send_sample(void) const = 0;
             /// @brief Adjust the platform settings based the policy
@@ -176,9 +177,10 @@ namespace geopm
             ///        the applying the aggregation across child
             ///        samples.
             static void aggregate_sample(const std::vector<std::vector<double> > &in_sample,
-                                         const std::vector<std::function<double(const std::vector<double>&)> > &agg_func,
+                                         const std::vector<std::function<double(const std::vector<double> &)> > &agg_func,
                                          std::vector<double> &out_sample);
             static const std::string M_PLUGIN_PREFIX;
+
         private:
             static const std::string m_num_sample_string;
             static const std::string m_num_policy_string;

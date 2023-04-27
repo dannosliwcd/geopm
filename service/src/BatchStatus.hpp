@@ -25,11 +25,8 @@ namespace geopm
 
             BatchStatus() = default;
             virtual ~BatchStatus() = default;
-            static std::unique_ptr<BatchStatus> make_unique_server(
-                int client_pid,
-                const std::string &server_key);
-            static std::unique_ptr<BatchStatus> make_unique_client(
-                const std::string &server_key);
+            static std::unique_ptr<BatchStatus> make_unique_server(int client_pid, const std::string &server_key);
+            static std::unique_ptr<BatchStatus> make_unique_client(const std::string &server_key);
 
             /// @brief Send an integer to the other process
             ///
@@ -67,8 +64,7 @@ namespace geopm
 
             // This is the single place where the server prefix is located,
             // which is also accessed by BatchStatusTest.
-            static constexpr const char* M_DEFAULT_FIFO_PREFIX =
-                "/run/geopm-service/batch-status-";
+            static constexpr const char *M_DEFAULT_FIFO_PREFIX = "/run/geopm-service/batch-status-";
     };
 
     class BatchStatusServer : public BatchStatusImp
@@ -78,8 +74,7 @@ namespace geopm
             /// The constructor which is called by the server.
             ///
             BatchStatusServer(int other_pid, const std::string &server_key);
-            BatchStatusServer(int other_pid, const std::string &server_key,
-                              const std::string &fifo_prefix);
+            BatchStatusServer(int other_pid, const std::string &server_key, const std::string &fifo_prefix);
             virtual ~BatchStatusServer();
 
         private:
@@ -95,8 +90,7 @@ namespace geopm
             /// The constructor which is called by the client.
             ///
             BatchStatusClient(const std::string &server_key);
-            BatchStatusClient(const std::string &server_key,
-                              const std::string &fifo_prefix);
+            BatchStatusClient(const std::string &server_key, const std::string &fifo_prefix);
             virtual ~BatchStatusClient();
 
         private:

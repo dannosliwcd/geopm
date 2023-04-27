@@ -24,7 +24,6 @@ namespace geopm
     ProfileIOGroup::ProfileIOGroup()
         : ProfileIOGroup(platform_topo(), ApplicationSampler::application_sampler())
     {
-
     }
 
     ProfileIOGroup::ProfileIOGroup(const PlatformTopo &topo, ApplicationSampler &application_sampler)
@@ -37,28 +36,23 @@ namespace geopm
     {
 
         // default signal values: 0.0 for hint time and progress, NAN for others
-        std::fill(m_per_cpu_sample.begin(), m_per_cpu_sample.end(),
-                  std::vector<double>(m_num_cpu, 0.0));
-        std::fill(m_per_cpu_sample[M_SIGNAL_REGION_HASH].begin(),
-                  m_per_cpu_sample[M_SIGNAL_REGION_HASH].end(), NAN);
-        std::fill(m_per_cpu_sample[M_SIGNAL_REGION_HINT].begin(),
-                  m_per_cpu_sample[M_SIGNAL_REGION_HINT].end(), NAN);
+        std::fill(m_per_cpu_sample.begin(), m_per_cpu_sample.end(), std::vector<double>(m_num_cpu, 0.0));
+        std::fill(m_per_cpu_sample[M_SIGNAL_REGION_HASH].begin(), m_per_cpu_sample[M_SIGNAL_REGION_HASH].end(), NAN);
+        std::fill(m_per_cpu_sample[M_SIGNAL_REGION_HINT].begin(), m_per_cpu_sample[M_SIGNAL_REGION_HINT].end(), NAN);
 
-        std::vector<std::pair<std::string, int> > aliases {
-            {"REGION_HASH", M_SIGNAL_REGION_HASH},
-            {"REGION_HINT", M_SIGNAL_REGION_HINT},
-            {"REGION_PROGRESS", M_SIGNAL_THREAD_PROGRESS},
-            {"TIME_HINT_UNKNOWN", M_SIGNAL_TIME_HINT_UNKNOWN},
-            {"TIME_HINT_UNSET", M_SIGNAL_TIME_HINT_UNSET},
-            {"TIME_HINT_COMPUTE", M_SIGNAL_TIME_HINT_COMPUTE},
-            {"TIME_HINT_MEMORY", M_SIGNAL_TIME_HINT_MEMORY},
-            {"TIME_HINT_NETWORK", M_SIGNAL_TIME_HINT_NETWORK},
-            {"TIME_HINT_IO", M_SIGNAL_TIME_HINT_IO},
-            {"TIME_HINT_SERIAL", M_SIGNAL_TIME_HINT_SERIAL},
-            {"TIME_HINT_PARALLEL", M_SIGNAL_TIME_HINT_PARALLEL},
-            {"TIME_HINT_IGNORE", M_SIGNAL_TIME_HINT_IGNORE},
-            {"TIME_HINT_SPIN", M_SIGNAL_TIME_HINT_SPIN}
-        };
+        std::vector<std::pair<std::string, int> > aliases{{"REGION_HASH", M_SIGNAL_REGION_HASH},
+                                                          {"REGION_HINT", M_SIGNAL_REGION_HINT},
+                                                          {"REGION_PROGRESS", M_SIGNAL_THREAD_PROGRESS},
+                                                          {"TIME_HINT_UNKNOWN", M_SIGNAL_TIME_HINT_UNKNOWN},
+                                                          {"TIME_HINT_UNSET", M_SIGNAL_TIME_HINT_UNSET},
+                                                          {"TIME_HINT_COMPUTE", M_SIGNAL_TIME_HINT_COMPUTE},
+                                                          {"TIME_HINT_MEMORY", M_SIGNAL_TIME_HINT_MEMORY},
+                                                          {"TIME_HINT_NETWORK", M_SIGNAL_TIME_HINT_NETWORK},
+                                                          {"TIME_HINT_IO", M_SIGNAL_TIME_HINT_IO},
+                                                          {"TIME_HINT_SERIAL", M_SIGNAL_TIME_HINT_SERIAL},
+                                                          {"TIME_HINT_PARALLEL", M_SIGNAL_TIME_HINT_PARALLEL},
+                                                          {"TIME_HINT_IGNORE", M_SIGNAL_TIME_HINT_IGNORE},
+                                                          {"TIME_HINT_SPIN", M_SIGNAL_TIME_HINT_SPIN}};
         // same signal index for aliases and underlying signal
         for (const auto &name : aliases) {
             m_signal_idx_map[name.first] = name.second;
@@ -66,10 +60,7 @@ namespace geopm
         }
     }
 
-    ProfileIOGroup::~ProfileIOGroup()
-    {
-
-    }
+    ProfileIOGroup::~ProfileIOGroup() {}
 
     std::set<std::string> ProfileIOGroup::signal_names(void) const
     {
@@ -121,9 +112,7 @@ namespace geopm
 
         int signal_idx = 0;
         for (const auto &it : m_active_signal) {
-            if (it.signal_type == signal_type &&
-                it.domain_type == domain_type &&
-                it.domain_idx == domain_idx) {
+            if (it.signal_type == signal_type && it.domain_type == domain_type && it.domain_idx == domain_idx) {
                 result = signal_idx;
             }
             ++signal_idx;
@@ -150,7 +139,8 @@ namespace geopm
 
         if (m_do_read[M_SIGNAL_REGION_HASH]) {
             for (int idx = 0; idx < m_num_cpu; ++idx) {
-                m_per_cpu_sample[M_SIGNAL_REGION_HASH][idx] = hash_to_signal(m_application_sampler.cpu_region_hash(idx));
+                m_per_cpu_sample[M_SIGNAL_REGION_HASH][idx]
+                    = hash_to_signal(m_application_sampler.cpu_region_hash(idx));
             }
         }
         if (m_do_read[M_SIGNAL_REGION_HINT]) {
@@ -175,10 +165,7 @@ namespace geopm
         m_is_batch_read = true;
     }
 
-    void ProfileIOGroup::write_batch(void)
-    {
-
-    }
+    void ProfileIOGroup::write_batch(void) {}
 
     double ProfileIOGroup::hash_to_signal(uint64_t hash)
     {
@@ -198,18 +185,16 @@ namespace geopm
 
     uint64_t ProfileIOGroup::signal_type_to_hint(int signal_type)
     {
-        static const std::map<int, uint64_t> type_hints {
-            {M_SIGNAL_TIME_HINT_UNSET, GEOPM_REGION_HINT_UNSET},
-            {M_SIGNAL_TIME_HINT_UNKNOWN, GEOPM_REGION_HINT_UNKNOWN},
-            {M_SIGNAL_TIME_HINT_COMPUTE, GEOPM_REGION_HINT_COMPUTE},
-            {M_SIGNAL_TIME_HINT_MEMORY, GEOPM_REGION_HINT_MEMORY},
-            {M_SIGNAL_TIME_HINT_NETWORK, GEOPM_REGION_HINT_NETWORK},
-            {M_SIGNAL_TIME_HINT_IO, GEOPM_REGION_HINT_IO},
-            {M_SIGNAL_TIME_HINT_SERIAL, GEOPM_REGION_HINT_SERIAL},
-            {M_SIGNAL_TIME_HINT_PARALLEL, GEOPM_REGION_HINT_PARALLEL},
-            {M_SIGNAL_TIME_HINT_IGNORE, GEOPM_REGION_HINT_IGNORE},
-            {M_SIGNAL_TIME_HINT_SPIN, GEOPM_REGION_HINT_SPIN}
-        };
+        static const std::map<int, uint64_t> type_hints{{M_SIGNAL_TIME_HINT_UNSET, GEOPM_REGION_HINT_UNSET},
+                                                        {M_SIGNAL_TIME_HINT_UNKNOWN, GEOPM_REGION_HINT_UNKNOWN},
+                                                        {M_SIGNAL_TIME_HINT_COMPUTE, GEOPM_REGION_HINT_COMPUTE},
+                                                        {M_SIGNAL_TIME_HINT_MEMORY, GEOPM_REGION_HINT_MEMORY},
+                                                        {M_SIGNAL_TIME_HINT_NETWORK, GEOPM_REGION_HINT_NETWORK},
+                                                        {M_SIGNAL_TIME_HINT_IO, GEOPM_REGION_HINT_IO},
+                                                        {M_SIGNAL_TIME_HINT_SERIAL, GEOPM_REGION_HINT_SERIAL},
+                                                        {M_SIGNAL_TIME_HINT_PARALLEL, GEOPM_REGION_HINT_PARALLEL},
+                                                        {M_SIGNAL_TIME_HINT_IGNORE, GEOPM_REGION_HINT_IGNORE},
+                                                        {M_SIGNAL_TIME_HINT_SPIN, GEOPM_REGION_HINT_SPIN}};
         auto result = type_hints.find(signal_type);
         if (result == type_hints.end()) {
             throw Exception("ProfileIOGroup::signal_type_to_hint(): signal_type "
@@ -219,26 +204,23 @@ namespace geopm
         return result->second;
     }
 
-
     double ProfileIOGroup::sample(int signal_idx)
     {
         if (signal_idx < 0 || signal_idx >= (int)m_active_signal.size()) {
-            throw Exception("ProfileIOGroup::sample(): signal_idx out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("ProfileIOGroup::sample(): signal_idx out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         if (!m_is_batch_read) {
-            throw Exception("ProfileIOGroup::sample(): signal has not been read",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("ProfileIOGroup::sample(): signal has not been read", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
 
         int cpu_idx = m_active_signal[signal_idx].domain_idx;
         int signal_type = m_active_signal[signal_idx].signal_type;
-        GEOPM_DEBUG_ASSERT(cpu_idx >= 0 && cpu_idx < m_num_cpu,
-                           "ProfileIOGroup:sample(): Signal was pushed with an "
-                           "invalid cpu_idx");
-        GEOPM_DEBUG_ASSERT(signal_type >= 0 && signal_type < M_NUM_SIGNAL,
-                           "ProfileIOGroup:sample(): Signal was pushed with an "
-                           "invalid signal_type");
+        GEOPM_DEBUG_ASSERT(cpu_idx >= 0 && cpu_idx < m_num_cpu, "ProfileIOGroup:sample(): Signal was pushed with an "
+                                                                "invalid cpu_idx");
+        GEOPM_DEBUG_ASSERT(signal_type >= 0 && signal_type < M_NUM_SIGNAL, "ProfileIOGroup:sample(): Signal was pushed with an "
+                                                                           "invalid signal_type");
         return m_per_cpu_sample[signal_type][cpu_idx];
     }
 
@@ -309,45 +291,26 @@ namespace geopm
                         GEOPM_ERROR_NOT_IMPLEMENTED, __FILE__, __LINE__);
     }
 
-    void ProfileIOGroup::save_control(void)
-    {
+    void ProfileIOGroup::save_control(void) {}
 
-    }
-
-    void ProfileIOGroup::restore_control(void)
-    {
-
-    }
+    void ProfileIOGroup::restore_control(void) {}
 
     std::function<double(const std::vector<double> &)> ProfileIOGroup::agg_function(const std::string &signal_name) const
     {
-        static const std::map<std::string, std::function<double(const std::vector<double> &)> > fn_map {
-            {"REGION_PROGRESS", Agg::min},
-            {"PROFILE::REGION_PROGRESS", Agg::min},
-            {"REGION_HASH", Agg::region_hash},
-            {"PROFILE::REGION_HASH", Agg::region_hash},
-            {"REGION_HINT", Agg::region_hint},
-            {"PROFILE::REGION_HINT", Agg::region_hint},
-            {"TIME_HINT_UNKNOWN", Agg::average},
-            {"PROFILE::TIME_HINT_UNKNOWN", Agg::average},
-            {"TIME_HINT_UNSET", Agg::average},
-            {"PROFILE::TIME_HINT_UNSET", Agg::average},
-            {"TIME_HINT_COMPUTE", Agg::average},
-            {"PROFILE::TIME_HINT_COMPUTE", Agg::average},
-            {"TIME_HINT_MEMORY", Agg::average},
-            {"PROFILE::TIME_HINT_MEMORY", Agg::average},
-            {"TIME_HINT_NETWORK", Agg::average},
-            {"PROFILE::TIME_HINT_NETWORK", Agg::average},
-            {"TIME_HINT_IO", Agg::average},
-            {"PROFILE::TIME_HINT_IO", Agg::average},
-            {"TIME_HINT_SERIAL", Agg::average},
-            {"PROFILE::TIME_HINT_SERIAL", Agg::average},
-            {"TIME_HINT_PARALLEL", Agg::average},
-            {"PROFILE::TIME_HINT_PARALLEL", Agg::average},
-            {"TIME_HINT_IGNORE", Agg::average},
-            {"PROFILE::TIME_HINT_IGNORE", Agg::average},
-            {"TIME_HINT_SPIN", Agg::average},
-            {"PROFILE::TIME_HINT_SPIN", Agg::average},
+        static const std::map<std::string, std::function<double(const std::vector<double> &)> > fn_map{
+            {"REGION_PROGRESS", Agg::min},        {"PROFILE::REGION_PROGRESS", Agg::min},
+            {"REGION_HASH", Agg::region_hash},    {"PROFILE::REGION_HASH", Agg::region_hash},
+            {"REGION_HINT", Agg::region_hint},    {"PROFILE::REGION_HINT", Agg::region_hint},
+            {"TIME_HINT_UNKNOWN", Agg::average},  {"PROFILE::TIME_HINT_UNKNOWN", Agg::average},
+            {"TIME_HINT_UNSET", Agg::average},    {"PROFILE::TIME_HINT_UNSET", Agg::average},
+            {"TIME_HINT_COMPUTE", Agg::average},  {"PROFILE::TIME_HINT_COMPUTE", Agg::average},
+            {"TIME_HINT_MEMORY", Agg::average},   {"PROFILE::TIME_HINT_MEMORY", Agg::average},
+            {"TIME_HINT_NETWORK", Agg::average},  {"PROFILE::TIME_HINT_NETWORK", Agg::average},
+            {"TIME_HINT_IO", Agg::average},       {"PROFILE::TIME_HINT_IO", Agg::average},
+            {"TIME_HINT_SERIAL", Agg::average},   {"PROFILE::TIME_HINT_SERIAL", Agg::average},
+            {"TIME_HINT_PARALLEL", Agg::average}, {"PROFILE::TIME_HINT_PARALLEL", Agg::average},
+            {"TIME_HINT_IGNORE", Agg::average},   {"PROFILE::TIME_HINT_IGNORE", Agg::average},
+            {"TIME_HINT_SPIN", Agg::average},     {"PROFILE::TIME_HINT_SPIN", Agg::average},
         };
         auto it = fn_map.find(signal_name);
         if (it == fn_map.end()) {
@@ -359,7 +322,7 @@ namespace geopm
 
     std::function<std::string(double)> ProfileIOGroup::format_function(const std::string &signal_name) const
     {
-       static const std::map<std::string, std::function<std::string(double)> > fmt_map {
+        static const std::map<std::string, std::function<std::string(double)> > fmt_map{
             {"REGION_PROGRESS", string_format_float},
             {"PROFILE::REGION_PROGRESS", string_format_float},
             {"REGION_HASH", string_format_hex},
@@ -395,7 +358,6 @@ namespace geopm
         return it->second;
     }
 
-
     std::string ProfileIOGroup::signal_description(const std::string &signal_name) const
     {
         return "";
@@ -409,21 +371,17 @@ namespace geopm
     int ProfileIOGroup::signal_behavior(const std::string &signal_name) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("ProfileIOGroup::signal_behavior(): " + signal_name +
-                            "not valid for TimeIOGroup",
+            throw Exception("ProfileIOGroup::signal_behavior(): " + signal_name + "not valid for TimeIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
-        static const std::set<std::string> label_signals {
-            "REGION_HASH", "PROFILE::REGION_HASH",
-            "REGION_HINT", "PROFILE::REGION_HINT"
-        };
+        static const std::set<std::string> label_signals{"REGION_HASH", "PROFILE::REGION_HASH", "REGION_HINT",
+                                                         "PROFILE::REGION_HINT"};
         int result = IOGroup::M_SIGNAL_BEHAVIOR_MONOTONE;
         auto sig = label_signals.find(signal_name);
         if (sig != label_signals.end()) {
             result = IOGroup::M_SIGNAL_BEHAVIOR_LABEL;
         }
-        else if (signal_name == "REGION_PROGRESS" ||
-                 signal_name == "PROFILE::REGION_PROGRESS") {
+        else if (signal_name == "REGION_PROGRESS" || signal_name == "PROFILE::REGION_PROGRESS") {
             result = IOGroup::M_SIGNAL_BEHAVIOR_VARIABLE;
         }
         return result;
@@ -432,8 +390,7 @@ namespace geopm
     int ProfileIOGroup::check_signal(const std::string &signal_name, int domain_type, int domain_idx) const
     {
         if (!is_valid_signal(signal_name)) {
-            throw Exception("ProfileIOGroup::check_signal(): signal_name " + signal_name +
-                            " not valid for ProfileIOGroup",
+            throw Exception("ProfileIOGroup::check_signal(): signal_name " + signal_name + " not valid for ProfileIOGroup",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (domain_type != GEOPM_DOMAIN_CPU) {
@@ -442,8 +399,8 @@ namespace geopm
         }
         int cpu_idx = domain_idx;
         if (cpu_idx < 0 || cpu_idx >= m_platform_topo.num_domain(GEOPM_DOMAIN_CPU)) {
-            throw Exception("ProfileIOGroup::check_signal(): domain index out of range",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("ProfileIOGroup::check_signal(): domain index out of range", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         int signal_type = -1;
         auto it = m_signal_idx_map.find(signal_name);
@@ -459,15 +416,9 @@ namespace geopm
         return signal_type;
     }
 
-    void ProfileIOGroup::save_control(const std::string &save_path)
-    {
+    void ProfileIOGroup::save_control(const std::string &save_path) {}
 
-    }
-
-    void ProfileIOGroup::restore_control(const std::string &save_path)
-    {
-
-    }
+    void ProfileIOGroup::restore_control(const std::string &save_path) {}
 
     std::string ProfileIOGroup::name(void) const
     {

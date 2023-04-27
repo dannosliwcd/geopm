@@ -16,10 +16,7 @@
 
 namespace geopm
 {
-    StreamModelRegion::StreamModelRegion(double big_o_in,
-                                         int verbosity,
-                                         bool do_imbalance,
-                                         bool do_progress,
+    StreamModelRegion::StreamModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress,
                                          bool do_unmarked)
         : ModelRegion(verbosity)
         , m_array_a(NULL)
@@ -34,8 +31,7 @@ namespace geopm
         m_do_unmarked = do_unmarked;
         int err = ModelRegion::region(GEOPM_REGION_HINT_MEMORY);
         if (err) {
-            throw Exception("StreamModelRegion::StreamModelRegion()",
-                            err, __FILE__, __LINE__);
+            throw Exception("StreamModelRegion::StreamModelRegion()", err, __FILE__, __LINE__);
         }
         big_o(big_o_in);
     }
@@ -74,8 +70,7 @@ namespace geopm
                 err = posix_memalign((void **)&m_array_c, m_align, m_array_len * sizeof(double));
             }
             if (err) {
-                throw Exception("StreamModelRegion::big_o(): posix_memalign() failed",
-                                err, __FILE__, __LINE__);
+                throw Exception("StreamModelRegion::big_o(): posix_memalign() failed", err, __FILE__, __LINE__);
             }
 #pragma omp parallel for
             for (size_t i = 0; i < m_array_len; i++) {
@@ -93,7 +88,9 @@ namespace geopm
     {
         if (m_big_o != 0.0) {
             if (m_verbosity) {
-                std::cout << "Executing " << m_array_len * m_num_progress_updates << " array length stream triadd."  << std::endl << std::flush;
+                std::cout << "Executing " << m_array_len * m_num_progress_updates
+                          << " array length stream triadd." << std::endl
+                          << std::flush;
             }
             ModelRegion::region_enter();
             size_t block_size = m_array_len / m_num_progress_updates;
@@ -102,7 +99,8 @@ namespace geopm
                 ModelRegion::loop_enter(i);
 #pragma omp parallel for
                 for (size_t j = 0; j < block_size; ++j) {
-                    m_array_a[i * block_size + j] = m_array_b[i * block_size + j] + scalar * m_array_c[i * block_size + j];
+                    m_array_a[i * block_size + j] = m_array_b[i * block_size + j]
+                                                    + scalar * m_array_c[i * block_size + j];
                 }
 
                 ModelRegion::loop_exit();
@@ -112,7 +110,9 @@ namespace geopm
                 remainder = m_array_len % block_size;
             }
             for (uint64_t j = 0; j < remainder; ++j) {
-                m_array_a[m_num_progress_updates * block_size + j] = m_array_b[m_num_progress_updates * block_size + j] + scalar * m_array_c[m_num_progress_updates * block_size + j];
+                m_array_a[m_num_progress_updates * block_size + j]
+                    = m_array_b[m_num_progress_updates * block_size + j]
+                      + scalar * m_array_c[m_num_progress_updates * block_size + j];
             }
             ModelRegion::region_exit();
         }

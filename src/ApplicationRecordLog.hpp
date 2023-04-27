@@ -155,8 +155,7 @@ namespace geopm
             /// @param [out] short_regions Vector of short region data
             ///        about any short regions events in the records
             ///        output vector.
-            virtual void dump(std::vector<record_s> &records,
-                              std::vector<short_region_s> &short_regions) = 0;
+            virtual void dump(std::vector<record_s> &records, std::vector<short_region_s> &short_regions) = 0;
             /// @brief Gets the shared memory size requirement.
             ///
             /// This method returns the value to use when sizing the
@@ -181,6 +180,7 @@ namespace geopm
             /// @return The maximum length of the short_regions vector
             ///         after a call to dump().
             static size_t max_region(void);
+
         protected:
             ApplicationRecordLog() = default;
             static constexpr size_t M_LAYOUT_SIZE = 49192;
@@ -197,23 +197,23 @@ namespace geopm
             void enter(uint64_t hash, const geopm_time_s &time) override;
             void exit(uint64_t hash, const geopm_time_s &time) override;
             void epoch(const geopm_time_s &time) override;
-            void dump(std::vector<record_s> &records,
-                      std::vector<short_region_s> &short_regions) override;
+            void dump(std::vector<record_s> &records, std::vector<short_region_s> &short_regions) override;
+
         private:
             struct m_layout_s {
-                int num_record;
-                record_s record_table[M_MAX_RECORD];
-                int num_region;
-                short_region_s region_table[M_MAX_REGION];
+                    int num_record;
+                    record_s record_table[M_MAX_RECORD];
+                    int num_region;
+                    short_region_s region_table[M_MAX_REGION];
             };
             static_assert(sizeof(m_layout_s) == M_LAYOUT_SIZE,
                           "Defined layout size does not match the actual layout size");
 
             struct m_region_enter_s {
-                int record_idx;
-                int region_idx;
-                geopm_time_s enter_time;
-                bool is_short;
+                    int record_idx;
+                    int region_idx;
+                    geopm_time_s enter_time;
+                    bool is_short;
             };
             void check_setup(void);
             void check_reset(m_layout_s &layout);

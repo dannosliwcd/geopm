@@ -39,7 +39,7 @@ namespace geopm
 
     std::set<uint64_t> ApplicationSampler::region_hash_network(void)
     {
-        static std::set <uint64_t> result = region_hash_network_once();
+        static std::set<uint64_t> result = region_hash_network_once();
         return result;
     }
 
@@ -51,41 +51,41 @@ namespace geopm
     std::set<uint64_t> ApplicationSampler::region_hash_network_once(void)
     {
         std::set<uint64_t> ret;
-        std::set<std::string> network_funcs {"MPI_Allgather",
-                                             "MPI_Allgatherv",
-                                             "MPI_Allreduce",
-                                             "MPI_Alltoall",
-                                             "MPI_Alltoallv",
-                                             "MPI_Alltoallw",
-                                             "MPI_Barrier",
-                                             "MPI_Bcast",
-                                             "MPI_Bsend",
-                                             "MPI_Bsend_init",
-                                             "MPI_Gather",
-                                             "MPI_Gatherv",
-                                             "MPI_Neighbor_allgather",
-                                             "MPI_Neighbor_allgatherv",
-                                             "MPI_Neighbor_alltoall",
-                                             "MPI_Neighbor_alltoallv",
-                                             "MPI_Neighbor_alltoallw",
-                                             "MPI_Reduce",
-                                             "MPI_Reduce_scatter",
-                                             "MPI_Reduce_scatter_block",
-                                             "MPI_Rsend",
-                                             "MPI_Rsend_init",
-                                             "MPI_Scan",
-                                             "MPI_Scatter",
-                                             "MPI_Scatterv",
-                                             "MPI_Waitall",
-                                             "MPI_Waitany",
-                                             "MPI_Wait",
-                                             "MPI_Waitsome",
-                                             "MPI_Exscan",
-                                             "MPI_Recv",
-                                             "MPI_Send",
-                                             "MPI_Sendrecv",
-                                             "MPI_Sendrecv_replace",
-                                             "MPI_Ssend"};
+        std::set<std::string> network_funcs{"MPI_Allgather",
+                                            "MPI_Allgatherv",
+                                            "MPI_Allreduce",
+                                            "MPI_Alltoall",
+                                            "MPI_Alltoallv",
+                                            "MPI_Alltoallw",
+                                            "MPI_Barrier",
+                                            "MPI_Bcast",
+                                            "MPI_Bsend",
+                                            "MPI_Bsend_init",
+                                            "MPI_Gather",
+                                            "MPI_Gatherv",
+                                            "MPI_Neighbor_allgather",
+                                            "MPI_Neighbor_allgatherv",
+                                            "MPI_Neighbor_alltoall",
+                                            "MPI_Neighbor_alltoallv",
+                                            "MPI_Neighbor_alltoallw",
+                                            "MPI_Reduce",
+                                            "MPI_Reduce_scatter",
+                                            "MPI_Reduce_scatter_block",
+                                            "MPI_Rsend",
+                                            "MPI_Rsend_init",
+                                            "MPI_Scan",
+                                            "MPI_Scatter",
+                                            "MPI_Scatterv",
+                                            "MPI_Waitall",
+                                            "MPI_Waitany",
+                                            "MPI_Wait",
+                                            "MPI_Waitsome",
+                                            "MPI_Exscan",
+                                            "MPI_Recv",
+                                            "MPI_Send",
+                                            "MPI_Sendrecv",
+                                            "MPI_Sendrecv_replace",
+                                            "MPI_Ssend"};
         for (auto const &func_name : network_funcs) {
             ret.insert(geopm_crc32_str(func_name.c_str()));
         }
@@ -93,21 +93,15 @@ namespace geopm
     }
 
     ApplicationSamplerImp::ApplicationSamplerImp()
-        : ApplicationSamplerImp(nullptr,
-                                platform_topo(),
-                                std::map<int, m_process_s> {},
-                                environment().do_record_filter(),
-                                environment().record_filter(),
-                                {})
+        : ApplicationSamplerImp(nullptr, platform_topo(), std::map<int, m_process_s>{},
+                                environment().do_record_filter(), environment().record_filter(), {})
     {
-
     }
 
     ApplicationSamplerImp::ApplicationSamplerImp(std::shared_ptr<ApplicationStatus> status,
                                                  const PlatformTopo &platform_topo,
                                                  const std::map<int, m_process_s> &process_map,
-                                                 bool is_filtered,
-                                                 const std::string &filter_name,
+                                                 bool is_filtered, const std::string &filter_name,
                                                  const std::vector<bool> &is_cpu_active)
         : m_time_zero(geopm::time_zero())
         , m_status(status)
@@ -129,7 +123,7 @@ namespace geopm
 
     ApplicationSamplerImp::~ApplicationSamplerImp()
     {
-        for (auto const& process : m_process_map) {
+        for (auto const &process : m_process_map) {
             if (process.second.record_log_shmem) {
                 process.second.record_log_shmem->unlink();
             }
@@ -159,8 +153,7 @@ namespace geopm
             }
         }
         else {
-            GEOPM_DEBUG_ASSERT((int) m_hint_time.size() == m_num_cpu &&
-                               (int) m_hint_last.size() == m_num_cpu,
+            GEOPM_DEBUG_ASSERT((int)m_hint_time.size() == m_num_cpu && (int)m_hint_last.size() == m_num_cpu,
                                "Mismatch in CPU/hint vectors");
             double time_delta = geopm_time_diff(&m_update_time, &curr_time);
             for (int cpu_idx = 0; cpu_idx != m_num_cpu; ++cpu_idx) {
@@ -200,24 +193,19 @@ namespace geopm
                 for (const auto &record : proc_it.records) {
                     proc_it.valid.check(record);
                 }
-                m_record_buffer.insert(m_record_buffer.end(),
-                                       proc_it.records.begin(),
-                                       proc_it.records.end());
+                m_record_buffer.insert(m_record_buffer.end(), proc_it.records.begin(), proc_it.records.end());
             }
             // Update the "signal" field for all of the short region
             // events to have the right offset.
             size_t short_region_remain = proc_it.short_regions.size();
             for (auto record_it = m_record_buffer.begin() + record_offset;
-                 short_region_remain > 0 &&
-                 record_it != m_record_buffer.end();
-                 ++record_it) {
+                 short_region_remain > 0 && record_it != m_record_buffer.end(); ++record_it) {
                 if (record_it->event == EVENT_SHORT_REGION) {
                     record_it->signal += m_short_region_buffer.size();
                     --short_region_remain;
                 }
             }
-            m_short_region_buffer.insert(m_short_region_buffer.end(),
-                                         proc_it.short_regions.begin(),
+            m_short_region_buffer.insert(m_short_region_buffer.end(), proc_it.short_regions.begin(),
                                          proc_it.short_regions.end());
         }
     }
@@ -263,8 +251,8 @@ namespace geopm
     {
         double result = NAN;
         if (cpu_idx < 0 || cpu_idx >= m_num_cpu) {
-            throw Exception("ApplicationSampler::" + std::string(__func__) +
-                            "(): cpu_idx is out of range: " + std::to_string(cpu_idx),
+            throw Exception("ApplicationSampler::" + std::string(__func__)
+                                + "(): cpu_idx is out of range: " + std::to_string(cpu_idx),
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         if (m_is_cpu_active[cpu_idx]) {
@@ -306,11 +294,9 @@ namespace geopm
     {
         if (!m_status) {
             std::string shmem_name = shm_key + "-status";
-            m_status_shmem = SharedMemory::make_unique_owner(shmem_name,
-                                                             ApplicationStatus::buffer_size(m_num_cpu));
+            m_status_shmem = SharedMemory::make_unique_owner(shmem_name, ApplicationStatus::buffer_size(m_num_cpu));
             m_status = ApplicationStatus::make_unique(m_num_cpu, m_status_shmem);
-            GEOPM_DEBUG_ASSERT(m_process_map.empty(),
-                               "m_process_map is not empty, but we are connecting");
+            GEOPM_DEBUG_ASSERT(m_process_map.empty(), "m_process_map is not empty, but we are connecting");
             // Convert per-cpu process to a set of the unique process id's
             int cpu_idx = 0;
             std::set<int> proc_set;
@@ -325,10 +311,9 @@ namespace geopm
             // insert it into map indexed by process id
             for (const auto &proc_it : proc_set) {
                 std::string shmem_name = shm_key + "-record-log-" + std::to_string(proc_it);
-                std::shared_ptr<SharedMemory> record_log_shmem =
-                    SharedMemory::make_unique_owner(shmem_name,
-                                                    ApplicationRecordLog::buffer_size());
-                auto emplace_ret = m_process_map.emplace(proc_it, m_process_s {});
+                std::shared_ptr<SharedMemory> record_log_shmem = SharedMemory::make_unique_owner(
+                    shmem_name, ApplicationRecordLog::buffer_size());
+                auto emplace_ret = m_process_map.emplace(proc_it, m_process_s{});
                 auto &process = emplace_ret.first->second;
                 if (m_is_filtered) {
                     process.filter = RecordFilter::make_unique(m_filter_name);
@@ -347,8 +332,7 @@ namespace geopm
         if (err) {
 #ifdef GEOPM_DEBUG
             std::cerr << "Warning: <geopm> Unable to affinitize sampling thread to CPU "
-                      << *(sampler_cpu_set.begin())
-                      << ", sched_setaffinity() failed: " << strerror(errno) << "\n";
+                      << *(sampler_cpu_set.begin()) << ", sched_setaffinity() failed: " << strerror(errno) << "\n";
 #endif
         }
     }
@@ -367,11 +351,8 @@ namespace geopm
         }
         for (int core_idx = num_core - 1; core_idx != -1; --core_idx) {
             if (!is_core_active.at(core_idx)) {
-                std::set<int> inactive_cpu = m_topo.domain_nested(GEOPM_DOMAIN_CPU,
-                                                                  GEOPM_DOMAIN_CORE,
-                                                                  core_idx);
-                GEOPM_DEBUG_ASSERT(inactive_cpu.size() != 0,
-                                   "Valid core index returned no nested CPUs");
+                std::set<int> inactive_cpu = m_topo.domain_nested(GEOPM_DOMAIN_CPU, GEOPM_DOMAIN_CORE, core_idx);
+                GEOPM_DEBUG_ASSERT(inactive_cpu.size() != 0, "Valid core index returned no nested CPUs");
                 result = *(inactive_cpu.rbegin());
                 found_inactive_core = true;
                 found_inactive_cpu = true;
@@ -380,7 +361,7 @@ namespace geopm
         }
         if (!found_inactive_core) {
             for (int cpu_idx = m_num_cpu - 1; cpu_idx != -1; --cpu_idx) {
-                if(!m_is_cpu_active[cpu_idx]) {
+                if (!m_is_cpu_active[cpu_idx]) {
                     result = cpu_idx;
                     found_inactive_cpu = true;
                     break;
@@ -388,7 +369,8 @@ namespace geopm
             }
         }
 #ifdef GEOPM_DEBUG
-        std::cout << "Info: <geopm> ApplicationSampler::sampler_cpu(): The Controller will run on logical CPU " << result << std::endl;
+        std::cout << "Info: <geopm> ApplicationSampler::sampler_cpu(): The Controller will run on logical CPU "
+                  << result << std::endl;
 #endif
 
         if (!found_inactive_core) {
@@ -413,8 +395,7 @@ namespace geopm
         if (found_inactive_core && 0 == m_topo.domain_idx(GEOPM_DOMAIN_CORE, result)) {
             std::cerr << "Warning: <geopm> ApplicationSampler::sampler_cpu(): User requested "
                       << "all cores except core 0 for the application.  GEOPM will share a "
-                      << "core with the OS, running on logical CPU " << result << "."
-                      << std::endl;
+                      << "core with the OS, running on logical CPU " << result << "." << std::endl;
         }
 #endif
 

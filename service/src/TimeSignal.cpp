@@ -12,13 +12,11 @@
 
 namespace geopm
 {
-    TimeSignal::TimeSignal(std::shared_ptr<geopm_time_s> time_zero,
-                           std::shared_ptr<double> time_batch)
+    TimeSignal::TimeSignal(std::shared_ptr<geopm_time_s> time_zero, std::shared_ptr<double> time_batch)
         : m_time_zero(time_zero)
         , m_time_batch(time_batch)
         , m_is_batch_ready(false)
     {
-
     }
 
     void TimeSignal::setup_batch(void)
@@ -31,8 +29,7 @@ namespace geopm
     double TimeSignal::sample(void)
     {
         if (!m_is_batch_ready) {
-            throw Exception("setup_batch() must be called before sample().",
-                            GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+            throw Exception("setup_batch() must be called before sample().", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         return *m_time_batch;
     }

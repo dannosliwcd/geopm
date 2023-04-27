@@ -16,15 +16,12 @@ namespace geopm
     class ScalingModelRegion : public ModelRegion
     {
         public:
-            ScalingModelRegion(double big_o_in,
-                               int verbosity,
-                               bool do_imbalance,
-                               bool do_progress,
-                               bool do_unmarked);
+            ScalingModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress, bool do_unmarked);
             virtual ~ScalingModelRegion();
             void big_o(double big_o);
             void run(void);
             void run_atom(void);
+
         protected:
             size_t llc_size(void);
 

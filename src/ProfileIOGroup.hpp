@@ -73,9 +73,9 @@ namespace geopm
                 M_NUM_SIGNAL,
             };
             struct m_signal_config {
-                int signal_type;
-                int domain_type;
-                int domain_idx;
+                    int signal_type;
+                    int domain_type;
+                    int domain_idx;
             };
 
             /// @brief Check that the signal name and domain are valid

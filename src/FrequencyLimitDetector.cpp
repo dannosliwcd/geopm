@@ -23,8 +23,7 @@ namespace geopm
     {
         bool do_use_signals = false;
         try {
-            do_use_signals = platform_io.read_signal(
-                "SST::TURBOFREQ_SUPPORT:SUPPORTED", GEOPM_DOMAIN_BOARD, 0);
+            do_use_signals = platform_io.read_signal("SST::TURBOFREQ_SUPPORT:SUPPORTED", GEOPM_DOMAIN_BOARD, 0);
         }
         catch (const geopm::Exception &) {
             // Either we don't know if SST-TF is supported, or it definitely is
@@ -33,8 +32,8 @@ namespace geopm
         return do_use_signals;
     }
 
-    std::unique_ptr<FrequencyLimitDetector> FrequencyLimitDetector::make_unique(
-        PlatformIO &platform_io, const PlatformTopo &platform_topo)
+    std::unique_ptr<FrequencyLimitDetector> FrequencyLimitDetector::make_unique(PlatformIO &platform_io,
+                                                                                const PlatformTopo &platform_topo)
     {
 
         if (use_sst_tf_signals(platform_io)) {
@@ -45,8 +44,8 @@ namespace geopm
         }
     }
 
-    std::shared_ptr<FrequencyLimitDetector> FrequencyLimitDetector::make_shared(
-        PlatformIO &platform_io, const PlatformTopo &platform_topo)
+    std::shared_ptr<FrequencyLimitDetector> FrequencyLimitDetector::make_shared(PlatformIO &platform_io,
+                                                                                const PlatformTopo &platform_topo)
     {
 
         if (use_sst_tf_signals(platform_io)) {

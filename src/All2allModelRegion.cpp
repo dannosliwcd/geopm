@@ -16,11 +16,8 @@
 
 namespace geopm
 {
-    All2allModelRegion::All2allModelRegion(double big_o_in,
-                                           int verbosity,
-                                           bool do_imbalance,
-                                           bool do_progress,
-                                           bool do_unmarked)
+    All2allModelRegion::All2allModelRegion(double big_o_in, int verbosity, bool do_imbalance,
+                                           bool do_progress, bool do_unmarked)
         : ModelRegion(verbosity)
         , m_send_buffer(NULL)
         , m_recv_buffer(NULL)
@@ -35,16 +32,14 @@ namespace geopm
         m_do_unmarked = do_unmarked;
         int err = MPI_Comm_size(MPI_COMM_WORLD, &m_num_rank);
         if (err) {
-            throw Exception("All2allModelRegion: MPI_Comm_size() failed",
-                            err, __FILE__, __LINE__);
+            throw Exception("All2allModelRegion: MPI_Comm_size() failed", err, __FILE__, __LINE__);
         }
         err = ModelRegion::region(GEOPM_REGION_HINT_UNKNOWN);
         if (!err) {
             err = MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
         }
         if (err) {
-            throw Exception("All2allModelRegion::All2allModelRegion()",
-                            err, __FILE__, __LINE__);
+            throw Exception("All2allModelRegion::All2allModelRegion()", err, __FILE__, __LINE__);
         }
 
         big_o(big_o_in);
@@ -70,22 +65,19 @@ namespace geopm
         num_progress_updates(big_o_in);
 
         if (m_num_progress_updates > 1) {
-            m_num_send = 1048576; //1MB
+            m_num_send = 1048576; // 1MB
         }
         else {
-            m_num_send = 10485760; //10MB
+            m_num_send = 10485760; // 10MB
         }
 
         if (big_o_in && m_big_o != big_o_in) {
-            int err = posix_memalign((void **)&m_send_buffer, m_align,
-                                 m_num_rank * m_num_send * sizeof(char));
+            int err = posix_memalign((void **)&m_send_buffer, m_align, m_num_rank * m_num_send * sizeof(char));
             if (!err) {
-                err = posix_memalign((void **)&m_recv_buffer, m_align,
-                                     m_num_rank * m_num_send * sizeof(char));
+                err = posix_memalign((void **)&m_recv_buffer, m_align, m_num_rank * m_num_send * sizeof(char));
             }
             if (err) {
-                throw Exception("All2allModelRegion::big_o(): posix_memalign() failed",
-                                err, __FILE__, __LINE__);
+                throw Exception("All2allModelRegion::big_o(): posix_memalign() failed", err, __FILE__, __LINE__);
             }
 #pragma omp parallel for
             for (size_t i = 0; i < m_num_rank * m_num_send; i++) {
@@ -99,8 +91,9 @@ namespace geopm
     {
         if (m_big_o != 0) {
             if (m_verbosity) {
-                std::cout << "Executing " << m_num_send << " byte buffer all2all "
-                          << m_num_progress_updates << " times."  << std::endl << std::flush;
+                std::cout << "Executing " << m_num_send << " byte buffer all2all " << m_num_progress_updates
+                          << " times." << std::endl
+                          << std::flush;
             }
             MPI_Barrier(MPI_COMM_WORLD);
             ModelRegion::region_enter();
@@ -108,15 +101,15 @@ namespace geopm
                 ModelRegion::loop_enter(i);
 
                 double timeout = 0.0;
-                struct geopm_time_s start = {{0,0}};
-                struct geopm_time_s curr = {{0,0}};
+                struct geopm_time_s start = {{0, 0}};
+                struct geopm_time_s curr = {{0, 0}};
                 int loop_done = 0;
                 if (!m_rank) {
                     (void)geopm_time(&start);
                 }
                 while (!loop_done) {
-                    int err = MPI_Alltoall(m_send_buffer, m_num_send, MPI_CHAR, m_recv_buffer,
-                                           m_num_send, MPI_CHAR, MPI_COMM_WORLD);
+                    int err = MPI_Alltoall(m_send_buffer, m_num_send, MPI_CHAR, m_recv_buffer, m_num_send,
+                                           MPI_CHAR, MPI_COMM_WORLD);
                     if (err) {
                         throw Exception("MPI_Alltoall()", err, __FILE__, __LINE__);
                     }
@@ -127,7 +120,7 @@ namespace geopm
                             loop_done = 1;
                         }
                     }
-                    err = MPI_Bcast((void*)&loop_done, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                    err = MPI_Bcast((void *)&loop_done, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     if (err) {
                         throw Exception("MPI_Bcast()", err, __FILE__, __LINE__);
                     }

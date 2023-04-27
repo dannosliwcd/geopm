@@ -26,6 +26,7 @@ namespace geopm
             void update(int error_value, const std::string &error_message);
             std::string message_last(int error_value);
             std::string message_fixed(int error_value);
+
         private:
             ErrorMessage();
             virtual ~ErrorMessage() = default;
@@ -33,22 +34,22 @@ namespace geopm
             int m_error_value;
             char m_error_message[PATH_MAX];
             std::mutex m_lock;
+
         public:
             ErrorMessage(const ErrorMessage &other) = delete;
             void operator=(const ErrorMessage &other) = delete;
     };
 }
 
-extern "C"
+extern "C" {
+void geopm_error_message(int error_value, char *error_message, size_t message_size)
 {
-    void geopm_error_message(int error_value, char *error_message, size_t message_size)
-    {
-        if (message_size != 0) {
-            std::string msg(geopm::ErrorMessage::get().message_last(error_value));
-            error_message[message_size - 1] = '\0';
-            strncpy(error_message, msg.c_str(), message_size - 1);
-        }
+    if (message_size != 0) {
+        std::string msg(geopm::ErrorMessage::get().message_last(error_value));
+        error_message[message_size - 1] = '\0';
+        strncpy(error_message, msg.c_str(), message_size - 1);
     }
+}
 }
 
 namespace geopm
@@ -93,14 +94,12 @@ namespace geopm
     Exception::Exception()
         : Exception("", GEOPM_ERROR_RUNTIME, NULL, 0)
     {
-
     }
 
     Exception::Exception(const Exception &other)
         : std::runtime_error(other.what())
         , m_err(other.m_err)
     {
-
     }
 
     Exception &Exception::operator=(const Exception &other)
@@ -111,13 +110,13 @@ namespace geopm
     }
 
     Exception::Exception(const std::string &what, int err, const char *file, int line)
-        : std::runtime_error(ErrorMessage::get().message_fixed(err) + (
-                                 what.size() != 0 ? (std::string(": ") + what) : std::string("")) + (
-                                 file != NULL ? (std::string(": at ") + std::string(file) +
-                                 std::string(":") + std::to_string(line)) : std::string("")))
+        : std::runtime_error(
+            ErrorMessage::get().message_fixed(err)
+            + (what.size() != 0 ? (std::string(": ") + what) : std::string(""))
+            + (file != NULL ? (std::string(": at ") + std::string(file) + std::string(":") + std::to_string(line))
+                            : std::string("")))
         , m_err(err ? err : GEOPM_ERROR_RUNTIME)
     {
-
     }
 
     int Exception::err_value(void) const
@@ -126,21 +125,20 @@ namespace geopm
     }
 
     ErrorMessage::ErrorMessage()
-        : M_VALUE_MESSAGE_MAP{
-            {GEOPM_ERROR_RUNTIME, "Runtime error"},
-            {GEOPM_ERROR_LOGIC, "Logic error"},
-            {GEOPM_ERROR_INVALID, "Invalid argument"},
-            {GEOPM_ERROR_FILE_PARSE, "Unable to parse input file"},
-            {GEOPM_ERROR_LEVEL_RANGE, "Control hierarchy level is out of range"},
-            {GEOPM_ERROR_NOT_IMPLEMENTED, "Feature not yet implemented"},
-            {GEOPM_ERROR_PLATFORM_UNSUPPORTED, "Current platform not supported or unrecognized"},
-            {GEOPM_ERROR_MSR_OPEN, "Could not open MSR device"},
-            {GEOPM_ERROR_MSR_READ, "Could not read from MSR device"},
-            {GEOPM_ERROR_MSR_WRITE, "Could not write to MSR device"},
-            {GEOPM_ERROR_AGENT_UNSUPPORTED, "Specified Agent not supported or unrecognized"},
-            {GEOPM_ERROR_AFFINITY, "MPI ranks are not affinitized to distinct CPUs"},
-            {GEOPM_ERROR_NO_AGENT, "Requested agent is unavailable or invalid"},
-            {GEOPM_ERROR_DATA_STORE, "Encountered a data store error"}}
+        : M_VALUE_MESSAGE_MAP{{GEOPM_ERROR_RUNTIME, "Runtime error"},
+                              {GEOPM_ERROR_LOGIC, "Logic error"},
+                              {GEOPM_ERROR_INVALID, "Invalid argument"},
+                              {GEOPM_ERROR_FILE_PARSE, "Unable to parse input file"},
+                              {GEOPM_ERROR_LEVEL_RANGE, "Control hierarchy level is out of range"},
+                              {GEOPM_ERROR_NOT_IMPLEMENTED, "Feature not yet implemented"},
+                              {GEOPM_ERROR_PLATFORM_UNSUPPORTED, "Current platform not supported or unrecognized"},
+                              {GEOPM_ERROR_MSR_OPEN, "Could not open MSR device"},
+                              {GEOPM_ERROR_MSR_READ, "Could not read from MSR device"},
+                              {GEOPM_ERROR_MSR_WRITE, "Could not write to MSR device"},
+                              {GEOPM_ERROR_AGENT_UNSUPPORTED, "Specified Agent not supported or unrecognized"},
+                              {GEOPM_ERROR_AFFINITY, "MPI ranks are not affinitized to distinct CPUs"},
+                              {GEOPM_ERROR_NO_AGENT, "Requested agent is unavailable or invalid"},
+                              {GEOPM_ERROR_DATA_STORE, "Encountered a data store error"}}
         , m_error_value(0)
     {
         std::fill(m_error_message, m_error_message + PATH_MAX, '\0');

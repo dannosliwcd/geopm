@@ -12,10 +12,7 @@
 
 namespace geopm
 {
-    SleepModelRegion::SleepModelRegion(double big_o_in,
-                                       int verbosity,
-                                       bool do_imbalance,
-                                       bool do_progress,
+    SleepModelRegion::SleepModelRegion(double big_o_in, int verbosity, bool do_imbalance, bool do_progress,
                                        bool do_unmarked)
         : ModelRegion(verbosity)
     {
@@ -25,23 +22,18 @@ namespace geopm
         m_do_unmarked = do_unmarked;
         int err = ModelRegion::region();
         if (err) {
-            throw Exception("SleepModelRegion::SleepModelRegion()",
-                            err, __FILE__, __LINE__);
+            throw Exception("SleepModelRegion::SleepModelRegion()", err, __FILE__, __LINE__);
         }
         big_o(big_o_in);
     }
 
-    SleepModelRegion::~SleepModelRegion()
-    {
-
-    }
+    SleepModelRegion::~SleepModelRegion() {}
 
     void SleepModelRegion::big_o(double big_o_in)
     {
         num_progress_updates(big_o_in);
         double seconds = big_o_in / m_num_progress_updates;
-        m_delay = {(time_t)(seconds),
-                   (long)((seconds - (time_t)(seconds)) * 1E9)};
+        m_delay = {(time_t)(seconds), (long)((seconds - (time_t)(seconds)) * 1E9)};
 
         m_big_o = big_o_in;
     }
@@ -50,16 +42,15 @@ namespace geopm
     {
         if (m_big_o != 0.0) {
             if (m_verbosity) {
-                std::cout << "Executing " << m_big_o << " second sleep."  << std::endl << std::flush;
+                std::cout << "Executing " << m_big_o << " second sleep." << std::endl << std::flush;
             }
             ModelRegion::region_enter();
-            for (uint64_t i = 0 ; i < m_num_progress_updates; ++i) {
+            for (uint64_t i = 0; i < m_num_progress_updates; ++i) {
                 ModelRegion::loop_enter(i);
                 int err;
                 err = clock_nanosleep(CLOCK_REALTIME, 0, &m_delay, NULL);
                 if (err) {
-                    throw Exception("SleepModelRegion::run()",
-                                    GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
+                    throw Exception("SleepModelRegion::run()", GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
                 }
                 ModelRegion::loop_exit();
             }

@@ -58,10 +58,8 @@ namespace geopm
         bool result = false;
 
         try {
-            result = platform_io.read_signal("SST::COREPRIORITY_SUPPORT:CAPABILITIES",
-                                             GEOPM_DOMAIN_BOARD, 0) > 0;
-            result &= platform_io.read_signal("SST::TURBOFREQ_SUPPORT:SUPPORTED",
-                                              GEOPM_DOMAIN_BOARD, 0) > 0;
+            result = platform_io.read_signal("SST::COREPRIORITY_SUPPORT:CAPABILITIES", GEOPM_DOMAIN_BOARD, 0) > 0;
+            result &= platform_io.read_signal("SST::TURBOFREQ_SUPPORT:SUPPORTED", GEOPM_DOMAIN_BOARD, 0) > 0;
         }
         catch (...) {
             result = false;
@@ -74,69 +72,47 @@ namespace geopm
     {
         for (size_t ctl_idx = 0; ctl_idx < m_num_clos_assoc_ctl_domain; ++ctl_idx) {
             m_clos_control_idx.push_back(m_platform_io.push_control(
-                "SST::COREPRIORITY:ASSOCIATION",
-                m_clos_assoc_ctl_domain_type,
-                static_cast<int>(ctl_idx)));
+                "SST::COREPRIORITY:ASSOCIATION", m_clos_assoc_ctl_domain_type, static_cast<int>(ctl_idx)));
         }
         // Increase the turbo ratio limits so we can take advantage of the
         // increased range offered by SST-TF
-        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_0",
-                                    GEOPM_DOMAIN_BOARD, 0, 255e8);
-        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_1",
-                                    GEOPM_DOMAIN_BOARD, 0, 255e8);
-        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_2",
-                                    GEOPM_DOMAIN_BOARD, 0, 255e8);
-        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_3",
-                                    GEOPM_DOMAIN_BOARD, 0, 255e8);
-        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_4",
-                                    GEOPM_DOMAIN_BOARD, 0, 255e8);
-        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_5",
-                                    GEOPM_DOMAIN_BOARD, 0, 255e8);
-        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_6",
-                                    GEOPM_DOMAIN_BOARD, 0, 255e8);
-        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_7",
-                                    GEOPM_DOMAIN_BOARD, 0, 255e8);
+        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_0", GEOPM_DOMAIN_BOARD, 0, 255e8);
+        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_1", GEOPM_DOMAIN_BOARD, 0, 255e8);
+        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_2", GEOPM_DOMAIN_BOARD, 0, 255e8);
+        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_3", GEOPM_DOMAIN_BOARD, 0, 255e8);
+        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_4", GEOPM_DOMAIN_BOARD, 0, 255e8);
+        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_5", GEOPM_DOMAIN_BOARD, 0, 255e8);
+        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_6", GEOPM_DOMAIN_BOARD, 0, 255e8);
+        m_platform_io.write_control("MSR::TURBO_RATIO_LIMIT:MAX_RATIO_LIMIT_7", GEOPM_DOMAIN_BOARD, 0, 255e8);
 
         // Start everything in the high-priority class of service.
-        m_platform_io.write_control("SST::COREPRIORITY:ASSOCIATION",
-                                    GEOPM_DOMAIN_BOARD, 0, HIGH_PRIORITY);
+        m_platform_io.write_control("SST::COREPRIORITY:ASSOCIATION", GEOPM_DOMAIN_BOARD, 0, HIGH_PRIORITY);
 
         enable_sst_turbo_prioritization();
 
         // Highest priority bucket. Start by distributing at the bottom of the
         // turbo range, but give high priority to distribute up to max.
-        m_platform_io.write_control("SST::COREPRIORITY:0:PRIORITY",
-                                    GEOPM_DOMAIN_BOARD, 0, 0.0);
-        m_platform_io.write_control("SST::COREPRIORITY:0:FREQUENCY_MIN",
-                                    GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
-        m_platform_io.write_control("SST::COREPRIORITY:0:FREQUENCY_MAX",
-                                    GEOPM_DOMAIN_BOARD, 0, m_frequency_max);
+        m_platform_io.write_control("SST::COREPRIORITY:0:PRIORITY", GEOPM_DOMAIN_BOARD, 0, 0.0);
+        m_platform_io.write_control("SST::COREPRIORITY:0:FREQUENCY_MIN", GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
+        m_platform_io.write_control("SST::COREPRIORITY:0:FREQUENCY_MAX", GEOPM_DOMAIN_BOARD, 0, m_frequency_max);
 
         // Next-highest bucket. Apply the same ranges, but with less priority.
-        m_platform_io.write_control("SST::COREPRIORITY:1:PRIORITY",
-                                    GEOPM_DOMAIN_BOARD, 0, 0.34);
-        m_platform_io.write_control("SST::COREPRIORITY:1:FREQUENCY_MIN",
-                                    GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
-        m_platform_io.write_control("SST::COREPRIORITY:1:FREQUENCY_MAX",
-                                    GEOPM_DOMAIN_BOARD, 0, m_frequency_max);
+        m_platform_io.write_control("SST::COREPRIORITY:1:PRIORITY", GEOPM_DOMAIN_BOARD, 0, 0.34);
+        m_platform_io.write_control("SST::COREPRIORITY:1:FREQUENCY_MIN", GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
+        m_platform_io.write_control("SST::COREPRIORITY:1:FREQUENCY_MAX", GEOPM_DOMAIN_BOARD, 0, m_frequency_max);
 
         // First low-priority bucket. Initially just give it the bottom of the
         // turbo range. Potentially go lower at run time.
-        m_platform_io.write_control("SST::COREPRIORITY:2:PRIORITY",
-                                    GEOPM_DOMAIN_BOARD, 0, 0.67);
-        m_platform_io.write_control("SST::COREPRIORITY:2:FREQUENCY_MIN",
-                                    GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
-        m_platform_io.write_control("SST::COREPRIORITY:2:FREQUENCY_MAX",
-                                    GEOPM_DOMAIN_BOARD, 0, (m_frequency_sticker + m_frequency_max) / 2);
+        m_platform_io.write_control("SST::COREPRIORITY:2:PRIORITY", GEOPM_DOMAIN_BOARD, 0, 0.67);
+        m_platform_io.write_control("SST::COREPRIORITY:2:FREQUENCY_MIN", GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
+        m_platform_io.write_control("SST::COREPRIORITY:2:FREQUENCY_MAX", GEOPM_DOMAIN_BOARD, 0,
+                                    (m_frequency_sticker + m_frequency_max) / 2);
 
         // Least prioritized bucket. Initially just give it the bottom of the
         // turbo range. Potentially go lower at run time.
-        m_platform_io.write_control("SST::COREPRIORITY:3:PRIORITY",
-                                    GEOPM_DOMAIN_BOARD, 0, 1.0);
-        m_platform_io.write_control("SST::COREPRIORITY:3:FREQUENCY_MIN",
-                                    GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
-        m_platform_io.write_control("SST::COREPRIORITY:3:FREQUENCY_MAX",
-                                    GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
+        m_platform_io.write_control("SST::COREPRIORITY:3:PRIORITY", GEOPM_DOMAIN_BOARD, 0, 1.0);
+        m_platform_io.write_control("SST::COREPRIORITY:3:FREQUENCY_MIN", GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
+        m_platform_io.write_control("SST::COREPRIORITY:3:FREQUENCY_MAX", GEOPM_DOMAIN_BOARD, 0, m_frequency_sticker);
     }
 
     int SSTClosGovernorImp::clos_domain_type(void) const
@@ -144,12 +120,11 @@ namespace geopm
         return m_clos_assoc_ctl_domain_type;
     }
 
-    void SSTClosGovernorImp::adjust_platform(
-        const std::vector<double> &clos_by_core)
+    void SSTClosGovernorImp::adjust_platform(const std::vector<double> &clos_by_core)
     {
         if (clos_by_core.size() != m_num_clos_assoc_ctl_domain) {
-            throw Exception("SSTClosGovernorImp::" + std::string(__func__) +
-                                "(): size of request vector does not match size of control domain.",
+            throw Exception("SSTClosGovernorImp::" + std::string(__func__)
+                                + "(): size of request vector does not match size of control domain.",
                             GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
 
@@ -170,13 +145,11 @@ namespace geopm
     void SSTClosGovernorImp::enable_sst_turbo_prioritization()
     {
         // Enable prioritized turbo by cores
-        m_platform_io.write_control("SST::COREPRIORITY_ENABLE:ENABLE",
-                                    GEOPM_DOMAIN_BOARD, 0, 1);
+        m_platform_io.write_control("SST::COREPRIORITY_ENABLE:ENABLE", GEOPM_DOMAIN_BOARD, 0, 1);
 
         // Enable the ability to extend the turbo range of high priority cores
         // by decreasing the turbo range of low priority cores
-        m_platform_io.write_control("SST::TURBO_ENABLE:ENABLE",
-                                    GEOPM_DOMAIN_BOARD, 0, 1);
+        m_platform_io.write_control("SST::TURBO_ENABLE:ENABLE", GEOPM_DOMAIN_BOARD, 0, 1);
 
         m_is_enabled = true;
     }
@@ -187,11 +160,9 @@ namespace geopm
 
         // Disable the ability to extend the turbo range of high priority cores
         // by decreasing the turbo range of low priority cores
-        m_platform_io.write_control("SST::TURBO_ENABLE:ENABLE",
-                                    GEOPM_DOMAIN_BOARD, 0, 0);
+        m_platform_io.write_control("SST::TURBO_ENABLE:ENABLE", GEOPM_DOMAIN_BOARD, 0, 0);
 
         // Disable prioritized turbo by cores
-        m_platform_io.write_control("SST::COREPRIORITY_ENABLE:ENABLE",
-                                    GEOPM_DOMAIN_BOARD, 0, 0);
+        m_platform_io.write_control("SST::COREPRIORITY_ENABLE:ENABLE", GEOPM_DOMAIN_BOARD, 0, 0);
     }
 }

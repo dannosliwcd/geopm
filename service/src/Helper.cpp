@@ -30,8 +30,7 @@ namespace geopm
     {
         std::ifstream input_file(path, std::ifstream::in);
         if (!input_file.is_open()) {
-            throw Exception("Helper::" + std::string(__func__) + "(): file \"" + path +
-                            "\" could not be opened",
+            throw Exception("Helper::" + std::string(__func__) + "(): file \"" + path + "\" could not be opened",
                             errno ? errno : GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         std::stringstream buffer;
@@ -53,18 +52,15 @@ namespace geopm
         auto value = std::stod(file_contents, &value_length);
         auto units_offset = file_contents.find_first_not_of(separators, value_length);
         auto units_end = file_contents.find_last_not_of(separators);
-        auto units_length = units_end == std::string::npos
-                                ? std::string::npos
-                                : units_end - units_offset + 1;
+        auto units_length = units_end == std::string::npos ? std::string::npos : units_end - units_offset + 1;
         bool units_exist = units_offset != std::string::npos;
         bool units_are_expected = !expected_units.empty();
 
-        if ((units_exist != units_are_expected) ||
-            (units_exist &&
-             (units_offset == value_length ||
-              file_contents.substr(units_offset, units_length) != expected_units))) {
-            throw Exception("Unexpected format in " + path, GEOPM_ERROR_RUNTIME,
-                            __FILE__, __LINE__);
+        if ((units_exist != units_are_expected)
+            || (units_exist
+                && (units_offset == value_length
+                    || file_contents.substr(units_offset, units_length) != expected_units))) {
+            throw Exception("Unexpected format in " + path, GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         return value;
     }
@@ -73,20 +69,18 @@ namespace geopm
     {
         std::ofstream output_file(path, std::ofstream::out);
         if (!output_file.is_open()) {
-            throw Exception("Helper::" + std::string(__func__) + "(): file \"" + path +
-                            "\" could not be opened for writing",
+            throw Exception("Helper::" + std::string(__func__) + "(): file \"" + path + "\" could not be opened for writing",
                             errno ? errno : GEOPM_ERROR_INVALID, __FILE__, __LINE__);
         }
         output_file.seekp(0, std::ios::beg);
         output_file.write(contents.c_str(), contents.size());
     }
 
-    std::vector<std::string> string_split(const std::string &str,
-                                          const std::string &delim)
+    std::vector<std::string> string_split(const std::string &str, const std::string &delim)
     {
         if (delim.empty()) {
-            throw Exception("Helper::" + std::string(__func__) + "(): invalid delimiter",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("Helper::" + std::string(__func__) + "(): invalid delimiter", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         std::vector<std::string> pieces;
         if (!str.empty()) {
@@ -103,8 +97,7 @@ namespace geopm
         return pieces;
     }
 
-    std::string string_join(const std::vector<std::string> &list,
-                            const std::string &delim)
+    std::string string_join(const std::vector<std::string> &list, const std::string &delim)
     {
         std::ostringstream result;
         if (!list.empty()) {
@@ -142,7 +135,8 @@ namespace geopm
         else if (path != GEOPM_DEFAULT_PLUGIN_PATH) {
             // Default plugin path may not be valid in some cases, e.g. when running unit tests
             // before installing
-            throw Exception("Helper::" + std::string(__func__) + "(): failed to open directory '" + path + "': " + strerror(errno),
+            throw Exception("Helper::" + std::string(__func__) + "(): failed to open directory '" + path
+                                + "': " + strerror(errno),
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
         return file_list;
@@ -203,10 +197,9 @@ namespace geopm
         return result;
     }
 
-
     std::function<std::string(double)> string_format_type_to_function(int format_type)
     {
-        static const std::map<int, std::function<std::string(double)> > function_map {
+        static const std::map<int, std::function<std::string(double)> > function_map{
             {STRING_FORMAT_DOUBLE, string_format_double},
             {STRING_FORMAT_INTEGER, string_format_integer},
             {STRING_FORMAT_HEX, string_format_hex},
@@ -231,8 +224,8 @@ namespace geopm
         auto f_ref = *(format_function.target<decltype(&string_format_double)>());
         auto result = function_map.find(f_ref);
         if (result == function_map.end()) {
-            throw Exception("string_format_function_to_type(): unknown format function.",
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("string_format_function_to_type(): unknown format function.", GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         return result->second;
     }
@@ -247,7 +240,8 @@ namespace geopm
         return env_string;
     }
 
-    unsigned int pid_to_uid(const int pid) {
+    unsigned int pid_to_uid(const int pid)
+    {
         int err = 0;
         std::string proc_path = "/proc/" + std::to_string(pid);
         struct stat stat_struct;
@@ -258,7 +252,8 @@ namespace geopm
         return stat_struct.st_uid;
     };
 
-    unsigned int pid_to_gid(const int pid) {
+    unsigned int pid_to_gid(const int pid)
+    {
         int err = 0;
         std::string proc_path = "/proc/" + std::to_string(pid);
         struct stat stat_struct;

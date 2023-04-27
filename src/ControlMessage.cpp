@@ -37,14 +37,12 @@ namespace geopm
                     throw Exception("ControlMessageImp::wait(): Abort sent through control message",
                                     GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
                 }
-                is_init = (m_ctl_msg.app_status == 0 ||
-                           m_ctl_msg.app_status == M_STATUS_MAP_BEGIN);
-            } while (!is_init && geopm_time_since(&start) < M_WAIT_SEC);
+                is_init = (m_ctl_msg.app_status == 0 || m_ctl_msg.app_status == M_STATUS_MAP_BEGIN);
+            }
+            while (!is_init && geopm_time_since(&start) < M_WAIT_SEC);
             if (!is_init) {
-                throw Exception("ControlMessageImp::wait(): " + hostname() +
-                                " : is_ctl=" + std::to_string(m_is_ctl) +
-                                " : is_writer=" + std::to_string(m_is_writer) +
-                                " : Timed out waiting for startup",
+                throw Exception("ControlMessageImp::wait(): " + hostname() + " : is_ctl=" + std::to_string(m_is_ctl)
+                                    + " : is_writer=" + std::to_string(m_is_writer) + " : Timed out waiting for startup",
                                 GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
             }
         }
@@ -74,10 +72,9 @@ namespace geopm
             }
         }
         if (this_status() != m_last_status) {
-            throw Exception("ControlMessageImp::wait(): " + hostname() +
-                            " : is_ctl=" + std::to_string(m_is_ctl) +
-                            " : is_writer=" + std::to_string(m_is_writer) +
-                            " : Timed out waiting for status " + std::to_string(m_last_status),
+            throw Exception("ControlMessageImp::wait(): " + hostname() + " : is_ctl=" + std::to_string(m_is_ctl)
+                                + " : is_writer=" + std::to_string(m_is_writer)
+                                + " : Timed out waiting for status " + std::to_string(m_last_status),
                             GEOPM_ERROR_RUNTIME, __FILE__, __LINE__);
         }
     }
@@ -131,14 +128,12 @@ namespace geopm
     {
         if (m_is_ctl) {
             while (m_ctl_msg.app_status != M_STATUS_NAME_LOOP_BEGIN) {
-
             }
             m_ctl_msg.ctl_status = M_STATUS_NAME_LOOP_BEGIN;
         }
         else {
             m_ctl_msg.app_status = M_STATUS_NAME_LOOP_BEGIN;
             while (m_ctl_msg.ctl_status != M_STATUS_NAME_LOOP_BEGIN) {
-
             }
         }
         m_last_status = M_STATUS_NAME_LOOP_BEGIN;

@@ -23,8 +23,8 @@ namespace geopm
             result = geopm::make_unique<EditDistEpochRecordFilter>(name);
         }
         else {
-            throw Exception("RecordFilter::make_unique(): Unable to parse name: " + name,
-                            GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+            throw Exception("RecordFilter::make_unique(): Unable to parse name: " + name, GEOPM_ERROR_INVALID,
+                            __FILE__, __LINE__);
         }
         return result;
     }

@@ -60,30 +60,24 @@ namespace geopm
     std::map<std::string, std::string> Environment::parse_environment_file(const std::string &env_file_path)
     {
         std::map<std::string, std::string> ret;
-        EnvironmentImp::parse_environment_file(env_file_path , EnvironmentImp::get_all_vars(), {}, ret);
+        EnvironmentImp::parse_environment_file(env_file_path, EnvironmentImp::get_all_vars(), {}, ret);
         return ret;
     }
 
     EnvironmentImp::EnvironmentImp()
         : EnvironmentImp(DEFAULT_CONFIG_PATH, OVERRIDE_CONFIG_PATH, nullptr)
     {
-
     }
 
     EnvironmentImp::EnvironmentImp(const std::string &default_config_path,
-                                   const std::string &override_config_path,
-                                   const PlatformIO *platform_io)
+                                   const std::string &override_config_path, const PlatformIO *platform_io)
         : m_all_names(get_all_vars())
-        , m_runtime_names({"GEOPM_PROFILE",
-                           "GEOPM_REPORT",
-                           "GEOPM_TRACE",
-                           "GEOPM_TRACE_PROFILE",
-                           "GEOPM_CTL"})
-        , m_name_value_map ({{"GEOPM_COMM" ,"MPIComm"},
-                             {"GEOPM_AGENT", "monitor"},
-                             {"GEOPM_MAX_FAN_OUT", "16"},
-                             {"GEOPM_TIMEOUT", "30"},
-                             {"GEOPM_DEBUG_ATTACH", "-1"}})
+        , m_runtime_names({"GEOPM_PROFILE", "GEOPM_REPORT", "GEOPM_TRACE", "GEOPM_TRACE_PROFILE", "GEOPM_CTL"})
+        , m_name_value_map({{"GEOPM_COMM", "MPIComm"},
+                            {"GEOPM_AGENT", "monitor"},
+                            {"GEOPM_MAX_FAN_OUT", "16"},
+                            {"GEOPM_TIMEOUT", "30"},
+                            {"GEOPM_DEBUG_ATTACH", "-1"}})
         , m_default_config_path(default_config_path)
         , m_override_config_path(override_config_path)
         , m_platform_io(platform_io)
@@ -134,7 +128,7 @@ namespace geopm
     {
         for (const auto &env_var : m_all_names) {
             std::string value;
-            if(get_env(env_var, value)) {
+            if (get_env(env_var, value)) {
                 m_name_value_map[env_var] = value;
                 m_user_defined_names.insert(env_var);
             }
@@ -159,29 +153,29 @@ namespace geopm
             std::string err;
             Json json_root = Json::parse(json_str, err);
             if (!err.empty() || !json_root.is_object()) {
-                throw Exception("EnvironmentImp::" + std::string(__func__) +
-                                "(): detected a malformed json config file: " + err,
+                throw Exception("EnvironmentImp::" + std::string(__func__)
+                                    + "(): detected a malformed json config file: " + err,
                                 GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
             }
             for (const auto &json_obj : json_root.object_items()) {
                 std::string var_name = json_obj.first;
                 auto var_it = all_names.find(var_name);
                 if (var_it == all_names.end()) {
-                    throw Exception("EnvironmentImp::" + std::string(__func__) +
-                                    ": environment key " + var_name + " is unexpected",
+                    throw Exception("EnvironmentImp::" + std::string(__func__) + ": environment key "
+                                        + var_name + " is unexpected",
                                     GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
                 }
                 else if (json_obj.second.type() != Json::STRING) {
-                    throw Exception("EnvironmentImp::" + std::string(__func__) +
-                                    ": value for " + var_name + " expected to be a string",
+                    throw Exception("EnvironmentImp::" + std::string(__func__) + ": value for " + var_name
+                                        + " expected to be a string",
                                     GEOPM_ERROR_FILE_PARSE, __FILE__, __LINE__);
                 }
                 auto override_value = json_obj.second.string_value();
                 if (user_defined_names.find(var_name) != user_defined_names.end()) {
                     auto user_value = name_value_map[var_name];
                     std::cerr << "Warning: <geopm> User provided environment variable \"" << var_name
-                              << "\" with value <"  << user_value << ">"
-                              << " has been overridden with value <"  << override_value << ">" << std::endl;
+                              << "\" with value <" << user_value << ">"
+                              << " has been overridden with value <" << override_value << ">" << std::endl;
                 }
                 name_value_map[var_name] = override_value;
             }
@@ -252,15 +246,12 @@ namespace geopm
         }
         else if (!ret.empty()) {
             // Sanitize the input: No carriage returns nor double quotes
-            ret.erase(std::remove_if(ret.begin(), ret.end(),
-                                     [](char &c) {
-                                         return ( c == '\n' || c == '"');
-                                     }),
+            ret.erase(std::remove_if(ret.begin(), ret.end(), [](char &c) { return (c == '\n' || c == '"'); }),
                       ret.end());
         }
         if (!env_profile.empty() && ret != env_profile) {
-            std::cerr << "Warning: <geopm> The GEOPM_PROFILE contains invalid characters: \""
-                      << env_profile << "\" converted to \"" << ret << "\n";
+            std::cerr << "Warning: <geopm> The GEOPM_PROFILE contains invalid characters: \"" << env_profile
+                      << "\" converted to \"" << ret << "\n";
         }
         ret = "\"" + ret + "\""; // Add quotes for later YAML parsing
         return ret;
@@ -295,15 +286,12 @@ namespace geopm
         for (const auto &signal : individual_signals) {
             auto signal_domain = geopm::string_split(signal, "@");
             if (signals_avail.find(signal_domain[0]) == signals_avail.end()) {
-                throw Exception("Invalid signal : " + signal_domain[0],
-                                GEOPM_ERROR_INVALID, __FILE__, __LINE__);
+                throw Exception("Invalid signal : " + signal_domain[0], GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
 
             if (signal_domain.size() == 2) {
                 result_data_structure.push_back(std::make_pair(
-                    signal_domain[0],
-                    geopm::PlatformTopo::domain_name_to_type(signal_domain[1])
-                ));
+                    signal_domain[0], geopm::PlatformTopo::domain_name_to_type(signal_domain[1])));
             }
             else if (signal_domain.size() == 1) {
                 result_data_structure.push_back(std::make_pair(signal_domain[0], GEOPM_DOMAIN_BOARD));
@@ -335,8 +323,8 @@ namespace geopm
                 ret = Environment::M_CTL_PTHREAD;
             }
             else {
-                throw Exception("EnvironmentImp::EnvironmentImp(): " + pmpi_ctl_str +
-                                " is not a valid value for GEOPM_CTL see geopm(7).",
+                throw Exception("EnvironmentImp::EnvironmentImp(): " + pmpi_ctl_str
+                                    + " is not a valid value for GEOPM_CTL see geopm(7).",
                                 GEOPM_ERROR_INVALID, __FILE__, __LINE__);
             }
         }
@@ -372,7 +360,7 @@ namespace geopm
     {
 
         return std::any_of(m_runtime_names.begin(), m_runtime_names.end(),
-                           [this](std::string var) {return (is_set(var));});
+                           [this](std::string var) { return (is_set(var)); });
     }
 
     int EnvironmentImp::timeout(void) const
@@ -403,7 +391,6 @@ namespace geopm
                 result = true;
             }
             catch (const std::exception &) {
-
             }
         }
         return result;

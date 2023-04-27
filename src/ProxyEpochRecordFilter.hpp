@@ -54,9 +54,7 @@ namespace geopm
             ///        region that are to be ignored at application
             ///        startup.  These calls are expected prior to
             ///        entering the outer loop of the application.
-            ProxyEpochRecordFilter(uint64_t region_hash,
-                                   int calls_per_epoch,
-                                   int startup_count);
+            ProxyEpochRecordFilter(uint64_t region_hash, int calls_per_epoch, int startup_count);
             ProxyEpochRecordFilter(const std::string &filter_name);
             /// @brief Default destructor.
             virtual ~ProxyEpochRecordFilter() = default;
@@ -95,9 +93,7 @@ namespace geopm
             /// @param [out] startup_count Number of entries into the
             ///        proxy-region expected prior to the beginning of
             ///        the outer loop of the application.
-            static void parse_name(const std::string &name,
-                                   uint64_t &region_hash,
-                                   int &calls_per_epoch,
+            static void parse_name(const std::string &name, uint64_t &region_hash, int &calls_per_epoch,
                                    int &startup_count);
 
         private:

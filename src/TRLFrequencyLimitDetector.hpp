@@ -18,14 +18,10 @@ namespace geopm
     class TRLFrequencyLimitDetector : public FrequencyLimitDetector
     {
         public:
-            TRLFrequencyLimitDetector(
-                PlatformIO &platform_io,
-                const PlatformTopo &);
+            TRLFrequencyLimitDetector(PlatformIO &platform_io, const PlatformTopo &);
 
-            void update_max_frequency_estimates(
-                const std::vector<double> &observed_core_frequencies) override;
-            std::vector<std::pair<unsigned int, double> > get_core_frequency_limits(
-                unsigned int core_idx) const override;
+            void update_max_frequency_estimates(const std::vector<double> &observed_core_frequencies) override;
+            std::vector<std::pair<unsigned int, double> > get_core_frequency_limits(unsigned int core_idx) const override;
             double get_core_low_priority_frequency(unsigned int core_idx) const override;
 
         private:

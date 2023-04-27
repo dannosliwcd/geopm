@@ -54,15 +54,13 @@ int main(int argc, char **argv)
                         "Copyright (c) 2015 - 2023, Intel Corporation. All rights reserved.\n"
                         "\n";
 
-    static struct option long_options[] = {
-        {"domain", no_argument, NULL, 'd'},
-        {"info", no_argument, NULL, 'i'},
-        {"info-all", no_argument, NULL, 'I'},
-        {"cache", no_argument, NULL, 'c'},
-        {"help", no_argument, NULL, 'h'},
-        {"version", no_argument, NULL, 'v'},
-        {NULL, 0, NULL, 0}
-    };
+    static struct option long_options[] = {{"domain", no_argument, NULL, 'd'},
+                                           {"info", no_argument, NULL, 'i'},
+                                           {"info-all", no_argument, NULL, 'I'},
+                                           {"cache", no_argument, NULL, 'c'},
+                                           {"help", no_argument, NULL, 'h'},
+                                           {"version", no_argument, NULL, 'v'},
+                                           {NULL, 0, NULL, 0}};
 
     int opt;
     int err = 0;
@@ -101,7 +99,6 @@ int main(int argc, char **argv)
         }
     }
 
-
     if (is_domain && is_info) {
         std::cerr << "Error: info about domain not implemented." << std::endl;
         return EINVAL;
@@ -117,8 +114,7 @@ int main(int argc, char **argv)
     if (is_domain) {
         // print all domains
         for (int dom = GEOPM_DOMAIN_BOARD; dom < GEOPM_NUM_DOMAIN; ++dom) {
-            std::cout << std::setw(28) << std::left
-                      << PlatformTopo::domain_type_to_name(dom)
+            std::cout << std::setw(28) << std::left << PlatformTopo::domain_type_to_name(dom)
                       << platform_topo.num_domain(dom) << std::endl;
         }
     }
@@ -143,8 +139,7 @@ int main(int argc, char **argv)
         // print all controls with description
         auto controls = platform_io.control_names();
         for (const auto &con : controls) {
-            std::cout << con << ":" << std::endl
-                      << platform_io.control_description(con) << std::endl;
+            std::cout << con << ":" << std::endl << platform_io.control_description(con) << std::endl;
         }
     }
     else {
@@ -163,7 +158,7 @@ int main(int argc, char **argv)
             try {
                 domain_idx = std::stoi(pos_args[2]);
             }
-            catch (const std::invalid_argument&) {
+            catch (const std::invalid_argument &) {
                 std::cerr << "Error: invalid domain index.\n" << std::endl;
                 err = EINVAL;
             }
@@ -171,7 +166,7 @@ int main(int argc, char **argv)
                 try {
                     write_value = std::stod(pos_args[3]);
                 }
-                catch (const std::invalid_argument&) {
+                catch (const std::invalid_argument &) {
                     std::cerr << "Error: invalid write value.\n" << std::endl;
                     err = EINVAL;
                 }
@@ -188,7 +183,8 @@ int main(int argc, char **argv)
             }
         }
         else {
-            std::cerr << "Error: domain type, domain index, and value are required to write control.\n" << std::endl;
+            std::cerr << "Error: domain type, domain index, and value are required to write control.\n"
+                      << std::endl;
             err = EINVAL;
         }
     }

@@ -66,14 +66,15 @@ namespace geopm
                                   const std::vector<std::pair<std::string, std::string> > &agent_report_header,
                                   const std::vector<std::pair<std::string, std::string> > &agent_host_report,
                                   const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report,
-                                  const ApplicationIO &application_io,
-                                  std::shared_ptr<Comm> comm,
-                                  const TreeComm &tree_comm) = 0;
-            virtual std::string generate(const std::string &profile_name,
-                                         const std::string &agent_name,
-                                         const std::vector<std::pair<std::string, std::string> > &agent_report_header,
-                                         const std::vector<std::pair<std::string, std::string> > &agent_host_report,
-                                         const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report) = 0;
+                                  const ApplicationIO &application_io, std::shared_ptr<Comm> comm,
+                                  const TreeComm &tree_comm)
+                = 0;
+            virtual std::string
+                generate(const std::string &profile_name, const std::string &agent_name,
+                         const std::vector<std::pair<std::string, std::string> > &agent_report_header,
+                         const std::vector<std::pair<std::string, std::string> > &agent_host_report,
+                         const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report)
+                = 0;
     };
 
     class PlatformIO;
@@ -84,21 +85,13 @@ namespace geopm
     class ReporterImp : public Reporter
     {
         public:
-            ReporterImp(const std::string &start_time,
-                        const std::string &report_name,
-                        PlatformIO &platform_io,
-                        const PlatformTopo &platform_topo,
-                        int rank);
-            ReporterImp(const std::string &start_time,
-                        const std::string &report_name,
-                        PlatformIO &platform_io,
-                        const PlatformTopo &platform_topo,
-                        int rank,
-                        std::shared_ptr<SampleAggregator> sample_agg,
+            ReporterImp(const std::string &start_time, const std::string &report_name,
+                        PlatformIO &platform_io, const PlatformTopo &platform_topo, int rank);
+            ReporterImp(const std::string &start_time, const std::string &report_name, PlatformIO &platform_io,
+                        const PlatformTopo &platform_topo, int rank, std::shared_ptr<SampleAggregator> sample_agg,
                         std::shared_ptr<ProcessRegionAggregator> proc_agg,
                         const std::vector<std::pair<std::string, int> > &env_signal,
-                        const std::string &policy_path,
-                        bool do_endpoint);
+                        const std::string &policy_path, bool do_endpoint);
             virtual ~ReporterImp() = default;
             void init(void) override;
             void update(void) override;
@@ -106,11 +99,9 @@ namespace geopm
                           const std::vector<std::pair<std::string, std::string> > &agent_report_header,
                           const std::vector<std::pair<std::string, std::string> > &agent_host_report,
                           const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report,
-                          const ApplicationIO &application_io,
-                          std::shared_ptr<Comm> comm,
+                          const ApplicationIO &application_io, std::shared_ptr<Comm> comm,
                           const TreeComm &tree_comm) override;
-            std::string generate(const std::string &profile_name,
-                                 const std::string &agent_name,
+            std::string generate(const std::string &profile_name, const std::string &agent_name,
                                  const std::vector<std::pair<std::string, std::string> > &agent_report_header,
                                  const std::vector<std::pair<std::string, std::string> > &agent_host_report,
                                  const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report) override;
@@ -144,19 +135,18 @@ namespace geopm
             /// @brief Returns the memoy high water mark for the
             ///        controller process.
             double get_max_memory(void);
-            static void yaml_write(std::ostream &os, int indent_level,
-                                   const std::string &val);
+            static void yaml_write(std::ostream &os, int indent_level, const std::string &val);
             static void yaml_write(std::ostream &os, int indent_level,
                                    const std::vector<std::pair<std::string, std::string> > &data);
             static void yaml_write(std::ostream &os, int indent_level,
                                    const std::vector<std::pair<std::string, double> > &data);
 
-            std::string create_header(const std::string &agent_name,
-                                      const std::string &profile_name,
+            std::string create_header(const std::string &agent_name, const std::string &profile_name,
                                       const std::vector<std::pair<std::string, std::string> > &agent_report_header);
-            std::string create_report(const std::set<std::string> &region_name_set, double max_memory, double comm_overhead,
-                                      const std::vector<std::pair<std::string, std::string> > &agent_host_report,
-                                      const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report);
+            std::string create_report(
+                const std::set<std::string> &region_name_set, double max_memory, double comm_overhead,
+                const std::vector<std::pair<std::string, std::string> > &agent_host_report,
+                const std::map<uint64_t, std::vector<std::pair<std::string, std::string> > > &agent_region_report);
             std::string gather_report(const std::string &host_report, std::shared_ptr<Comm> comm);
 
             std::string m_start_time;
@@ -177,11 +167,10 @@ namespace geopm
 
             // Fields for each section in order.  function can be
             // passthrough, or combo of other fields
-            struct m_sync_field_s
-            {
-                std::string field_label;
-                std::vector<std::string> supporting_signals;
-                std::function<double(uint64_t, const std::vector<std::string>&)> func;
+            struct m_sync_field_s {
+                    std::string field_label;
+                    std::vector<std::string> supporting_signals;
+                    std::function<double(uint64_t, const std::vector<std::string> &)> func;
             };
             // All default fields supported by sample aggregator
             std::vector<m_sync_field_s> m_sync_fields;

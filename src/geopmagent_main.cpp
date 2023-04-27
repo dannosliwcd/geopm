@@ -30,8 +30,7 @@ int main(int argc, char **argv)
 {
     geopm::OptionParser parser{"geopmagent", std::cout, std::cerr, ""};
     parser.add_option("agent", 'a', "agent", "", "specify the name of the agent");
-    parser.add_option("policy", 'p', "policy", "",
-                      "values to be set for each policy in a comma-separated list");
+    parser.add_option("policy", 'p', "policy", "", "values to be set for each policy in a comma-separated list");
     parser.add_example_usage("");
     parser.add_example_usage("[-a AGENT] [-p POLICY0,POLICY1,...]");
     bool early_exit = parser.parse(argc, argv);
@@ -70,15 +69,14 @@ int main(int argc, char **argv)
             policy_vals_ptr = policy_vals_str;
         }
     }
-    catch (...)
-    {
+    catch (...) {
         err = geopm::exception_handler(std::current_exception(), false);
     }
 
     if (!err && argc == 1) {
         err = geopm_agent_num_avail(&output_num);
         if (!err) {
-            for(int i = 0; !err && i < output_num; ++i) {
+            for (int i = 0; !err && i < output_num; ++i) {
                 err = geopm_agent_name(i, sizeof(output_str), output_str);
                 if (!err) {
                     printf("%s\n", output_str);
@@ -158,13 +156,15 @@ int main(int argc, char **argv)
                     policy_vals[policy_count] = strtod(tok, &endptr);
                     if (tok == endptr) {
                         std::string policy_name = geopm::Agent::policy_names(agent_ptr).at(policy_count);
-                        if (policy_name.find("HASH") != std::string::npos ||
-                            policy_name.find("hash") != std::string::npos) {
+                        if (policy_name.find("HASH") != std::string::npos
+                            || policy_name.find("hash") != std::string::npos) {
                             policy_vals[policy_count] = geopm_crc32_str(tok);
                         }
                         else {
-                            fprintf(stderr, "Error: %s is not a valid floating-point number; "
-                                            "use \"NAN\" to indicate default.\n", tok);
+                            fprintf(stderr,
+                                    "Error: %s is not a valid floating-point number; "
+                                    "use \"NAN\" to indicate default.\n",
+                                    tok);
                             err = EINVAL;
                         }
                     }
@@ -179,15 +179,13 @@ int main(int argc, char **argv)
                     err = EINVAL;
                 }
             }
-            else if (strncmp(policy_vals_ptr, "none", 4) != 0 &&
-                     strncmp(policy_vals_ptr, "None", 4) != 0) {
+            else if (strncmp(policy_vals_ptr, "none", 4) != 0 && strncmp(policy_vals_ptr, "None", 4) != 0) {
                 fprintf(stderr, "Error: Must specify \"None\" for the parameter option if agent takes no parameters.\n");
                 err = EINVAL;
             }
         }
         if (!err) {
-            err = geopm_agent_policy_json_partial(agent_ptr, policy_count, policy_vals,
-                                                  sizeof(output_str), output_str);
+            err = geopm_agent_policy_json_partial(agent_ptr, policy_count, policy_vals, sizeof(output_str), output_str);
             printf("%s\n", output_str);
         }
     }
