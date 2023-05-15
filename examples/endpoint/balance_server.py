@@ -40,6 +40,11 @@ parser.add_argument('--replay-start-time', action='store_true',
 parser.add_argument('--reserve', type=float,
                     help='Maximum power reserve offered by this cluster, above '
                          'and below the average power target')
+parser.add_argument('--use-pre-characterized', action='store_true')
+parser.add_argument('--ignore-run-time-models', action='store_true')
+parser.add_argument('--confuse-jobs', nargs='*', default=[],
+                    help='Confuse one job for another. E.g., to use the ep.D.x model '
+                         'for bt.D.x, use --confuse-jobs bt.D.x=ep.D.x')
 parser.add_argument('--app-info',
                     default='app_properties.yaml',
                     help='Path to application characterization data')
@@ -61,18 +66,24 @@ JOB_SIZES_BY_NAME = {
 
 from collections import namedtuple
 Coef = namedtuple('coef', ['A','C'])
-USE_PRE_CHARACTERIZED = True
+USE_PRE_CHARACTERIZED = args.use_pre_characterized
+IGNORE_RUN_TIME_MODELS = args.ignore_run_time_models
 MODEL_COEFFICIENTS_BY_PROFILE_TAIL = {
     name: Coef(data['model']['A'], data['model']['C'])
     for name, data in app_info['applications'].items()
 }
 
 # TODO for testing small case
-MODEL_COEFFICIENTS_BY_PROFILE_TAIL['bt.C.x'] = Coef(5.47820496e-05, 1.4833673118803585)
-MODEL_COEFFICIENTS_BY_PROFILE_TAIL['sp.C.x'] = Coef(1.96963115e-05, 2.153331623883713)
+# MODEL_COEFFICIENTS_BY_PROFILE_TAIL['bt.C.x'] = Coef(5.47820496e-05, 1.4833673118803585)
+# MODEL_COEFFICIENTS_BY_PROFILE_TAIL['sp.C.x'] = Coef(1.96963115e-05, 2.153331623883713)
 
-JOB_WEIGHTS = np.clip([int(w) for w in args.job_weights.split(',') if len(w)>0], 0, None)
-JOB_SIZES = np.array([JOB_SIZES_BY_NAME[name] for name in args.job_names])
+for confusion in args.confuse_jobs:
+    actual_job, modeled_job = confusion.split('=', 1)
+    MODEL_COEFFICIENTS_BY_PROFILE_TAIL[actual_job] = MODEL_COEFFICIENTS_BY_PROFILE_TAIL[modeled_job]
+
+JOB_WEIGHTS = np.clip([float(w) for w in args.job_weights.split(',') if len(w)>0], 0, None)
+JOB_NAMES = args.job_names if args.job_names is not None else []
+JOB_SIZES = np.array([JOB_SIZES_BY_NAME[name] for name in JOB_NAMES])
 pending_new_hosts = 0
 
 GEOPM_ENDPOINT_SOCKET = 63094  # should be configurable
@@ -94,6 +105,7 @@ def get_total_node_count():
 
 EXPERIMENT_TOTAL_NODES = get_total_node_count()
 IDLE_WATTS_PER_NODE = 38
+print(f'Testing with {EXPERIMENT_TOTAL_NODES} nodes')
 
 class EndpointMetrics:
     def __init__(self, host_count, initial_power_limit, profile):
@@ -105,7 +117,7 @@ class EndpointMetrics:
         self.epoch_times = list() # TODO: should probably be a size-bounded collection
         self.progress_caps = list() # TODO: should probably be a size-bounded collection
         self.progress_times = list() # TODO: should probably be a size-bounded collection
-        self.last_recorded_epoch = float('nan')
+        self.last_recorded_epoch = float(1) # skip the first epoch (which includes pre-epoch time)
         self.last_recorded_epoch_time = time.time()
         self.last_recorded_progress = float('nan')
         self.last_recorded_progress_time = time.time()
@@ -124,8 +136,9 @@ class EndpointMetrics:
 
         #return np.exp(self.model.intercept_ + self.model.coef_[0] * power_cap + self.model.coef_[1] * power_cap**2)
         #poly = PolynomialFeatures(2, include_bias=False)
-        if USE_PRE_CHARACTERIZED:
-            A, C = MODEL_COEFFICIENTS_BY_PROFILE_TAIL[self.profile.rsplit('/', 1)[-1].rsplit('"',1)[0]]
+        if USE_PRE_CHARACTERIZED and (self.model is None or IGNORE_RUN_TIME_MODELS):
+            # A, C = MODEL_COEFFICIENTS_BY_PROFILE_TAIL[self.profile.rsplit('/', 1)[-1].rsplit('"',1)[0]]
+            A, C = MODEL_COEFFICIENTS_BY_PROFILE_TAIL[self.profile.rsplit('=', 1)[-1].strip('"\n')]
             return A * (POWER_MAX - power_cap)**2 + C
         poly = FunctionTransformer(lambda x: (POWER_MAX-x)**2)
         times = self.model.predict(poly.fit_transform(np.reshape([[power_cap]], (-1, 1))))
@@ -136,12 +149,15 @@ class EndpointMetrics:
         #A = self.model.estimator_.coef_[1]
         #B = self.model.estimator_.coef_[0]
         #C = self.model.estimator_.intercept_
-        A = self.model.coef_[0]
-        #B = self.model.coef_[0]
-        B = 0
-        C = self.model.intercept_
-        if USE_PRE_CHARACTERIZED:
-            A, C = MODEL_COEFFICIENTS_BY_PROFILE_TAIL[self.profile.rsplit('/', 1)[-1].rsplit('"',1)[0]]
+        if USE_PRE_CHARACTERIZED and (self.model is None or IGNORE_RUN_TIME_MODELS):
+            # A, C = MODEL_COEFFICIENTS_BY_PROFILE_TAIL[self.profile.rsplit('/', 1)[-1].rsplit('"',1)[0]]
+            A, C = MODEL_COEFFICIENTS_BY_PROFILE_TAIL[self.profile.rsplit('=', 1)[-1].strip('"\n')]
+            B = 0
+        else:
+            A = self.model.coef_[0]
+            #B = self.model.coef_[0]
+            B = 0
+            C = self.model.intercept_
 
         #if abs(A) <= 1e-5 and abs(B) < 0.001:
         if A == 0:
@@ -154,7 +170,7 @@ class EndpointMetrics:
     def predict_power_at_slowdown(self, slowdown):
         if slowdown < 1:
             return POWER_MAX
-        if self.model is None:
+        if self.model is None and not USE_PRE_CHARACTERIZED:
             print('no model')
             return max(POWER_MIN, min(POWER_MAX, (POWER_MAX/slowdown + POWER_MIN) / 2)) # or take mean of the rest of the job types
         else:
@@ -176,11 +192,11 @@ class EndpointMetrics:
             # a constrained optimizer over predict_time().
             if predicted_power < POWER_MIN:
                 return POWER_MIN
-            A = self.model.coef_[0]
-            #B = self.model.coef_[0]
-            B = 0
-            C = self.model.intercept_
-            #print(f'Predicted power(slowdown={slowdown}, time_power_max={time_power_max}) = {predicted_power}, A={A}, B={B}, C={C} ({self.profile})', file=sys.stderr)
+            # A = self.model.coef_[0]
+            # B = self.model.coef_[0]
+            # B = 0
+            # C = self.model.intercept_
+            # print(f'Predicted power(slowdown={slowdown}, time_power_max={time_power_max}) = {predicted_power}, A={A}, B={B}, C={C} ({self.profile})', file=sys.stderr)
             return predicted_power
 
 
@@ -191,7 +207,6 @@ pre_balance_barrier = asyncio.Semaphore(0)
 barrier_entry_lock = asyncio.Lock()
 
 time_of_last_power_target = time.time()
-last_average_host_power_target = POWER_MAX
 
 # Test P&R that cover the entire design-power range by default. Else, use
 # what the args say to use.
@@ -204,15 +219,17 @@ if args.reserve is not None:
 print(f'Testing with P={P} and R={R}')
 power_delta_sign = -1
 
+last_average_host_power_target = P / EXPERIMENT_TOTAL_NODES
+
 power_targets = None
 print('WARNING: disabled power traces... should probably just make it an argparse option')
 time.sleep(0.25)
-#try:
-#    with open('power_targets.csv') as f:
-#        power_targets = [float(line.strip()) for line in f if line]
-#except Exception as e:
-#    print('Unable to load power trace:', e)
-#    pass
+try:
+    with open('power_targets.csv') as f:
+        power_targets = [float(line.strip()) for line in f if line]
+except Exception as e:
+    print('Unable to load power trace:', e)
+    pass
 
 job_queue_trace = None
 if args.replay_job_trace is not None:
@@ -236,14 +253,17 @@ def get_cluster_power_target():
     global time_of_last_power_target
     global current_power_trace_index
     now = time.time()
+    mean_p_per_node = P / EXPERIMENT_TOTAL_NODES
+    r_per_node = R / EXPERIMENT_TOTAL_NODES
     if now - time_of_last_power_target > 1.0:
         time_of_last_power_target = now
         if power_targets is None:
-            if last_average_host_power_target >= POWER_MAX:
+            power_step = 10 if r_per_node > 0 else 0
+            if last_average_host_power_target >= mean_p_per_node + r_per_node:
                 power_delta_sign = -1
-            if last_average_host_power_target <= POWER_MIN:
+            if last_average_host_power_target <= mean_p_per_node - r_per_node:
                 power_delta_sign = 1
-            last_average_host_power_target += 10 * power_delta_sign
+            last_average_host_power_target += power_step * power_delta_sign
         else:
             current_power_trace_index = (int((datetime.now() - start_time).total_seconds())
                                          // APPLY_TRACE_CAP_EVERY_N_SECONDS) * APPLY_TRACE_CAP_EVERY_N_SECONDS
@@ -283,10 +303,14 @@ def get_ready_jobs(ready_hosts):
             ready_jobs = job_queue_trace.loc[is_ready]
             ready_jobs_by_type = ready_jobs.groupby('jobTypeID').size()
             waiting_job_types = ready_jobs_by_type.index[ready_jobs_by_type > 0]
+            if len(waiting_job_types) == 0:
+                return []
+            non_waiting_job_types = ready_jobs_by_type.index[ready_jobs_by_type == 0]
 
             # Ensure that sum(weights) == 1 for weights of jobs that are waiting to run
             total_usable_weight = JOB_WEIGHTS[waiting_job_types.values].sum()
             scheduler_weights = JOB_WEIGHTS / total_usable_weight
+            scheduler_weights[non_waiting_job_types] = 0
 
             # Allocate hosts to job-type queues by their weights. We only do
             # exclusive host allocations, so round to a whole number.
@@ -295,15 +319,19 @@ def get_ready_jobs(ready_hosts):
             # If any ready hosts aren't allocated to a queue, shuffle them around
             # If too many are allocated in total, randomly steal the deficit
             surplus_hosts = ready_hosts - host_counts_by_queue.sum()
-            surplus_host_distribution = np.random.randint(len(host_counts_by_queue), size=abs(surplus_hosts))
-            host_counts_by_queue += surplus_hosts / abs(surplus_hosts) * surplus_host_distribution
+            try:
+                surplus_host_assignees = np.random.randint(len(host_counts_by_queue), size=int(abs(surplus_hosts)))
+            except:
+                import pdb; pdb.set_trace()
+            host_counts_by_queue[surplus_host_assignees] += surplus_hosts // len(surplus_host_assignees)
 
-            job_launches_by_queue = host_counts_by_queue / JOB_SIZES
+            job_launches_by_queue = host_counts_by_queue // JOB_SIZES
             for job_type, job_launch_count in enumerate(job_launches_by_queue):
                 launch_candidates = ready_jobs.loc[ready_jobs['jobTypeID'] == job_type]
                 # Launchable count: as many of the ready job of this type as our job weights allow
-                launchable_job_count = min(len(launch_candidates, job_launch_count))
-                launch_candidates.iloc[:launchable_job_count]['scheduled'] = True
+                launchable_job_count = min(len(launch_candidates), int(job_launch_count))
+                launched_jobs = launch_candidates.iloc[:launchable_job_count]['jobID']
+                job_queue_trace.loc[job_queue_trace['jobID'].isin(launched_jobs), 'scheduled'] = True
                 launch_list.extend([JOB_PATHS[job_type]] * launchable_job_count)
     return launch_list
 
@@ -462,7 +490,7 @@ async def rebalance_jobs(reader, writer):
         # Use epoch data if it is available. Otherwise, use region progress
         # TODO: This works better if those metrics are exclusive. Should model
         # them together instead.
-        if len(endpoint.epoch_times) > 5:
+        if len(endpoint.epoch_times) > 20:
             times = endpoint.epoch_times
             caps = endpoint.power_caps
         else:
@@ -470,7 +498,7 @@ async def rebalance_jobs(reader, writer):
             caps = endpoint.progress_caps
 
         # Wait some time before training a new model
-        if endpoint.samples_in_last_model + 5 < len(times) and np.ptp(caps) > 10:
+        if endpoint.samples_in_last_model + 10 < len(times):
             # Generate [x, x^2] values from X (power caps)
             # Not including a bias column since the RANSACRegressor internally creates
             # Linear regressors that have a built-in bias column
@@ -486,6 +514,8 @@ async def rebalance_jobs(reader, writer):
                 #endpoint.model = linear_model.RANSACRegressor(is_model_valid=is_model_valid)
                 class Model:
                     pass
+                if endpoint.model is None:
+                    print(f'New model for {endpoint.profile}')
                 endpoint.model = linear_model.LinearRegression(positive=True)
                 # sample_weight = np.ones(len(caps))
                 # Give more importance to recent measurements

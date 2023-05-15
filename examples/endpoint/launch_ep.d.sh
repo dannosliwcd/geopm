@@ -10,6 +10,7 @@ WORKDIR="${GEOPM_WORKDIR:-.}/endpoint"
 python3 ./balance_client.py \
         geopmlaunch srun -N 1 -n 43 \
         --geopm-report="${WORKDIR}/${APP}.${SLURM_JOBID}.report" \
+        --geopm-profile="${APP}.x${GEOPM_PROFILE_SUFFIX}" \
         --geopm-agent=power_governor \
         -- \
         ${HOME}/geopm/integration/apps/nasep/NPB3.4.2/NPB3.4-MPI/bin/${APP}.x

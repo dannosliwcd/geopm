@@ -19,6 +19,7 @@ parser.add_argument('--power-sharing-cluster-trace')
 parser.add_argument('--non-sharing-cluster-trace')
 parser.add_argument('--reserve', type=float, required=True)
 parser.add_argument('--plot-path', default='endpoint_error.png')
+parser.add_argument('--max-time', type=float, default=3600)
 
 args = parser.parse_args()
 
@@ -60,12 +61,13 @@ fig, ax = plt.subplots(figsize=(3.35, 1.8))
 #ax.axvline(0.3, linestyle='--')
 sns.ecdfplot(
     ax=ax,
-    data=df.loc[(df['time'] > 0) & (df['time'] <= 3600)],
+    data=df.loc[(df['time'] > 0) & (df['time'] <= args.max_time)],
     x='error',
     hue='Method',
     #cut=0,
     #common_norm=False,
 )
+ax.set_xlim(0, 1)
 sns.move_legend(ax, 'lower right')
 ax.set_xlabel('Power Tracking Error')
 fig.savefig(args.plot_path, bbox_inches='tight', pad_inches=0)

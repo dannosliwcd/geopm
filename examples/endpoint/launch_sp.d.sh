@@ -1,14 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=sp.d
-#SBATCH -N 1
-#SBATCH --time=00:44:08
+#SBATCH -N 2
+#SBATCH --time=00:25:00
 
 APP='sp.D'
 WORKDIR="${GEOPM_WORKDIR:-.}/endpoint"
         #--geopm-trace="${WORKDIR}/${APP}.${SLURM_JOBID}.trace" \
 python3 ./balance_client.py \
-        geopmlaunch srun -N 1 -n 36 \
+        geopmlaunch srun -N 2 -n 81 \
         --geopm-report="${WORKDIR}/${APP}.${SLURM_JOBID}.report" \
+        --geopm-profile="${APP}.x${GEOPM_PROFILE_SUFFIX}" \
         --geopm-agent=power_governor \
         --geopm-trace-signals=CPU_POWER_LIMIT_CONTROL \
         -- \

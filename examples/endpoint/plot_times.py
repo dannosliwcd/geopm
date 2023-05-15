@@ -51,6 +51,7 @@ sns.set()
 fig, ax = plt.subplots(figsize=(12, 10))
 sns.barplot(
     ax=ax,
+    estimator=np.sum,
     data=df,
     x='Application',
     y='Time',
