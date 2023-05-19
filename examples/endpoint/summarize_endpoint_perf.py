@@ -195,4 +195,6 @@ print('===== time x hosts =====')
 print(df.groupby('Power Budgeter').apply(lambda x: (x['time'] * x['hosts']).mean()).to_string())
 print('===== reltime =====')
 print(df.groupby(['Power Budgeter', 'app'])['reltime'].mean().to_string())
+print('===== time =====')
+print(df.groupby(['Power Budgeter', 'app'])['time'].mean().to_string())
 

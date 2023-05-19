@@ -103,5 +103,8 @@ sns.barplot(
     hue='Job Type',
     order=experiment_order,
 )
+print(df.groupby(['Job Type', 'Experiment Name'])[['Slowdown']].mean().to_string())
+print(df.groupby(['Job Type', 'Experiment Name'])[['Execution Time']].mean().to_string())
 ax.xaxis.set_major_formatter(mtick.PercentFormatter(1))
+ax.set_ylabel('')
 fig.savefig(args.plot_path, bbox_inches='tight', pad_inches=0)

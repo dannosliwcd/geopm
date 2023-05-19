@@ -46,11 +46,11 @@ sns.set_theme(
 )
 fig, ax = plt.subplots(figsize=(3.35, 2.0))
 if args.mean_target is not None:
-    ax.axhline(args.mean_target, linestyle='--', label='Mean Target Power')
+    ax.axhline(args.mean_target / 1000, c='k', linestyle='--', label='Mean Target Power')
     if args.reserve is not None and not args.reserve_only:
         ax.axhspan(args.mean_target - args.reserve, args.mean_target + args.reserve, alpha=0.5, label='Reserve Target Range')
 df.rename(columns={'target': 'Target', 'cap': 'Cap', 'measured': 'Measured'}, inplace=True)
-df.set_index('Time')[['Target', 'Cap', 'Measured']].plot(ax=ax, legend=False)
+(df.set_index('Time')[['Target', 'Cap', 'Measured']] / 1000).plot(ax=ax, linewidth=1, legend=False)
 # sns.lineplot(
 #     ax=ax,
 #     data=pd.melt(totals_df, ignore_index=False, var_name='Signal',
@@ -59,10 +59,10 @@ df.set_index('Time')[['Target', 'Cap', 'Measured']].plot(ax=ax, legend=False)
 #     y='value',
 #     style='Signal')
 ax.legend(loc='lower center', bbox_to_anchor=(0.5, 1), ncol=2)
-ax.set_ylabel('Power (W)')
+ax.set_ylabel('Power (kW)')
 ax.set_xlabel('Time (s)')
 ax.set_xlim(0, args.max_time)
 #ax.xaxis.set_major_locator(ticker.LinearLocator(4))
 if args.reserve is not None and args.mean_target is not None and args.reserve_only:
-    ax.set_ylim(args.mean_target - args.reserve, args.mean_target + args.reserve)
-fig.savefig(args.plot_path, bbox_inches='tight')
+    ax.set_ylim((args.mean_target - args.reserve) / 1000, (args.mean_target + args.reserve) / 1000)
+fig.savefig(args.plot_path, bbox_inches='tight', pad_inches=0)
