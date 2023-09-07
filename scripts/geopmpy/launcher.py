@@ -35,7 +35,8 @@ from . import __version__
 
 class Factory(object):
     def __init__(self):
-        self._launcher_dict = OrderedDict([('srun', SrunLauncher),
+        self._launcher_dict = OrderedDict([('exec', ExecLauncher),
+                                           ('srun', SrunLauncher),
                                            ('SrunLauncher', SrunLauncher),
                                            ('aprun', AprunLauncher),
                                            ('AprunLauncher', AprunLauncher),
@@ -1723,6 +1724,50 @@ class AprunLauncher(Launcher):
         Returns a list containing the ``-q`` option for ``aprun``.
         """
         return ['-q']
+
+
+class ExecLauncher(Launcher):
+    """
+    Launcher derived object for use with non-MPI applications.
+    """
+    def __init__(self, argv, num_rank=None, num_node=None, cpu_per_rank=None, timeout=None,
+                 time_limit=None, job_name=None, node_list=None, exclude_list=None, host_file=None,
+                 partition=None, reservation=None, quiet=None, do_affinity=None, bootstrap=None):
+        self._config = Config(argv)
+        self.quiet=quiet
+
+    def run(self, stdout=sys.stdout, stderr=sys.stderr):
+        popen_stdout = stdout.fileno()
+        popen_stderr = stderr.fileno()
+
+        if not self.quiet:
+            echo_ctl = []
+            echo_ctl.append(str(self._config))
+            echo_ctl.append('geopmctl')
+            echo_ctl = ' '.join(echo_ctl) + ' &\n'
+            stderr.write(echo_ctl)
+        controller_proc = subprocess.Popen(['geopmctl'], env=self._config.environ(),
+                                           stdout=popen_stdout, stderr=popen_stderr)
+
+        app_env = dict(os.environ)
+        env_ext = dict()
+        env_ext['LD_PRELOAD'] = ':'.join((ll for ll in
+                                          ('libgeopm.so.1.0.0', app_env.get('LD_PRELOAD'))
+                                          if ll is not None))
+        env_ext['GEOPM_PROFILE'] = self._config.profile
+        app_env.update(env_ext)
+
+        if not self.quiet:
+            echo_app = []
+            for env_var, env_value in env_ext.items():
+                echo_app.append('{}={}'.format(env_var, env_value))
+            echo_app.extend(self._config.argv_unparsed)
+            echo_app = ' '.join(echo_app) + ' \n'
+            stderr.write(echo_app)
+        app_proc = subprocess.Popen(self._config.argv_unparsed, env=app_env,
+                                    stdout=popen_stdout, stderr=popen_stderr)
+        app_proc.communicate()
+        controller_proc.communicate()
 
 
 def main():
