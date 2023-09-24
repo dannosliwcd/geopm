@@ -405,11 +405,7 @@ rpm: dist
 	cp geopm-service.spec $(rpm_topdir)/SPECS/geopm-service.spec
 	rpmbuild $(rpmbuild_flags) -ba $(rpm_topdir)/SPECS/geopm-service.spec
 
-if !ENABLE_SANITIZERS
-checkprogs: gtest-checkprogs geopmdpy-checkprogs $(check_PROGRAMS) $(check_LTLIBRARIES)
-else
-checkprogs: gtest-checkprogs $(check_PROGRAMS) $(check_LTLIBRARIES)
-endif
+checkprogs: $(check_PROGRAMS) $(check_LTLIBRARIES)
 
 all-local: $(all_local)
 
