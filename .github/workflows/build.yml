@@ -28,7 +28,7 @@ jobs:
     # particular configuration of the build matrix.
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - uses: codespell-project/actions-codespell@v1.0
   build_and_test:
     name: "build: ${{ matrix.config.name }} ${{ matrix.debug-flag }} service:${{ matrix.service-asan-flag }} base:${{ matrix.base-asan-flag  }}"
@@ -64,7 +64,7 @@ jobs:
       F77: gfortran-9
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: install system dependencies
       run: sudo apt-get update && sudo apt-get install libelf-dev mpich libmpich-dev libomp-11-dev libsystemd-dev liburing-dev python3-gi python3-yaml
     - name: install base and service dir python dependencies
@@ -126,7 +126,7 @@ jobs:
       CC: "gcc-9"
       CXX: "g++-9"
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
     - name: install system dependencies
