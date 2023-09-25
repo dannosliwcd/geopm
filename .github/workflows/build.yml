@@ -95,10 +95,10 @@ jobs:
       run: make -j2
     - name: make checkprogs service
       working-directory: service
-      run: make checkprogs -j2
+      run: make checkprogs -j2 CXXFLAGS='-O0 -g' CFLAGS='-O0 -g'
     - name: make checkprogs base dir
       if: matrix.service-asan-flag != 'enable-asan'
-      run: make checkprogs -j2
+      run: make checkprogs -j2 CXXFLAGS='-O0 -g' CFLAGS='-O0 -g'
     - name: make check service
       working-directory: service
       env:
