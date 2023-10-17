@@ -14,6 +14,7 @@
 #include "grpc/grpc_security_constants.h"
 #include <sstream>
 #include <iostream>
+#include <chrono>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
@@ -158,6 +159,7 @@ namespace geopm
         GEOPMPackage::SessionKey request;
         request.set_name(m_session_key);
         grpc::ClientContext context;
+        context.set_deadline(std::chrono::system_clock::now() + std::chrono::milliseconds(100));
         GEOPMPackage::SessionKey response;
         grpc::Status status = m_client->OpenSession(&context,
                                                     request,
