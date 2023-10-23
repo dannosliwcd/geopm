@@ -471,9 +471,9 @@ class PlatformService(object):
                     sys.stderr.write(f"Warning: Failed to call pio.stop_batch_server({batch_pid}), sending SIGKILL\n)")
                     if psutil.pid_exists(batch_pid):
                         os.kill(batch_pid, signal.SIGKILL)
-            with system_files.WriteLock(self._RUN_PATH) as lock:
-                if lock.try_lock() == client_pid:
-                    self._close_session_write(lock, client_pid)
+        with system_files.WriteLock(self._RUN_PATH) as lock:
+            if lock.try_lock() == client_pid:
+                self._close_session_write(lock, client_pid)
 
     def _close_session_write(self, lock, pid):
         save_dir = os.path.join(self._RUN_PATH, self._SAVE_DIR)
