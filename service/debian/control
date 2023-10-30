@@ -71,6 +71,8 @@ Description: Library supporting the GEOPM Service.  This provides the
 Package: python3-geopmdpy
 Section: python
 Architecture: any
+# We also depend on python3-grpcio (==1.47.5), but there is no apt package
+# for that version. Other versions contain a segfault during cleanup.
 Depends: ${python3:Depends},
          libgeopmd2 (= ${binary:Version}),
          python3-cffi (>=1.15.0),
@@ -80,7 +82,6 @@ Depends: ${python3:Depends},
          python3-setuptools (>=59.6.0),
          python3-gi (>=3.42.1),
          python3-gi-cairo (>=3.42.1),
-         python3-grpcio (>=1.30.2),
          python3-protobuf (>=3.12.4)
 Description: Python 3 package for GEOPM service.  Provides the
  implementation for the geopmd service daemon and interfaces for
