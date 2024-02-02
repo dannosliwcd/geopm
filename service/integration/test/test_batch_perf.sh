@@ -6,8 +6,9 @@
 set -x
 set -e
 
-LOOP_COUNT=100
-DELAY=1e-4
+# 10 second runtime
+LOOP_COUNT=1000
+DELAY=10e-3
 
 # Clean environment and restart service
 sudo systemctl unset-environment GEOPM_DISABLE_IO_URING GEOPM_DISABLE_MSR_SAFE
