@@ -25,7 +25,7 @@ sudo systemctl restart geopm
 # Use stock msr driver through the GEOPM Service with kernel asynchronous IO
 ./test_batch_perf ${LOOP_COUNT} ${DELAY} > msr-uring-service.csv
 # Use stock msr driver directly with kernel asynchronous IO
-sudo ./test_batch_perf ${LOOP_COUNT} ${DELAY} > msr-uring-root.csv
+sudo env GEOPM_DISABLE_MSR_SAFE=TRUE ./test_batch_perf ${LOOP_COUNT} ${DELAY} > msr-uring-root.csv
 
 sudo systemctl set-environment GEOPM_DISABLE_IO_URING=TRUE
 sudo systemctl restart geopm
@@ -33,7 +33,7 @@ sudo systemctl restart geopm
 # Use stock msr driver through the GEOPM Service with serial reads
 ./test_batch_perf ${LOOP_COUNT} ${DELAY} > msr-sync-service.csv
 # Use stock msr driver directly with serial reads
-sudo ./test_batch_perf ${LOOP_COUNT} ${DELAY} > msr-sync-root.csv
+sudo env GEOPM_DISABLE_MSR_SAFE=TRUE GEOPM_DISABLE_IO_URING=TRUE ./test_batch_perf ${LOOP_COUNT} ${DELAY} > msr-sync-root.csv
 sudo chown ${USER} msr-safe-root.csv
 
 # Restore environment
