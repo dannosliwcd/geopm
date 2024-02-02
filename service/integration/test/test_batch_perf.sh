@@ -16,7 +16,7 @@ sudo systemctl restart geopm
 
 # Use mrs-safe driver through the GEOPM Service shared memory interface
 ./test_batch_perf ${LOOP_COUNT} ${DELAY} > msr-safe-service.csv
-# Use mrs-safe driver directly wihtout GEOPM Service
+# Use mrs-safe driver directly without GEOPM Service
 sudo ./test_batch_perf ${LOOP_COUNT} ${DELAY} > msr-safe-root.csv
 sudo chown ${USER} msr-safe-root.csv
 
