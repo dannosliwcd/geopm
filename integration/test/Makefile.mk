@@ -8,6 +8,7 @@ EXTRA_DIST += integration/test/check_trace.py \
               integration/test/__init__.py \
               integration/test/README.md \
               integration/test/short_region/plot_margin_sweep.py \
+              integration/test/test_examples.py \
               integration/test/test_plugin_static_policy.py \
               integration/test/test_template.cpp.in \
               integration/test/test_template.mk.in \
