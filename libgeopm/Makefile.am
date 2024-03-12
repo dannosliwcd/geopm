@@ -247,6 +247,7 @@ libgeopm_la_SOURCES = src/Accumulator.cpp \
                       src/ProcessRegionAggregator.cpp \
                       src/ProcessRegionAggregator.hpp \
                       src/RuntimeService.cpp \
+                      src/RuntimeService.hpp \
                       src/RecordFilter.cpp \
                       src/RecordFilter.hpp \
                       src/RegionHintRecommender.cpp \
@@ -279,6 +280,7 @@ libgeopm_la_SOURCES = src/Accumulator.cpp \
                       src/geopm_lib_init.cpp \
                       src/record.cpp \
                       src/record.hpp \
+                      src/geopmrtd_main.cpp \
                       src/geopm_runtime.grpc.pb.cc \
                       src/geopm_runtime.grpc.pb.h \
                       src/geopm_runtime.pb.cc \

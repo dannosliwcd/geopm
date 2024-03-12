@@ -43,6 +43,10 @@ compile_commands.json
 /plugin/*.lo
 /plugin/*.o
 /geopm-runtime.spec
+/src/geopm_runtime.grpc.pb.cc
+/src/geopm_runtime.grpc.pb.h
+/src/geopm_runtime.pb.cc
+/src/geopm_runtime.pb.h
 /stamp-h1
 /test-driver
 !/test/fortran/*.f90
