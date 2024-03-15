@@ -5,3 +5,4 @@
 /make_sdist.log
 /geopmpy-*/
 /debian/changelog
+/geopmpy/geopm_runtime_pb2.py
