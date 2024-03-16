@@ -6,3 +6,4 @@
 /geopmpy-*/
 /debian/changelog
 /geopmpy/geopm_runtime_pb2.py
+/geopmpy/geopm_runtime_pb2_grpc.py
