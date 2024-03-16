@@ -30,3 +30,6 @@ protoc --grpc_out src \
 protoc --grpc_out ../geopmpy/geopmpy \
        --plugin=protoc-gen-grpc=$(which grpc_python_plugin) \
        geopm_runtime.proto
+
+sed 's|import geopm_runtime_pb2|from . import geopm_runtime_pb2|' \
+    -i ../geopmpy/geopmpy/geopm_runtime_pb2_grpc.py
