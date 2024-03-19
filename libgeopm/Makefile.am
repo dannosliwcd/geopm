@@ -124,6 +124,7 @@ EXTRA_DIST += .gitignore \
               m4/openmp.m4 \
               geopm-runtime.spec \
               geopm-runtime.spec.in \
+	      geopm_runtime.proto \
               # end
 
 if HAVE_ICX
