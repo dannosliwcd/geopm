@@ -1,0 +1,97 @@
+#
+#  Copyright (c) 2015 - 2024, Intel Corporation
+#  SPDX-License-Identifier: BSD-3-Clause
+#
+
+name: Build GEOPM Libraries
+
+on:
+  workflow_call:
+    inputs:
+      cc:
+        required: true
+        type: string
+      cxx:
+        required: true
+        type: string
+      debug-flag:
+        required: true
+        type: string
+      libgeopmd-asan-flag:
+        required: true
+        type: string
+      libgeopm-asan-flag:
+        required: true
+        type: string
+
+jobs:
+  build_libgeopmd:
+    name: "build libgeopmd"
+    runs-on: ubuntu-22.04
+    env:
+      CC: ${{ inputs.cc }}
+      CXX: ${{ inputs.cxx }}
+      FC: gfortran-9
+      F77: gfortran-9
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - name: install libgeopmd build dependencies
+      run: sudo apt-get update && sudo apt-get install libcap-dev libnvidia-ml-dev libsystemd-dev liburing-dev libtool pkgconf unzip zlib1g-dev && pip install setuptools setuptools-scm
+    - name: configure libgeopmd
+      working-directory: libgeopmd
+      run: ./autogen.sh && ./configure --${{ inputs.debug-flag }} --${{ inputs.libgeopmd-asan-flag }} || (cat config.log && false)
+    - name: make libgeopmd
+      working-directory: libgeopmd
+      run: make -j2
+    - name: make libgeopmd tests
+      working-directory: libgeopmd
+      run: make checkprogs -j2
+    - name: run libgeopmd tests
+      working-directory: libgeopmd
+      env:
+        LD_LIBRARY_PATH: .libs:${LD_LIBRARY_PATH}
+      run: make check
+    - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+      with:
+        name: libgeopmd-${{ inputs.cc }}-${{ inputs.cxx }}-${{ inputs.debug-flag }}-${{ inputs.libgeopmd-asan-flag }}
+        path: |
+          libgeopmd/.libs
+          libgeopmd/test/.libs
+  build_libgeopm:
+    name: "build libgeopm"
+    needs: build_libgeopmd
+    runs-on: ubuntu-22.04
+    env:
+      CC: ${{ inputs.cc }}
+      CXX: ${{ inputs.cxx }}
+      FC: gfortran-9
+      F77: gfortran-9
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - name: install libgeopm build dependencies
+      run: sudo apt-get update && sudo apt-get install build-essential mpich libmpich-dev elfutils libelf-dev openssh-client unzip && pip install setuptools>=61 setuptools-scm
+    - uses: actions/download-artifact@c850b930e6ba138125429b7e5c93fc707a7f8427 # v4.1.4
+      with:
+        name: libgeopmd-${{ inputs.cc }}-${{ inputs.cxx }}-${{ inputs.debug-flag }}-${{ inputs.libgeopmd-asan-flag }}
+        path: libgeopmd
+    - name: configure libgeopm
+      working-directory: libgeopm
+      run: ./autogen.sh && ./configure --enable-beta --disable-openmp --with-geopmd-lib=../libgeopmd/.libs --with-geopmd-include=../libgeopmd/src --${{ inputs.debug-flag }} --${{ inputs.libgeopm-asan-flag  }} || (cat config.log && false)
+    - name: make libgeopm
+      working-directory: libgeopm
+      run: make -j2
+    - name: make libgeopm tests
+      working-directory: libgeopm
+      run: make checkprogs -j2
+    - name: run libgeopm tests
+      working-directory: libgeopm
+      env:
+        LD_LIBRARY_PATH: .libs:../libgeopmd/.libs:${LD_LIBRARY_PATH}
+      run: make check
+    - uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v4.3.1
+      with:
+        name: libgeopm-${{ inputs.cc }}-${{ inputs.cxx }}-${{ inputs.debug-flag }}-${{ inputs.libgeopm-asan-flag }}
+        working-directory: 
+        path: |
+          libgeopm/.libs
+          libgeopm/test/.libs
