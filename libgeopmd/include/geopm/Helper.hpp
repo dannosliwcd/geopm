@@ -16,6 +16,7 @@
 #include <functional>
 #include <set>
 
+#pragma GCC visibility push(default)
 namespace geopm
 {
     /// @brief Implementation of std::make_unique (C++14) for C++11.
@@ -171,4 +172,5 @@ namespace geopm
     };
 }
 
+#pragma GCC visibility pop
 #endif

@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#pragma GCC visibility push(default)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -42,4 +43,5 @@ static inline double geopm_field_to_signal(uint64_t field)
 #ifdef __cplusplus
 }
 #endif
+#pragma GCC visibility pop
 #endif

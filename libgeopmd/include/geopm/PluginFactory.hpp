@@ -14,6 +14,7 @@
 
 #include "Exception.hpp"
 
+#pragma GCC visibility push(default)
 namespace geopm
 {
     template<class T> class PluginFactory
@@ -101,4 +102,5 @@ namespace geopm
     const std::map<std::string, std::string> PluginFactory<Type>::m_empty_dictionary = {};
 
 }
+#pragma GCC visibility pop
 #endif

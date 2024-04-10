@@ -15,6 +15,7 @@
 
 #include "geopm_pio.h"
 
+#pragma GCC visibility push(default)
 struct geopm_request_s {
     int domain_type;
     int domain_idx;
@@ -258,4 +259,5 @@ namespace geopm
     PlatformIO &platform_io(void);
 }
 
+#pragma GCC visibility pop
 #endif

@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <string.h>
 
+#pragma GCC visibility push(default)
 #ifndef __cplusplus
 #include <stdbool.h>
 #else
@@ -116,4 +117,5 @@ namespace geopm
     void time_zero_reset(const geopm_time_s &zero);
 }
 #endif
+#pragma GCC visibility pop
 #endif

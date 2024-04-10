@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 
+#pragma GCC visibility push(default)
 #ifdef __cplusplus
 extern "C"
 {
@@ -63,4 +64,5 @@ int geopm_sched_woomp(int num_cpu, cpu_set_t *woomp);
 }
 #endif
 
+#pragma GCC visibility pop
 #endif

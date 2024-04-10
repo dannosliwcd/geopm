@@ -8,6 +8,7 @@
 
 #include <stdlib.h>
 
+#pragma GCC visibility push(default)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -35,4 +36,5 @@ void geopm_error_message(int err, char *msg, size_t size);
 #ifdef __cplusplus
 }
 #endif
+#pragma GCC visibility pop
 #endif

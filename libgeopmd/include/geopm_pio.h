@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <limits.h>
 
+#pragma GCC visibility push(default)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -494,4 +495,5 @@ int geopm_pio_profile_pids(const char *profile_name, int max_num_pid, int *num_p
 #ifdef __cplusplus
 }
 #endif
+#pragma GCC visibility pop
 #endif

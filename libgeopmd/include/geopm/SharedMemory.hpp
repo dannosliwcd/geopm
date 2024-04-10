@@ -13,6 +13,7 @@
 
 #include "SharedMemoryScopedLock.hpp"
 
+#pragma GCC visibility push(default)
 namespace geopm
 {
     /// @brief This class encapsulates an inter-process shared memory region.
@@ -65,4 +66,5 @@ namespace geopm
     };
 }
 
+#pragma GCC visibility pop
 #endif

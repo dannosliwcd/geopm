@@ -8,6 +8,7 @@
 
 #include <stddef.h>
 
+#pragma GCC visibility push(default)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -96,4 +97,5 @@ int geopm_topo_create_cache(void);
 #ifdef __cplusplus
 }
 #endif
+#pragma GCC visibility pop
 #endif

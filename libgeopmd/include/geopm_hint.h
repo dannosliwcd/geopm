@@ -7,6 +7,7 @@
 #define GEOPM_HINT_H_INCLUDE
 #include <stdint.h>
 
+#pragma GCC visibility push(default)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,5 +38,5 @@ namespace geopm {
     void check_hint(uint64_t hint);
 }
 #endif
-
+#pragma GCC visibility pop
 #endif

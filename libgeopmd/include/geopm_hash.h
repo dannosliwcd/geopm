@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#pragma GCC visibility push(default)
 #ifdef __cplusplus
 #include <string>
 
@@ -72,5 +73,5 @@ namespace geopm
 }
 
 #endif
-
+#pragma GCC visibility pop
 #endif

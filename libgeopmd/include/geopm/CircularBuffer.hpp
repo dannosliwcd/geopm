@@ -12,6 +12,7 @@
 
 #include "Exception.hpp"
 
+#pragma GCC visibility push(default)
 namespace geopm
 {
     /// @brief Templated container for a circular buffer implementation.
@@ -253,4 +254,5 @@ namespace geopm
 
 }
 
+#pragma GCC visibility pop
 #endif

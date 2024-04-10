@@ -6,6 +6,7 @@
 #ifndef GEOPM_SHMEM_H_INCLUDE
 #define GEOPM_SHMEM_H_INCLUDE
 
+#pragma GCC visibility push(default)
 #ifdef __cplusplus
 #include <string>
 
@@ -24,4 +25,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+#pragma GCC visibility pop
 #endif

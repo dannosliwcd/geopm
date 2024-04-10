@@ -13,6 +13,7 @@
 
 #include "PluginFactory.hpp"
 
+#pragma GCC visibility push(default)
 namespace geopm
 {
     class IOGroup
@@ -233,4 +234,5 @@ namespace geopm
     IOGroupFactory &iogroup_factory(void);
 }
 
+#pragma GCC visibility pop
 #endif

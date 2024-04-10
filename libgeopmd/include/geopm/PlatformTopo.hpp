@@ -14,6 +14,7 @@
 
 #include "geopm_topo.h"
 
+#pragma GCC visibility push(default)
 extern "C"
 {
     /// @brief Identify host CPU.
@@ -85,4 +86,5 @@ namespace geopm
 
     const PlatformTopo &platform_topo(void);
 }
+#pragma GCC visibility pop
 #endif

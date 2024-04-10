@@ -10,6 +10,7 @@
 #include <memory>
 #include <vector>
 
+#pragma GCC visibility push(default)
 struct geopm_request_s;
 
 namespace geopm
@@ -193,4 +194,5 @@ namespace geopm
     };
 }
 
+#pragma GCC visibility pop
 #endif

@@ -7,6 +7,7 @@
 
 #include <memory>
 
+#pragma GCC visibility push(default)
 namespace geopm
 {
     class Cpuid
@@ -30,4 +31,5 @@ namespace geopm
     };
 }
 
+#pragma GCC visibility pop
 #endif

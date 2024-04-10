@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include "geopm_error.h"
 
+#pragma GCC visibility push(default)
 namespace geopm
 {
     /// @brief Handle a thrown exception and return an error value.
@@ -102,4 +103,5 @@ namespace geopm
     std::string error_message(int error_value);
 }
 
+#pragma GCC visibility pop
 #endif

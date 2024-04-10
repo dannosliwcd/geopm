@@ -8,6 +8,7 @@
 
 #include <pthread.h>
 
+#pragma GCC visibility push(default)
 namespace geopm
 {
     /// @brief An object used to automatically hold a SharedMemory mutex while
@@ -25,4 +26,5 @@ namespace geopm
     };
 }
 
+#pragma GCC visibility pop
 #endif

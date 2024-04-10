@@ -19,6 +19,7 @@
 #include "geopm_time.h"
 #include "geopm/Cpuid.hpp"
 
+#pragma GCC visibility push(default)
 extern "C"
 {
     int geopm_allowlist(size_t result_max,
@@ -274,4 +275,5 @@ namespace geopm
     };
 }
 
+#pragma GCC visibility pop
 #endif

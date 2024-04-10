@@ -9,6 +9,7 @@
 #include <vector>
 #include <string>
 #include <functional>
+#pragma GCC visibility push(default)
 
 namespace geopm
 {
@@ -106,4 +107,5 @@ namespace geopm
     };
 }
 
+#pragma GCC visibility pop
 #endif
