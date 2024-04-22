@@ -143,15 +143,16 @@ geopmagent_LDADD = libgeopm.la
 geopmadmin_LDADD = libgeopm.la
 geopmctl_LDADD = libgeopm.la
 geopmbench_LDADD = libgeopm.la $(MATH_LIB)
+libgeopm_la_LIBADD = $(MATH_LIB)
 if ENABLE_MPI
 geopmctl_LDADD += $(MPI_CLIBS)
 geopmbench_LDADD += $(MPI_CLIBS)
-libgeopm_la_LIBADD = $(MPI_CLIBS)
+libgeopm_la_LIBADD += $(MPI_CLIBS)
 endif
 
 
 libgeopm_la_LDFLAGS = $(AM_LDFLAGS) $(MATH_CLDFLAGS) -version-info $(geopm_abi_version)
-libgeopm_la_CFLAGS = $(AM_CFLAGS)
+libgeopm_la_CFLAGS = $(AM_CFLAGS) $(MATH_CFLAGS)
 libgeopm_la_CXXFLAGS = $(AM_CXXFLAGS)
 
 libgeopm_la_SOURCES = src/Accumulator.cpp \
