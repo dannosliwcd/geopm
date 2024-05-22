@@ -368,6 +368,7 @@ jobs:
         # The version string won't be right (it'll be relative to a very old tag) but
         # it at least won't be empty.
         git fetch --prune --unshallow
+        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     - name: Build the container image for the rpmbuild runner
