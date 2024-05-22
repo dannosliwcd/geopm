@@ -39,11 +39,11 @@ RUN pip install --upgrade pip && pip install --upgrade build wheel setuptools_sc
 # Tell rpmbuild where to save its output. This path is expected to be a
 # writable mount to wherever you want the build output to be saved.
 RUN echo '%_topdir /geopm_rpmbuild' >> ~/.rpmmacros
-RUN wget https://github.com/dasbus-project/dasbus/archive/refs/tags/v1.6.tar.gz -O dasbus-1.6.tar.gz \
-    && tar zxf /dasbus-1.6.tar.gz -C / && mkdir -p /dasbus_rpmbuild/SOURCES \
-    && mv /dasbus-1.6.tar.gz /dasbus_rpmbuild/SOURCES/dasbus-1.6.tar.gz \
-    && rpmbuild --define '_topdir /dasbus_rpmbuild' -ba /dasbus-1.6/python-dasbus.spec \
-    && zypper --non-interactive install --allow-unsigned-rpm /dasbus_rpmbuild/RPMS/noarch/python3-dasbus-1.6-1.noarch.rpm
+# RUN wget https://github.com/dasbus-project/dasbus/archive/refs/tags/v1.6.tar.gz -O dasbus-1.6.tar.gz \
+#     && tar zxf /dasbus-1.6.tar.gz -C / && mkdir -p /dasbus_rpmbuild/SOURCES \
+#     && mv /dasbus-1.6.tar.gz /dasbus_rpmbuild/SOURCES/dasbus-1.6.tar.gz \
+#     && rpmbuild --define '_topdir /dasbus_rpmbuild' -ba /dasbus-1.6/python-dasbus.spec \
+#     && zypper --non-interactive install --allow-unsigned-rpm /dasbus_rpmbuild/RPMS/noarch/python3-dasbus-1.6-1.noarch.rpm
 COPY package_component.sh /
 
 ENTRYPOINT ["/package_component.sh"]
