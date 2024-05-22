@@ -364,6 +364,7 @@ jobs:
         # GH Actions use shallow git clones by default, which are incompatible with setuptools_scm version detection
         # Override to use a full-depth clone.
         fetch-depth: 0
+        fetch-tags: true
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     - name: Build the container image for the rpmbuild runner
