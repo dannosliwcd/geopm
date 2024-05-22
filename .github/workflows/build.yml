@@ -278,7 +278,7 @@ jobs:
            cd -
            osc ci -m "geopm-doc ${{ github.sha }}" ${DOCS_PACKAGE}
 
-  test_packages:
+  test_deb_packages:
     name: "Make Deb Packages"
     runs-on: ubuntu-22.04
     steps:
@@ -355,3 +355,32 @@ jobs:
         sudo mv ./*.deb $TEST_DEBS_DIR
         sudo sh -c "cd $TEST_DEBS_DIR && dpkg-scanpackages . /dev/null | gzip -9c > Packages.gz"
         sudo apt-get update
+  test_rpm_packages:
+    name: "Make rpm Packages"
+    runs-on: ubuntu-22.04
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Build the container image for the rpmbuild runner
+      uses: docker/build-push-action@v5
+      with:
+        context: ".github/workflows/rpmbuild_container"
+        push: false
+        load: true
+        tags: geopm/rpmbuild:latest
+    - name: Package libgeopmd
+      run: |
+        docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest libgeopmd
+    - name: Package libgeopm
+      run: |
+        docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest libgeopm
+    - name: Package geopmdpy
+      run: |
+        docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest geopmdpy
+    - name: Package geopmpy
+      run: |
+        docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest geopmpy
+    - name: Package docs
+      run: |
+        docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest docs
