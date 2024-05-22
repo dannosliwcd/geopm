@@ -361,7 +361,13 @@ jobs:
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
+        # GH Actions use shallow git clones by defauly, which are incompatible with setuptools_scm version detection
         fetch-tags: true
+      run: |
+        # Give some additional history without doing a full (larger download) clone
+        # The version string won't be right (it'll be relative to a very old tag) but
+        # it at least won't be empty.
+        git fetch --prune --unshallow
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     - name: Build the container image for the rpmbuild runner
@@ -376,18 +382,13 @@ jobs:
         docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest libgeopmd
     - name: Package libgeopm
       run: |
-        # GH Actions use shallow git clones, which are incompatible with setuptools_scm version detection
-        cp libgeopmd/VERSION libgeopm/VERSION
         docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest libgeopm
     - name: Package geopmdpy
       run: |
-        cp libgeopmd/VERSION geopmdpy/VERSION
         docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest geopmdpy
     - name: Package geopmpy
       run: |
-        cp libgeopmd/VERSION geopmpy/VERSION
         docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest geopmpy
     - name: Package docs
       run: |
-        cp libgeopmd/VERSION docs/VERSION
         docker run --rm -v ./:/geopm -v ~/rpmbuild:/geopm_rpmbuild geopm/rpmbuild:latest docs

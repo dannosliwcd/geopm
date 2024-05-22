@@ -39,6 +39,7 @@ RUN pip install --upgrade pip && pip install --upgrade build wheel setuptools_sc
 # Tell rpmbuild where to save its output. This path is expected to be a
 # writable mount to wherever you want the build output to be saved.
 RUN echo '%_topdir /geopm_rpmbuild' >> ~/.rpmmacros
+# Below is only needed if targeting SLES before 15.4:
 # RUN wget https://github.com/dasbus-project/dasbus/archive/refs/tags/v1.6.tar.gz -O dasbus-1.6.tar.gz \
 #     && tar zxf /dasbus-1.6.tar.gz -C / && mkdir -p /dasbus_rpmbuild/SOURCES \
 #     && mv /dasbus-1.6.tar.gz /dasbus_rpmbuild/SOURCES/dasbus-1.6.tar.gz \
