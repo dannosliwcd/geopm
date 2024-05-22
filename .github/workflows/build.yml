@@ -363,7 +363,7 @@ jobs:
       with:
         # GH Actions use shallow git clones by defauly, which are incompatible with setuptools_scm version detection
         fetch-tags: true
-      run: |
+    - run: |
         # Give some additional history without doing a full (larger download) clone
         # The version string won't be right (it'll be relative to a very old tag) but
         # it at least won't be empty.
