@@ -361,14 +361,9 @@ jobs:
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
       with:
-        # GH Actions use shallow git clones by defauly, which are incompatible with setuptools_scm version detection
-        fetch-tags: true
-    - run: |
-        # Give some additional history without doing a full (larger download) clone
-        # The version string won't be right (it'll be relative to a very old tag) but
-        # it at least won't be empty.
-        git fetch --prune --unshallow
-        git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+        # GH Actions use shallow git clones by default, which are incompatible with setuptools_scm version detection
+        # Override to use a full-depth clone.
+        fetch-depth: 0
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     - name: Build the container image for the rpmbuild runner
