@@ -52,6 +52,16 @@ using testing::WithArg;
 using testing::AtLeast;
 using json11::Json;
 
+namespace geopm {
+    // The default printer in gtest scans all bytes allocated to this struct.
+    // Some of those bytes may be uninitializd padding depending on your build
+    // config. This printer ensures that gtest reads only initialized bytes.
+    void PrintTo(const Cpuid::rdt_info_s& rdt, std::ostream* os) {
+        *os << "rdt_info_s(rdt_support=" << rdt.rdt_support << ", rmid_bit_width="
+            << rdt.rmid_bit_width << ", mbm_scalar=" << rdt.mbm_scalar << ")";
+    }
+}
+
 class MSRIOGroupTest : public :: testing :: Test
 {
     protected:
