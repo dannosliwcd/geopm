@@ -7,5 +7,5 @@
 
 const char *geopm_version(void)
 {
-    return PACKAGE_VERSION;
+    return VERSION;
 }
