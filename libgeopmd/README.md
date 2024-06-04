@@ -14,22 +14,17 @@ Building
 ========
 Steps to build `libgeopmd` are as follows:
 
-1. This library is built with autotools, and may be distributed with an
-   autoconf script. If you haven't been provided a `./configure` script (e.g.,
-   if you cloned the repository yourself), then generate one by running
-   `./autogen.sh`. 
-2. Run `./configure --prefix=$HOME/build/geopm` (or modify the prefix to
-   wherever you want to install GEOPM). Additional options are shown when you
-   run `./configure --help`.
-3. Run `make -j` to build libgeopm and other build outputs. The library will be
-   written to the `./.libs` directory.
-4. Run `make install` to copy the build outputs to their installation
-   destinations.
+1. Generate a build directory. E.g., the following command creates a directory
+   named `builddir` with the build prefix overridden to `$HOME/build/geopm`:
+   `meson setup --prefix=$HOME/build/geopm builddir`. Additional configuration
+   options can either be specified now, or later by running `meson configure builddir` (If you don't add any additional options, it will print out the options that are available to you).
+2. Build `libgeopmd` using the build directory you just created: `meson compile -C builddir`
+3. Install `libgeopmd` using the build directory you just created: `meson install -C builddir`
 
 Testing
 -------
-Run ``make checkprogs -j`` to build the test suite.
+Run `meson test -C builddir` to build and run the test suite. Basic pass/fail
+information is printed to the screen. Add the `--verbose` option to 
+display more detailed test logs.
 
-Run ``make check`` to run the full test suite. Basic pass/fail information is printed to the screen. Detailed test logs are written to ``test-suite.log``.
-
-Run a subset of tests by using [gtest filters](https://google.github.io/googletest/advanced.html#running-a-subset-of-the-tests). For example, to run only ``HelperTest`` test cases, run ``GTEST_FILTER='HelperTest*' make check``.
+Run a subset of tests by using [gtest filters](https://google.github.io/googletest/advanced.html#running-a-subset-of-the-tests). For example, to run only ``HelperTest`` test cases, run ``GTEST_FILTER='HelperTest*' meson test -C builddir``.

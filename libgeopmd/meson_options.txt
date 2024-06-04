@@ -1,0 +1,21 @@
+option('enable-systemd', type: 'feature', value: 'enabled',
+       description: 'Enables the use of the sd_bus interface of libsystemd to support the ServiceIOGroup')
+option('enable-libcap', type: 'feature', value: 'enabled',
+       description: 'Disable the use of libcap and use syscall instead')
+option('enable-rawmsr', type: 'feature', value: 'enabled',
+       description: 'Disable direct use of standard msr(4) device driver')
+option('enable-cpuid', type: 'feature', value: 'enabled',
+       description: 'Enable use of the cpuid.h interfaces')
+option('enable-levelzero', type: 'feature', value: 'auto',
+       description: 'Enables use of the levelzero library to support levelzero board GPUs')
+option('enable-nvml', type: 'feature', value: 'auto',
+       description: 'Enables use of the NVML library to support NVML board GPUs')
+option('enable-dcgm', type: 'feature', value: 'auto',
+       description: 'Enables use of the DCGM library to support NVIDIA board GPUs')
+option('enable-cnl-iogroup', type: 'feature', value: 'auto',
+       description: 'Enable the CNL IOGroup')
+option('enable-io-uring', type: 'feature', value: 'enabled',
+       description: 'Enable the use of liburing for batch IO operations')
+
+option('geopm-config-path', type: 'string', value: '/etc/geopm',
+       description: 'The prefix to the path where GEOPM config files are stored.')
