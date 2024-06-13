@@ -92,10 +92,13 @@ By default, this test is setup to run on a single compute node.  After
      `MPI_Init` and `MPI_Finalize` but will not otherwise use MPI.
    - If the Runtime was built *without* MPI support, the
      `MPI_Init_thread`  region would not be present in the output
-     files.  `geopmbench` can be invoked with the GEOPMBENCH_NO_MPI
+     files.  `geopmbench` can be invoked with the `GEOPMBENCH_NO_MPI`
      environment variable to avoid any MPI calls. For more information
      about the environment configuration of `geopmbench`, see
      [here](https://geopm.github.io/geopmbench.1.html#environment).
+   - Care must be taken to ensure that if `GEOPM_CTL_LOCAL` is unset
+     that `GEOPMBENCH_NO_MPI` is set.  `MPI_Init()` must only be called
+     by one of the processes.
 3. `test_regions_valid` - The summarized report file contains valid
    data for the expected regions.
    - Region data is first validated by examining the count of how many
@@ -136,3 +139,27 @@ By default, this test is setup to run on a single compute node.  After
    runtime reported by the "Application Totals".
    - This is a consistency check to ensure valid data between the
      individual regions and the "Application Totals".
+
+### Example Runs
+
+Single node runs can be accomplished by invoking test_multi_app.py
+directly:
+```
+export PATH=${HOME}/build/stress-ng/bin:${PATH}
+GEOPM_NUM_NODE=1 mpiexec -n 1 -ppn 1 ~/geopm/integration/test/test_multi_app.py
+```
+
+Multi-node runs when libgeopm is built with MPI support, and when
+`GEOPM_CTL_LOCAL` is unset, requires 2 steps.  The first is to generate
+a single report with the data from all hosts.  For 4 nodes, the command
+is as follows:
+```
+export PATH=${HOME}/build/stress-ng/bin:${PATH}
+mpiexec -n 4 -ppn 1 ~/geopm/integration/test/test_multi_app.sh
+```
+
+The second is to invoke test_multi_app.py with ``--skip-launch`` since the data
+is already present:
+```
+GEOPM_NUM_NODE=4 ~/geopm/integration/test/test_multi_app.py -fv --skip-launch
+```
