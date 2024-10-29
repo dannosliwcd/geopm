@@ -9,7 +9,7 @@ die() {
 }
 
 skip_runtime=0
-if [ $# == 2 ] && [ $1 == '--skip-runtime' ]; then
+if [ $# == 2 ] && [ "$1" == '--skip-runtime' ]; then
     skip_runtime=1
 fi
 
@@ -52,7 +52,7 @@ if [ "$skip_runtime" -eq 0 ]; then
     fi
     
     if [ "$pkg" == 'deb' ]; then
-        for deb_path in "${libgeopmd_dir}"/*"${libgeopmd_version}"*.deb
+        for deb_path in ../libgeopmd/*"${libgeopmd_version}"*.deb
         do
             if ! ar x "$deb_path"; then
                 die "Error: Unable to unpack libgeopmd version ${libgeopmd_version} DEBs"
@@ -63,7 +63,7 @@ if [ "$skip_runtime" -eq 0 ]; then
             fi
         done
     elif [ "$pkg" == 'rpm' ]; then
-        for rpm_path in ${RPM_TOPDIR}/RPMS/$(uname -m)/{geopm-service,libgeopmd2}*"${libgeopmd_version}"*.rpm
+        for rpm_path in "${RPM_TOPDIR}/RPMS/$(uname -m)/"{geopm-service,libgeopmd2}*"${libgeopmd_version}"*.rpm
         do
             if ! rpm2cpio "$rpm_path" | cpio -idmv; then
                 die "Error: Unable to unpack libgeopmd version ${libgeopmd_version} RPMs"
@@ -72,6 +72,8 @@ if [ "$skip_runtime" -eq 0 ]; then
     else
         die "Error: Encountered an unexpected package type: $pkg"
     fi
+
+    popd
     
     cd libgeopm
     ./autogen.sh
@@ -88,3 +90,5 @@ if [ "$skip_runtime" -eq 0 ]; then
         ./make_$pkg.sh
     cd -
 fi
+
+rm -r "${deps_tmp_root}"
