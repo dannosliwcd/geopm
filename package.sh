@@ -41,23 +41,23 @@ if [ "$skip_runtime" -eq 0 ]; then
     if [ -z "${libgeopmd_version}" ]; then
         die "Error: libgeopmd/VERSION is not set"
     fi
-    
+
     deps_tmp_root="${PWD}/$(mktemp -d libgeopmd-deps-tmp.XXXXXX)"
     if [ "$?" -ne 0 ]; then
         die "Error: failed to create temporary directory for libgeopmd dependencies"
     fi
-    
+
     if ! pushd "$deps_tmp_root"; then
         die "Error: failed to enter temporary directory for libgeopmd dependencies"
     fi
-    
+
     if [ "$pkg" == 'deb' ]; then
         for deb_path in ../libgeopmd/*"${libgeopmd_version}"*.deb
         do
             if ! ar x "$deb_path"; then
                 die "Error: Unable to unpack libgeopmd version ${libgeopmd_version} DEBs"
             fi
-    
+
             if ! tar xf data.tar.zst; then
                 die "Error: Unable to decompress libgeopmd $deb_path data"
             fi
@@ -74,7 +74,7 @@ if [ "$skip_runtime" -eq 0 ]; then
     fi
 
     popd
-    
+
     cd libgeopm
     ./autogen.sh
     ./configure --disable-mpi \
@@ -83,7 +83,7 @@ if [ "$skip_runtime" -eq 0 ]; then
                 --with-geopmd-lib="$(dirname "$(find "${deps_tmp_root}/usr" -name libgeopmd.so.2 | head -n1)")"
     make $pkg
     cd -
-    
+
     cd geopmpy
     C_INCLUDE_PATH="${deps_tmp_root}/usr/include" \
         LIBRARY_PATH="$(dirname "$(find "${deps_tmp_root}/usr" -name libgeopmd.so.2 | head -n1)")" \
