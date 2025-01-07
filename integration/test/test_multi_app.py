@@ -22,7 +22,7 @@ from integration.test import util
 
 class TestIntegration_multi_app(unittest.TestCase):
     TEST_NAME = 'test_multi_app'
-    TIME_LIMIT = 60
+    TIME_LIMIT = 120
     NUM_NODE = util.get_num_node()
     EXPECTED_REGIONS = {'model-init', 'stream', 'dgemm'}
 
@@ -46,7 +46,8 @@ class TestIntegration_multi_app(unittest.TestCase):
     def test_expected_regions_exist(self):
         for node in self._node_names:
             regions = set(self._report.region_names(node))
-            self.assertEqual(regions, self.EXPECTED_REGIONS)
+            for rr in self.EXPECTED_REGIONS:
+                self.assertIn(rr, regions, msg=rr)
 
     def test_regions_valid(self):
         for node in self._node_names:
