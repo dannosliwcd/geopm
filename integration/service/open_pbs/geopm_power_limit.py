@@ -63,22 +63,27 @@ def clip_list(list_to_clip, min_value, max_value):
     return [max(min_value, min(x, max_value)) for x in list_to_clip]
 
 
-def slowdown_at_power(power, x0, A, B, C):
-    return [An * (x0n - power)**2 + Bn * (x0n - power) + Cn
-            for x0n, An, Bn, Cn in zip(x0, A, B, C)]
+def slowdown_at_power(power, x0, A, B, C, K):
+    """Return the slowdown factor (1 == 100% slowdown) given power normalized
+    to max power at power=1.
+    """
+    return A * (B ** (K * (power - x0))) + C
 
 
-def power_at_slowdown(slowdown, x0, A, B, C):
-    return clip_list([(x0n - (-Bn + math.sqrt(Bn**2 - 4 * An * (Cn - slowdown))) / (2 * An))
-                      for x0n, An, Bn, Cn in zip(x0, A, B, C)], 0, 1)
+def power_at_slowdown(slowdown, x0, A, B, C, K):
+    """Return power as a fraction of max power give the slowdown factor.
+    """
+    # slowdown = A * (B ** (K * (power.flatten() - x0))) + C
+    # (slowdown - C) / A = (B ** (K * (power.flatten() - x0)))
+    return math.log((slowdown - C) / A) / (math.log(B) * K) + x0
 
 
-def power_deficit_at_slowdown(slowdown, budget, max_node_power, x0, A, B, C):
+def power_deficit_at_slowdown(slowdown, budget, max_node_power, x0, A, B, C, K):
     """Return the power deficit at a target uniform slowdown across nodes for a
     given job power budget. I.e., the zero-crossing point is where the budget
     is allocated exactly, and where all jobs have the same expected slowdown.
     """
-    return max_node_power * sum(power_at_slowdown(slowdown, x0, A, B, C)) - budget
+    return max_node_power * sum(power_at_slowdown(slowdown, x0, A, B, C, K)) - budget
 
 
 def bisect_power_deficit_by_slowdown(min_slowdown, max_slowdown, max_iters, tolerance, args):
@@ -113,16 +118,16 @@ def bisect_power_deficit_by_slowdown(min_slowdown, max_slowdown, max_iters, tole
     return mid
 
 
-def allocate_budget_to_nodes(budget, max_node_power, x0, A, B, C):
+def allocate_budget_to_nodes(budget, max_node_power, x0, A, B, C, K):
     """Distribute a given job budget to node power caps, targeting even slowdown
     across nodes, as expected by the node performance models.
     """
     # Even if one node expects 0% slowdown at max power, that may not be true of
     # all nodes executing this job. Limit our search to the achievable range.
-    long_pole_slowdown_at_max_power = max(slowdown_at_power(1, x0, A, B, C))
-    long_pole_slowdown_at_min_power = max(slowdown_at_power(0, x0, A, B, C))
+    long_pole_slowdown_at_max_power = max(slowdown_at_power(1, x0, A, B, C, K))
+    long_pole_slowdown_at_min_power = max(slowdown_at_power(0, x0, A, B, C, K))
 
-    max_balanced_power = power_at_slowdown(long_pole_slowdown_at_max_power, x0, A, B, C)
+    max_balanced_power = power_at_slowdown(long_pole_slowdown_at_max_power, x0, A, B, C, K)
 
     if budget > sum(max_balanced_power) * max_node_power:
         # Bisection won't do any good in this case, since the equal-slowdown
@@ -135,9 +140,9 @@ def allocate_budget_to_nodes(budget, max_node_power, x0, A, B, C):
             long_pole_slowdown_at_min_power,
             max_iters=50,
             tolerance=0.1,
-            args=(budget, max_node_power, x0, A, B, C))
+            args=(budget, max_node_power, x0, A, B, C, K))
 
-    power_by_node = [p * max_node_power for p in power_at_slowdown(slowdown, x0, A, B, C)]
+    power_by_node = [p * max_node_power for p in power_at_slowdown(slowdown, x0, A, B, C, K)]
 
     # Evenly distribute slack power budget wherever it can be used.
     unused_budget = budget - sum(power_by_node)
@@ -177,6 +182,7 @@ def get_model_from_config(hook_config, job_type, per_host=False):
                 model['A'] = float(model['A'])
                 model['B'] = float(model['B'])
                 model['C'] = float(model['C'])
+                model['K'] = float(model['K'])
                 models[host_name] = model
             return models
     else:
@@ -186,6 +192,7 @@ def get_model_from_config(hook_config, job_type, per_host=False):
             A = float(model_coefficients['A'])
             B = float(model_coefficients['B'])
             C = float(model_coefficients['C'])
+            K = float(model_coefficients['K'])
         except:
             pbs.logmsg(pbs.LOG_WARNING, f'Invalid coefficients for profile {job_type} in GEOPM PBS config')
             return None
@@ -196,6 +203,7 @@ def get_model_from_config(hook_config, job_type, per_host=False):
             'A': A,
             'B': B,
             'C': C,
+            'K': K,
         }
 
 
@@ -218,7 +226,10 @@ def predict_power_cap_at_performance_factor(job_type, slowdown, min_power_per_no
         try:
             # Using a quadratic model: slowdown = A * (x0 - percent_of_tdp)^2 + B * (x0 - percent_of_tdp) + C
             # Solve for the positive root (less than 100% of max power) at '-slowdown' offset:
-            result = model['max_power'] * (model['x0'] - (-model['B'] + math.sqrt(model['B']**2 - 4 * model['A'] * (model['C'] - slowdown))) / (2 * model['A']))
+            result = model['max_power'] * power_at_slowdown(slowdown,
+                                                            model['x0'], model['A'],
+                                                            model['B'], model['C'],
+                                                            model['K'])
         except Exception as e:
             pbs.logmsg(pbs.LOG_WARNING, f'Unable to estimate job power. {str(e)}')
             do_use_model = False
@@ -337,13 +348,14 @@ def do_power_limit_prologue():
                     A = [host_models[host]['A'] for host in vnode_names]
                     B = [host_models[host]['B'] for host in vnode_names]
                     C = [host_models[host]['C'] for host in vnode_names]
+                    K = [host_models[host]['K'] for host in vnode_names]
                 except ValueError:
                     pbs.logmsg(pbs.LOG_WARNING, 'GEOPM PBS config has an incomplete set of host models. Using uniform power limits.')
                 else:
                     use_uniform_limit = False
                     slowdown, power_by_node = allocate_budget_to_nodes(
                         job_power_limit,
-                        max_node_power, x0, A, B, C)
+                        max_node_power, x0, A, B, C, K)
                     my_node_idx = vnode_names.index(pbs.get_local_nodename())
                     power_limit = power_by_node[my_node_idx]
         if use_uniform_limit:

@@ -44,7 +44,7 @@ def get_coefficients(df):
     """Given a DataFrame containing power and performance data, return a tuple
     of model coefficients that fit to the data.
 
-    Returns: x0, A, B, C
+    Returns: x0, A, B, C, K
     """
     columns = ['agent', 'profile', 'host', 'slowdown', 'BOARD_POWER_LIMIT_CONTROL', 'runtime (s)', 'BOARD_ENERGY']
     if not args.use_fom:
@@ -57,17 +57,20 @@ def get_coefficients(df):
 
     res = optimize.minimize(
         loss,
-        # Initial guess: x0=1 (max power), everything else is zero (i.e., a flat line)
-        [1, 0, 0, 0],
+        # Initial guess: x0=1 (max power), positive A and K, and B between 0 and 1
+        # get us inside the y' constraint.
+        [1, 1, 0.5, 0, 1],
         args=(y, X),
-        jac=loss_jac,
-        # y = A * (x0 - x)**2 + B * (x0 - x) + C
-        # dy/dx: -A*2*x0 + A*2*x - B
+        #jac=loss_jac,
+        bounds=((None, None), # X0
+                (0, None), # A
+                (0, 1), # B
+                (None, None), # C
+                (0, None)), # K
         constraints=(
-            dict(type='ineq', fun=lambda x: 2 * x[1]), # y''(x) >= 0, Slowdown decreases as power increases in the lower power domain
-            dict(type='ineq', fun=lambda x: 2 * x[1] * (x[0] - 1) + x[2]), # y'(1) <= 0, Slowdown is not increasing at Pmax
-            dict(type='ineq', fun=lambda x: x[1] * (x[0] - 1) ** 2 + x[2] * (x[0] - 1) + x[3]), # y(1) >= 0, Slowdown not better than best known at Pmax
-        )
+            dict(type='ineq', fun=lambda x: -x[1] * x[4] * np.log(x[2]) * x[2] ** (x[4] * (1-x[0]))), # y'(power=1) <= 0, At 100% power, Slowdown not increasing at pmax
+        ),
+        options=dict(disp=True),
     )
     params = res.x
     if not res.success:
@@ -81,17 +84,19 @@ def get_coefficients(df):
     return params
 
 
-def slowdown_at_power(power, x0, A, B, C):
+def slowdown_at_power(power, x0, A, B, C, K):
     """Return the slowdown factor (1 == 100% slowdown) given power normalized
     to max power at power=1.
     """
-    return A * (x0 - power.flatten())**2 + B * (x0 - power.flatten()) + C
+    return A * (B ** (K * (power.flatten() - x0))) + C
 
 
-def power_at_slowdown(slowdown, x0, A, B, C):
+def power_at_slowdown(slowdown, x0, A, B, C, K):
     """Return power as a fraction of max power give the slowdown factor.
     """
-    return x0 - (-B + np.sqrt(B**2 - 4 * A * (C - slowdown))) / (2 * A)
+    # slowdown = A * (B ** (K * (power.flatten() - x0))) + C
+    # (slowdown - C) / A = (B ** (K * (power.flatten() - x0)))
+    return np.log((slowdown - C) / A) / (np.log(B) * K) + x0
 
 
 def loss(params, slowdown, power):
@@ -105,14 +110,14 @@ def loss_jac(params, slowdown, power):
     """Return the gradient of loss(slowdown, power) with respect to params.
     """
     J = np.empty(params.size)
-    x0, A, B, C = params
+    x0, A, B, C, K = params
     P = power.flatten()
-    neg_two_resid = -2*(slowdown - slowdown_at_power(power, *params))
-    x0mP = x0 - P
-    J[0] = np.sum(neg_two_resid*(2*A*x0mP + B))
-    J[1] = np.sum(neg_two_resid*(x0mP**2))
-    J[2] = np.sum(neg_two_resid*x0mP)
-    J[3] = np.sum(neg_two_resid)
+    # TODO: Check the math on this. Never converges when applied as-is.
+    J[0] = np.sum(A * K * np.log(B) * B ** (K * (P - x0)))
+    J[1] = np.sum(-(B ** (K * (P - x0))))
+    J[2] = np.sum(A * K * (x0-P) * B**(-x0 * K + K * P - 1))
+    J[3] = -1
+    J[4] = np.sum(A * np.log(B) * (x0 - P) * B ** (K * (P - x0)))
     return J
 
 
@@ -168,10 +173,10 @@ for profile, df_profile in df.groupby('profile'):
         output['profiles'][profile] = dict(hosts=dict())
         for host, df_host in df_profile.groupby('host'):
             output['profiles'][profile]['hosts'][host] = dict(
-                model=dict(zip(('x0', 'A', 'B', 'C'), get_coefficients(df_host))))
+                model=dict(zip(('x0', 'A', 'B', 'C', 'K'), get_coefficients(df_host))))
     else:
         output['profiles'][profile] = dict(
-            model=dict(zip(('x0', 'A', 'B', 'C'), get_coefficients(df_profile))))
+            model=dict(zip(('x0', 'A', 'B', 'C', 'K'), get_coefficients(df_profile))))
 
 if args.per_host:
     # If multiple profiles are included here, default to using the first one.
@@ -189,7 +194,7 @@ if args.plot_path is not None:
         for profile_name, profile_data in output['profiles'].items():
             if args.per_host:
                 for host_name, host_data in profile_data['hosts'].items():
-                    y = slowdown_at_power(X, host_data['model']['x0'], host_data['model']['A'], host_data['model']['B'], host_data['model']['C'])
+                    y = slowdown_at_power(X, host_data['model']['x0'], host_data['model']['A'], host_data['model']['B'], host_data['model']['C'], host_data['model']['K'])
                     line, = ax.plot(X, y, label=f'{profile_name}@{host_name}')
                     if args.show_min_max_range:
                         slowdown_range = df.loc[
@@ -202,7 +207,7 @@ if args.plot_path is not None:
                         ax.scatter(plot_df['BOARD_POWER_LIMIT_CONTROL']/args.max_power, plot_df['slowdown'])
 
             else:
-                y = slowdown_at_power(X, profile_data['model']['x0'], profile_data['model']['A'], profile_data['model']['B'], profile_data['model']['C'])
+                y = slowdown_at_power(X, profile_data['model']['x0'], profile_data['model']['A'], profile_data['model']['B'], profile_data['model']['C'], profile_data['model']['K'])
                 line, = ax.plot(X, y, label=profile_name)
                 if args.show_min_max_range:
                     slowdown_range = df.loc[(df['profile'] == profile_name) & (df['BOARD_POWER_LIMIT_CONTROL'] != 0)].groupby(
